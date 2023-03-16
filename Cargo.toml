@@ -1,6 +1,10 @@
 [package]
 name = "surrealdb-migrations"
 version = "0.1.0"
+description = "An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations)."
+authors = ["David Bottiau"]
+repository = "https://github.com/Odonno/surrealdb-migrations/"
+license-file = "LICENSE"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
