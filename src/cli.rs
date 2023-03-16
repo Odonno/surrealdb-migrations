@@ -20,15 +20,15 @@ pub enum Action {
     #[clap(aliases = vec!["s"])]
     Scaffold {
         /// Kind of migration project to create
-        #[clap(short, long)]
         kind: ScaffoldKind,
     },
     /// Create a new migration file
     #[clap(aliases = vec!["c"])]
     Create {
+        #[command(subcommand)]
+        command: Option<CreateAction>,
         /// Name of the migration to create
-        #[clap(short, long)]
-        name: String,
+        name: Option<String>,
     },
     /// Update migration(s) definitions (based on schemas and migrations created)
     #[clap(aliases = vec!["u"])]
@@ -43,5 +43,27 @@ pub enum Action {
         username: Option<String>,
         #[clap(short, long)]
         password: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum CreateAction {
+    #[clap(aliases = vec!["s"])]
+    /// Generate a new schema file
+    Schema {
+        /// Name of the schema to generate
+        name: String,
+    },
+    #[clap(aliases = vec!["e"])]
+    /// Generate a new event file
+    Event {
+        /// Name of the event to generate
+        name: String,
+    },
+    #[clap(aliases = vec!["m"])]
+    /// Generate a new migration file
+    Migration {
+        /// Name of the migration to generate
+        name: String,
     },
 }
