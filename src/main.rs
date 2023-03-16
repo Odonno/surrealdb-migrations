@@ -2,12 +2,13 @@ use clap::Parser;
 use cli::{Action, Args};
 
 mod cli;
+mod scaffold;
 
 fn main() {
     let args = Args::parse();
 
     match args.command {
-        Action::Scaffold { kind } => todo!("Scaffold a new SurrealDB project: {:?}", kind),
+        Action::Scaffold { kind } => scaffold::main(kind),
         Action::Create { name } => todo!("Create a new migration file: {}", name),
         Action::Update => todo!("Update migration(s) definitions"),
         Action::Apply {
