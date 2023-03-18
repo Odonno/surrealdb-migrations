@@ -28,7 +28,6 @@ async fn main() {
                 None => panic!("No action specified for `create` command"),
             },
         },
-        Action::Update => todo!("Update migration(s) definitions"),
         Action::Apply {
             url,
             ns,

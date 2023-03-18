@@ -30,9 +30,6 @@ pub enum Action {
         /// Name of the migration to create
         name: Option<String>,
     },
-    /// Update migration(s) definitions (based on schemas and migrations created)
-    #[clap(aliases = vec!["u"])]
-    Update,
     /// Apply migration(s) to the database
     #[clap(aliases = vec!["a"])]
     Apply {
