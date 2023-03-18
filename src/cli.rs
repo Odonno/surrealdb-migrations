@@ -36,8 +36,11 @@ pub enum Action {
     /// Apply migration(s) to the database
     #[clap(aliases = vec!["a"])]
     Apply {
+        #[clap(long)]
         url: Option<String>,
+        #[clap(long)]
         ns: Option<String>,
+        #[clap(long)]
         db: Option<String>,
         #[clap(short, long)]
         username: Option<String>,

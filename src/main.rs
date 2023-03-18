@@ -2,11 +2,13 @@ use clap::Parser;
 use cli::{Action, Args, CreateAction};
 use create::CreateOperation;
 
+mod apply;
 mod cli;
 mod create;
 mod scaffold;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
 
     match args.command {
@@ -29,13 +31,6 @@ fn main() {
             db,
             username,
             password,
-        } => todo!(
-            "Apply migration(s) to the database: {:?} {:?} {:?} {:?} {:?}",
-            url,
-            ns,
-            db,
-            username,
-            password
-        ),
+        } => apply::main(url, ns, db, username, password).await,
     };
 }
