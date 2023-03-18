@@ -6,7 +6,7 @@ pub enum CreateOperation {
     Migration,
 }
 
-pub fn main(name: String, operation: CreateOperation) {
+pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>>) {
     let dir_name = match operation {
         CreateOperation::Schema => "schemas",
         CreateOperation::Event => "events",
@@ -42,19 +42,37 @@ pub fn main(name: String, operation: CreateOperation) {
     }
 
     // generate content
+    let field_definitions = match fields {
+        Some(fields) => fields
+            .iter()
+            .map(|field| format!("DEFINE FIELD {} ON {};", field, name))
+            .collect::<Vec<String>>()
+            .join("\n"),
+        None => format!("# DEFINE FIELD field ON {};", name),
+    };
+
     let content = match operation {
-        CreateOperation::Schema => format!("DEFINE TABLE {} SCHEMALESS;", name),
+        CreateOperation::Schema => format!(
+            "DEFINE TABLE {0} SCHEMALESS;
+
+{1}",
+            name, field_definitions
+        ),
         CreateOperation::Event => format!(
             "DEFINE TABLE {0} SCHEMALESS;
+
+{1}
 
 DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
     # TODO
 );",
-            name
+            name, field_definitions
         ),
         CreateOperation::Migration => "".to_string(),
     };
 
     // create file
     fs_extra::file::write_all(&file_path, &content).unwrap();
+
+    println!("File {} created successfully", filename);
 }

@@ -56,12 +56,18 @@ pub enum CreateAction {
     Schema {
         /// Name of the schema to generate
         name: String,
+        /// A list of fields to define on the table
+        #[clap(short, long, value_delimiter = ',')]
+        fields: Option<Vec<String>>,
     },
     #[clap(aliases = vec!["e"])]
     /// Generate a new event file
     Event {
         /// Name of the event to generate
         name: String,
+        /// A list of fields to define on the table
+        #[clap(short, long, value_delimiter = ',')]
+        fields: Option<Vec<String>>,
     },
     #[clap(aliases = vec!["m"])]
     /// Generate a new migration file

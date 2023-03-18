@@ -14,12 +14,16 @@ async fn main() {
     match args.command {
         Action::Scaffold { kind } => scaffold::main(kind),
         Action::Create { command, name } => match name {
-            Some(name) => create::main(name, CreateOperation::Migration),
+            Some(name) => create::main(name, CreateOperation::Migration, None),
             None => match command {
-                Some(CreateAction::Schema { name }) => create::main(name, CreateOperation::Schema),
-                Some(CreateAction::Event { name }) => create::main(name, CreateOperation::Event),
+                Some(CreateAction::Schema { name, fields }) => {
+                    create::main(name, CreateOperation::Schema, fields)
+                }
+                Some(CreateAction::Event { name, fields }) => {
+                    create::main(name, CreateOperation::Event, fields)
+                }
                 Some(CreateAction::Migration { name }) => {
-                    create::main(name, CreateOperation::Migration)
+                    create::main(name, CreateOperation::Migration, None)
                 }
                 None => panic!("No action specified for `create` command"),
             },
