@@ -1,4 +1,4 @@
-[![Latest Version][s1]][l1] [![MIT][s2]][l2]
+![Crates.io](https://img.shields.io/crates/v/surrealdb-migrations) ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Odonno/surrealdb-migrations/release) ![GitHub](https://img.shields.io/github/license/Odonno/surrealdb-migrations)
 
 # SurrealDB Migrations
 

@@ -5,6 +5,7 @@ description = "An awesome CLI for SurrealDB migrations (provides commands to sca
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
 readme = "readme.md"
+license = "MIT"
 license-file = "LICENSE"
 edition = "2021"
 
