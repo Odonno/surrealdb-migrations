@@ -4,6 +4,7 @@ version = "0.2.0"
 description = "An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations)."
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
+readme = "readme.md"
 license-file = "LICENSE"
 edition = "2021"
 
