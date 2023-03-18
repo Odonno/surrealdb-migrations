@@ -1,7 +1,10 @@
 use std::collections::HashSet;
 
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
-use reqwest::header::{HeaderMap, ACCEPT};
+use reqwest::{
+    header::{HeaderMap, ACCEPT},
+    Response,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -9,6 +12,14 @@ struct ScriptMigration {
     id: String,
     script_name: String,
     executed_at: String,
+}
+
+struct SurrealDbQueryParams {
+    url: String,
+    ns: String,
+    db: String,
+    username: String,
+    password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -33,6 +44,37 @@ type ExecuteSchemaResponse = EmptySurrealDbResponse;
 type ExecuteEventResponse = EmptySurrealDbResponse;
 type ExecuteMigrationResponse = EmptySurrealDbResponse;
 
+async fn execute_query(params: &SurrealDbQueryParams, query: String) -> Response {
+    let client = reqwest::Client::new();
+
+    let mut headers = HeaderMap::new();
+    headers.insert(ACCEPT, "application/json".parse().unwrap());
+    headers.insert("NS", params.ns.parse().unwrap());
+    headers.insert("DB", params.db.parse().unwrap());
+
+    client
+        .post(params.url.to_owned())
+        .basic_auth(params.username.to_owned(), Some(params.password.to_owned()))
+        .headers(headers.to_owned())
+        .body(query)
+        .send()
+        .await
+        .unwrap()
+}
+
+async fn execute_transaction(params: &SurrealDbQueryParams, inner_query: String) -> Response {
+    let query = format!(
+        "BEGIN TRANSACTION;
+
+{}
+
+COMMIT TRANSACTION;",
+        inner_query
+    );
+
+    execute_query(params, query).await
+}
+
 fn has_error(data: &EmptySurrealDbResponse) -> bool {
     data.iter().any(|r| r.status != "OK")
 }
@@ -52,25 +94,15 @@ pub async fn main(
     let ns = ns.unwrap_or("test".to_owned());
     let db = db.unwrap_or("test".to_owned());
 
-    // execute HTTP call to Surreal
-    let client = reqwest::Client::new();
+    let query_params = SurrealDbQueryParams {
+        url,
+        ns,
+        db,
+        username,
+        password,
+    };
 
-    let mut headers = HeaderMap::new();
-
-    headers.insert(ACCEPT, "application/json".parse().unwrap());
-    headers.insert("NS", ns.parse().unwrap());
-    headers.insert("DB", db.parse().unwrap());
-
-    let query = "SELECT * FROM script_migration".to_owned();
-
-    let response = client
-        .post(url.to_owned())
-        .basic_auth(username.to_owned(), Some(password.to_owned()))
-        .headers(headers.to_owned())
-        .body(query)
-        .send()
-        .await
-        .unwrap();
+    let response = execute_query(&query_params, "SELECT * FROM script_migration".to_owned()).await;
 
     if response.status() != 200 {
         panic!("RPC error");
@@ -105,15 +137,7 @@ pub async fn main(
         };
 
         let query = fs_extra::file::read_to_string(path).unwrap();
-
-        let response = client
-            .post(url.to_owned())
-            .basic_auth(username.to_owned(), Some(password.to_owned()))
-            .headers(headers.to_owned())
-            .body(query)
-            .send()
-            .await
-            .unwrap();
+        let response = execute_query(&query_params, query).await;
 
         if response.status() != 200 {
             panic!("RPC error");
@@ -138,15 +162,7 @@ pub async fn main(
         };
 
         let query = fs_extra::file::read_to_string(path).unwrap();
-
-        let response = client
-            .post(url.to_owned())
-            .basic_auth(username.to_owned(), Some(password.to_owned()))
-            .headers(headers.to_owned())
-            .body(query)
-            .send()
-            .await
-            .unwrap();
+        let response = execute_query(&query_params, query).await;
 
         if response.status() != 200 {
             panic!("RPC error");
@@ -187,12 +203,8 @@ pub async fn main(
         let inner_query = fs_extra::file::read_to_string(path).unwrap();
 
         let query = format!(
-            "BEGIN TRANSACTION;
-
-{}
-CREATE script_migration SET script_name = '{}'
-
-COMMIT TRANSACTION;",
+            "{}
+CREATE script_migration SET script_name = '{}'",
             inner_query, name
         );
 
@@ -205,14 +217,7 @@ COMMIT TRANSACTION;",
 
         println!("Executing migration {}...", script_display_name);
 
-        let response = client
-            .post(url.to_owned())
-            .basic_auth(username.to_owned(), Some(password.to_owned()))
-            .headers(headers.to_owned())
-            .body(query)
-            .send()
-            .await
-            .unwrap();
+        let response = execute_transaction(&query_params, query).await;
 
         if response.status() != 200 {
             panic!("RPC error");
