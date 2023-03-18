@@ -1,7 +1,7 @@
 use clap::{Parser, Subcommand};
 
 #[derive(clap::ValueEnum, Debug, Clone)]
-pub enum ScaffoldKind {
+pub enum ScaffoldTemplate {
     Empty,
     Blog,
 }
@@ -19,8 +19,8 @@ pub enum Action {
     /// Scaffold a new SurrealDB project (with migrations)
     #[clap(aliases = vec!["s"])]
     Scaffold {
-        /// Kind of migration project to create
-        kind: ScaffoldKind,
+        /// Type of migration project to create
+        template: ScaffoldTemplate,
     },
     /// Create a new migration file
     #[clap(aliases = vec!["c"])]

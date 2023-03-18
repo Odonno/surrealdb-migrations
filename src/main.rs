@@ -12,7 +12,7 @@ async fn main() {
     let args = Args::parse();
 
     match args.command {
-        Action::Scaffold { kind } => scaffold::main(kind),
+        Action::Scaffold { template } => scaffold::main(template),
         Action::Create { command, name } => match name {
             Some(name) => create::main(name, CreateOperation::Migration, None),
             None => match command {

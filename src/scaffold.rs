@@ -1,11 +1,11 @@
 use fs_extra::dir::CopyOptions;
 
-use crate::cli::ScaffoldKind;
+use crate::cli::ScaffoldTemplate;
 
-pub fn main(kind: ScaffoldKind) {
-    let template_dir_name = match kind {
-        ScaffoldKind::Empty => "empty",
-        ScaffoldKind::Blog => "blog",
+pub fn main(template: ScaffoldTemplate) {
+    let template_dir_name = match template {
+        ScaffoldTemplate::Empty => "empty",
+        ScaffoldTemplate::Blog => "blog",
     };
 
     let template_dir_name = format!("templates/{}", template_dir_name);
