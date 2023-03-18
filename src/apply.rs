@@ -102,7 +102,7 @@ pub async fn main(
         password,
     };
 
-    let response = execute_query(&query_params, "SELECT * FROM script_migration".to_owned()).await;
+    let response = execute_query(&query_params, "SELECT * FROM script_migration;".to_owned()).await;
 
     if response.status() != 200 {
         panic!("RPC error");
@@ -128,51 +128,63 @@ pub async fn main(
     let migrations_files = fs_extra::dir::ls("migrations", &config).unwrap();
 
     // apply schemas
-    for schema_file in schemas_files.items {
-        let path = schema_file.get(&DirEntryAttr::Path).unwrap();
+    let schema_definitions = schemas_files
+        .items
+        .iter()
+        .map(|file| {
+            let path = file.get(&DirEntryAttr::Path).unwrap();
 
-        let path = match path {
-            DirEntryValue::String(path) => path,
-            _ => panic!("Cannot get path to schema files"),
-        };
+            let path = match path {
+                DirEntryValue::String(path) => path,
+                _ => panic!("Cannot get path to schema files"),
+            };
 
-        let query = fs_extra::file::read_to_string(path).unwrap();
-        let response = execute_query(&query_params, query).await;
+            fs_extra::file::read_to_string(path).unwrap()
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
-        if response.status() != 200 {
-            panic!("RPC error");
-        }
+    let response = execute_transaction(&query_params, schema_definitions).await;
 
-        let data = response.json::<ExecuteSchemaResponse>().await.unwrap();
+    if response.status() != 200 {
+        panic!("RPC error");
+    }
 
-        if has_error(&data) {
-            panic!("RPC error");
-        }
+    let data = response.json::<ExecuteSchemaResponse>().await.unwrap();
+
+    if has_error(&data) {
+        panic!("RPC error");
     }
 
     println!("Schema files successfully executed!");
 
     // apply events
-    for event_file in events_files.items {
-        let path = event_file.get(&DirEntryAttr::Path).unwrap();
+    let event_definitions = events_files
+        .items
+        .iter()
+        .map(|file| {
+            let path = file.get(&DirEntryAttr::Path).unwrap();
 
-        let path = match path {
-            DirEntryValue::String(path) => path,
-            _ => panic!("Cannot get path to event files"),
-        };
+            let path = match path {
+                DirEntryValue::String(path) => path,
+                _ => panic!("Cannot get path to schema files"),
+            };
 
-        let query = fs_extra::file::read_to_string(path).unwrap();
-        let response = execute_query(&query_params, query).await;
+            fs_extra::file::read_to_string(path).unwrap()
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
 
-        if response.status() != 200 {
-            panic!("RPC error");
-        }
+    let response = execute_transaction(&query_params, event_definitions).await;
 
-        let data = response.json::<ExecuteEventResponse>().await.unwrap();
+    if response.status() != 200 {
+        panic!("RPC error");
+    }
 
-        if has_error(&data) {
-            panic!("RPC error");
-        }
+    let data = response.json::<ExecuteEventResponse>().await.unwrap();
+
+    if has_error(&data) {
+        panic!("RPC error");
     }
 
     println!("Event files successfully executed!");
@@ -204,7 +216,7 @@ pub async fn main(
 
         let query = format!(
             "{}
-CREATE script_migration SET script_name = '{}'",
+CREATE script_migration SET script_name = '{}';",
             inner_query, name
         );
 
@@ -228,8 +240,6 @@ CREATE script_migration SET script_name = '{}'",
         if has_error(&data) {
             panic!("RPC error");
         }
-
-        println!("Migration {} applied", script_display_name);
     }
 
     println!("Migration files successfully executed!");
