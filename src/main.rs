@@ -5,6 +5,7 @@ use create::CreateOperation;
 mod apply;
 mod cli;
 mod create;
+mod definitions;
 mod scaffold;
 
 #[tokio::main]
