@@ -8,6 +8,9 @@ An awesome CLI for SurrealDB migrations (provides commands to scaffold, create a
 cargo install surrealdb-migration
 ```
 
+> **Warning**
+> This project is not production-ready, use at your own risk.
+
 ### The philosophy
 
 The SurrealDB Migrations aims to simplify the creation of a SurrealDB database schema and the evolution of the database through migrations. A SurrealDB migration project is divided into 3 categories: schema, event and migration.
