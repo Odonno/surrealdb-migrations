@@ -33,6 +33,10 @@ pub enum Action {
     /// Apply migration(s) to the database
     #[clap(aliases = vec!["a"])]
     Apply {
+        /// Apply migrations up to this migration name.
+        /// This parameter allows you to skip ulterior migrations.
+        #[clap(long)]
+        up: Option<String>,
         #[clap(long)]
         url: Option<String>,
         #[clap(long)]

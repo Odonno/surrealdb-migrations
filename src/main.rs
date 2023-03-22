@@ -30,11 +30,12 @@ async fn main() {
             },
         },
         Action::Apply {
+            up,
             url,
             ns,
             db,
             username,
             password,
-        } => apply::main(url, ns, db, username, password).await,
+        } => apply::main(up, url, ns, db, username, password).await,
     };
 }

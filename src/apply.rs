@@ -82,6 +82,7 @@ fn has_error(data: &EmptySurrealDbResponse) -> bool {
 }
 
 pub async fn main(
+    up: Option<String>,
     url: Option<String>,
     ns: Option<String>,
     db: Option<String>,
@@ -367,6 +368,15 @@ pub async fn main(
             DirEntryValue::String(name) => name,
             _ => panic!("Cannot get name of the migration file"),
         };
+
+        match &up {
+            Some(max_migration) => {
+                if name > max_migration {
+                    continue;
+                }
+            }
+            None => {}
+        }
 
         let has_already_been_applied = migrations_applied
             .iter()
