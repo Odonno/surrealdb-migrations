@@ -5,7 +5,7 @@
 An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations).
 
 ```
-cargo install surrealdb-migration
+cargo install surrealdb-migrations
 ```
 
 > **Warning**
