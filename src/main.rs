@@ -15,16 +15,20 @@ async fn main() {
     match args.command {
         Action::Scaffold { template } => scaffold::main(template),
         Action::Create { command, name } => match name {
-            Some(name) => create::main(name, CreateOperation::Migration, None),
+            Some(name) => create::main(name, CreateOperation::Migration, None, false),
             None => match command {
-                Some(CreateAction::Schema { name, fields }) => {
-                    create::main(name, CreateOperation::Schema, fields)
-                }
-                Some(CreateAction::Event { name, fields }) => {
-                    create::main(name, CreateOperation::Event, fields)
-                }
+                Some(CreateAction::Schema {
+                    name,
+                    fields,
+                    dry_run,
+                }) => create::main(name, CreateOperation::Schema, fields, dry_run),
+                Some(CreateAction::Event {
+                    name,
+                    fields,
+                    dry_run,
+                }) => create::main(name, CreateOperation::Event, fields, dry_run),
                 Some(CreateAction::Migration { name }) => {
-                    create::main(name, CreateOperation::Migration, None)
+                    create::main(name, CreateOperation::Migration, None, false)
                 }
                 None => panic!("No action specified for `create` command"),
             },

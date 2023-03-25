@@ -6,7 +6,7 @@ pub enum CreateOperation {
     Migration,
 }
 
-pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>>) {
+pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>>, dry_run: bool) {
     let dir_name = match operation {
         CreateOperation::Schema => "schemas",
         CreateOperation::Event => "events",
@@ -71,8 +71,15 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
         CreateOperation::Migration => "".to_string(),
     };
 
-    // create file
-    fs_extra::file::write_all(&file_path, &content).unwrap();
+    match dry_run {
+        true => {
+            println!("{}", content);
+        }
+        false => {
+            // create file
+            fs_extra::file::write_all(&file_path, &content).unwrap();
 
-    println!("File {} created successfully", filename);
+            println!("File {} created successfully", filename);
+        }
+    }
 }

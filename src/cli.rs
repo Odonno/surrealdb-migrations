@@ -60,6 +60,8 @@ pub enum CreateAction {
         /// A list of fields to define on the table
         #[clap(short, long, value_delimiter = ',')]
         fields: Option<Vec<String>>,
+        #[clap(long)]
+        dry_run: bool,
     },
     #[clap(aliases = vec!["e"])]
     /// Generate a new event file
@@ -69,6 +71,8 @@ pub enum CreateAction {
         /// A list of fields to define on the table
         #[clap(short, long, value_delimiter = ',')]
         fields: Option<Vec<String>>,
+        #[clap(long)]
+        dry_run: bool,
     },
     #[clap(aliases = vec!["m"])]
     /// Generate a new migration file
