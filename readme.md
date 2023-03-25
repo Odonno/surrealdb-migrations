@@ -5,7 +5,7 @@
 An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations).
 
 ```
-cargo install surrealdb-migration
+cargo install surrealdb-migrations
 ```
 
 > **Warning**
@@ -26,7 +26,7 @@ A migration file represents a change in SurrealDB data. It can be a change in th
 You can start a migration project by scaffolding a new project using the following command line:
 
 ```
-surrealdb-migration scaffold --template empty
+surrealdb-migrations scaffold --template empty
 ```
 
 This will create the necessary folders and files in order to perform migrations. The `empty` template should look like this:
@@ -43,7 +43,7 @@ Once you have created your migration project, you can start writing your own mod
 You can create strict schema files that represent tables stored in SurrealDB.
 
 ```
-surrealdb-migration create schema post --fields title,content,author,created_at,status
+surrealdb-migrations create schema post --fields title,content,author,created_at,status
 ```
 
 This will create a schemaless table with predefined fields:
@@ -61,7 +61,7 @@ DEFINE FIELD status ON post;
 You can also create events in the same way.
 
 ```
-surrealdb-migration create event publish_post --fields post_id,created_at
+surrealdb-migrations create event publish_post --fields post_id,created_at
 ```
 
 This will define a table event with predefined fields:
@@ -80,7 +80,7 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 And when updating data, you can create migration files this way:
 
 ```
-surrealdb-migration create AddAdminUser
+surrealdb-migrations create AddAdminUser
 ```
 
 This will create a new file using the current date & time of the day, like `20230317_153201_AddAdminUser.surql` for example. All migrations files should be listed in a temporal order.
@@ -88,5 +88,5 @@ This will create a new file using the current date & time of the day, like `2023
 Finally, when you are ready, you can apply your schema and migrations to the database using the following command line:
 
 ```
-surrealdb-migration apply
+surrealdb-migrations apply
 ```
