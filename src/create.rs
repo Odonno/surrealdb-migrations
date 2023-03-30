@@ -26,11 +26,6 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
         None => Path::new(dir_name).to_path_buf(),
     };
 
-    // check that directory exists
-    if !folder_path.exists() {
-        panic!("Directory {} doesn't exist", dir_name);
-    }
-
     let filename = match operation {
         CreateOperation::Schema => format!("{}.surql", name),
         CreateOperation::Event => format!("{}.surql", name),
@@ -45,11 +40,19 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
         }
     };
 
-    // check that file doesn't already exist
     let file_path = folder_path.join(&filename);
 
-    if file_path.exists() {
-        panic!("File {} already exists", filename);
+    if !dry_run {
+        // check that directory exists
+        if !folder_path.exists() {
+            panic!("Directory {} doesn't exist", dir_name);
+        }
+
+        // check that file doesn't already exist
+
+        if file_path.exists() {
+            panic!("File {} already exists", filename);
+        }
     }
 
     // generate content

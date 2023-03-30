@@ -1,7 +1,13 @@
 use assert_cmd::Command;
+use serial_test::serial;
+
+use crate::helpers;
 
 #[test]
+#[serial]
 fn create_schema_file_dry_run() {
+    helpers::clear_files_dir();
+
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
     cmd.arg("create")
@@ -23,7 +29,10 @@ DEFINE FIELD published_at ON post;\n",
 }
 
 #[test]
+#[serial]
 fn create_event_file_dry_run() {
+    helpers::clear_files_dir();
+
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
     cmd.arg("create")
