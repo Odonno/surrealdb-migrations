@@ -4,6 +4,7 @@ use create::CreateOperation;
 
 mod apply;
 mod cli;
+mod config;
 mod create;
 mod definitions;
 mod scaffold;

@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use crate::config;
+
 pub enum CreateOperation {
     Schema,
     Event,
@@ -7,15 +9,24 @@ pub enum CreateOperation {
 }
 
 pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>>, dry_run: bool) {
+    let folder_path = config::retrieve_folder_path();
+
     let dir_name = match operation {
         CreateOperation::Schema => "schemas",
         CreateOperation::Event => "events",
         CreateOperation::Migration => "migrations",
     };
 
-    // check that directory exists
-    let folder_path = Path::new(dir_name);
+    // retrieve folder path
+    let folder_path = match folder_path.to_owned() {
+        Some(folder_path) => {
+            let path = Path::new(&folder_path);
+            path.join(dir_name)
+        }
+        None => Path::new(dir_name).to_path_buf(),
+    };
 
+    // check that directory exists
     if !folder_path.exists() {
         panic!("Directory {} doesn't exist", dir_name);
     }

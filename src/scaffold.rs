@@ -1,8 +1,12 @@
+use std::path::Path;
+
 use fs_extra::dir::CopyOptions;
 
-use crate::cli::ScaffoldTemplate;
+use crate::{cli::ScaffoldTemplate, config};
 
 pub fn main(template: ScaffoldTemplate) {
+    // TODO : fails if any folder "schemas", "events", "migrations" already exists
+
     let template_dir_name = match template {
         ScaffoldTemplate::Empty => "empty",
         ScaffoldTemplate::Blog => "blog",
@@ -11,9 +15,15 @@ pub fn main(template: ScaffoldTemplate) {
     let template_dir_name = format!("templates/{}", template_dir_name);
 
     // copy template files to current directory
+    let folder_path = config::retrieve_folder_path();
+    let to = match folder_path.to_owned() {
+        Some(folder_path) => folder_path,
+        None => ".".to_owned(),
+    };
+
     fs_extra::dir::copy(
         template_dir_name,
-        ".",
+        to,
         &CopyOptions::new().content_only(true),
     )
     .unwrap();
@@ -21,9 +31,16 @@ pub fn main(template: ScaffoldTemplate) {
     // rename migrations files to match the current date
     let now = chrono::Local::now();
 
-    let migrations_dir_name = "migrations";
+    const MIGRATIONS_DIR_NAME: &str = "migrations";
+    let migrations_dir_path = match folder_path.to_owned() {
+        Some(folder_path) => {
+            let path = Path::new(&folder_path);
+            path.join(MIGRATIONS_DIR_NAME)
+        }
+        None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
+    };
 
-    let migrations_dir = std::fs::read_dir(migrations_dir_name).unwrap();
+    let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
 
     let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_").unwrap();
 
@@ -41,8 +58,12 @@ pub fn main(template: ScaffoldTemplate) {
             let new_filename = regex.replace(filename.to_str().unwrap(), replace_str);
 
             std::fs::rename(
-                format!("{}/{}", migrations_dir_name, filename.to_str().unwrap()),
-                format!("{}/{}", migrations_dir_name, new_filename),
+                format!(
+                    "{}/{}",
+                    migrations_dir_path.to_str().clone().unwrap(),
+                    filename.to_str().unwrap()
+                ),
+                format!("{}/{}", migrations_dir_path.to_str().unwrap(), new_filename),
             )
             .unwrap();
         }
