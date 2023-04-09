@@ -4,6 +4,7 @@ use clap::{Parser, Subcommand};
 pub enum ScaffoldTemplate {
     Empty,
     Blog,
+    Ecommerce,
 }
 
 #[derive(Parser, Debug)]

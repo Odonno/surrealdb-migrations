@@ -3,7 +3,7 @@
 
 [db]
     url = "localhost:8000"
-    username = "admin"
-    password = "admin"
+    username = "root"
+    password = "root"
     ns = "test"
     db = "test"

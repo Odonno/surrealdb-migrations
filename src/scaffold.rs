@@ -10,6 +10,7 @@ pub fn main(template: ScaffoldTemplate) {
     let template_dir_name = match template {
         ScaffoldTemplate::Empty => "empty",
         ScaffoldTemplate::Blog => "blog",
+        ScaffoldTemplate::Ecommerce => "ecommerce",
     };
 
     let template_dir_name = format!("templates/{}", template_dir_name);
