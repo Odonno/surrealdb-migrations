@@ -1,0 +1,402 @@
+use assert_cmd::Command;
+use serial_test::serial;
+
+use crate::helpers;
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_initial_schema_changes() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // remove files in folder test-files/migrations
+    let migrations_files_dir = std::path::Path::new("tests-files/migrations");
+
+    if migrations_files_dir.exists() {
+        std::fs::remove_dir_all(migrations_files_dir).unwrap();
+        std::fs::create_dir(migrations_files_dir).unwrap();
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn cannot_apply_if_surreal_instance_not_running() {
+    todo!();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_new_schema_changes() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // remove files in folder test-files/migrations
+    let migrations_files_dir = std::path::Path::new("tests-files/migrations");
+
+    if migrations_files_dir.exists() {
+        std::fs::remove_dir_all(migrations_files_dir).unwrap();
+        std::fs::create_dir(migrations_files_dir).unwrap();
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // add new schema file
+    let schemas_files_dir = std::path::Path::new("tests-files/schemas");
+
+    if schemas_files_dir.exists() {
+        let category_schema_file = schemas_files_dir.join("category.surql");
+        const CATEGORY_CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
+
+DEFINE FIELD name ON category TYPE string;
+DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();";
+
+        std::fs::write(category_schema_file, CATEGORY_CONTENT).unwrap();
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_initial_migrations() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Executing migration AddAdminUser...
+Executing migration AddPost...
+Executing migration CommentPost...
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_with_skipped_migrations() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // read first migration file in folder test-files/migrations
+    let migrations_files_dir = std::path::Path::new("tests-files/migrations");
+
+    let first_migration_file = migrations_files_dir
+        .read_dir()
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+
+    let first_migration_name = first_migration_file.file_stem().unwrap().to_str().unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply").arg("--up").arg(first_migration_name);
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Executing migration AddAdminUser...
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_new_migrations() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // read first migration file in folder test-files/migrations
+    let migrations_files_dir = std::path::Path::new("tests-files/migrations");
+
+    let first_migration_file = migrations_files_dir
+        .read_dir()
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+
+    let first_migration_name = first_migration_file.file_stem().unwrap().to_str().unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply").arg("--up").arg(first_migration_name);
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Executing migration AddAdminUser...
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Executing migration AddPost...
+Executing migration CommentPost...
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}

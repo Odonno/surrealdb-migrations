@@ -8,21 +8,25 @@ use crate::helpers;
 fn create_schema_file() {
     helpers::clear_files_dir();
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
-    cmd.arg("scaffold").arg("empty");
+        cmd.arg("scaffold").arg("empty");
 
-    cmd.assert().success();
+        cmd.assert().success();
+    }
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
-    cmd.arg("create")
-        .arg("schema")
-        .arg("post")
-        .arg("-f")
-        .arg("name,title,published_at");
+        cmd.arg("create")
+            .arg("schema")
+            .arg("post")
+            .arg("-f")
+            .arg("name,title,published_at");
 
-    cmd.assert().success();
+        cmd.assert().success();
+    }
 
     let post_file = std::fs::read_to_string("tests-files/schemas/post.surql").unwrap();
 
@@ -41,21 +45,25 @@ DEFINE FIELD published_at ON post;"
 fn create_event_file() {
     helpers::clear_files_dir();
 
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("empty");
+
+        cmd.assert().success();
+    }
+
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
-    cmd.arg("scaffold").arg("empty");
+    {
+        cmd.arg("create")
+            .arg("event")
+            .arg("publish_post")
+            .arg("-f")
+            .arg("post_id,created_at");
 
-    cmd.assert().success();
-
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-    cmd.arg("create")
-        .arg("event")
-        .arg("publish_post")
-        .arg("-f")
-        .arg("post_id,created_at");
-
-    cmd.assert().success();
+        cmd.assert().success();
+    }
 
     let publish_post_file =
         std::fs::read_to_string("tests-files/events/publish_post.surql").unwrap();
@@ -78,17 +86,21 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 fn create_migration_file() {
     helpers::clear_files_dir();
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
-    cmd.arg("scaffold").arg("empty");
+        cmd.arg("scaffold").arg("empty");
 
-    cmd.assert().success();
+        cmd.assert().success();
+    }
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
 
-    cmd.arg("create").arg("migration").arg("AddPost");
+        cmd.arg("create").arg("migration").arg("AddPost");
 
-    cmd.assert().success();
+        cmd.assert().success();
+    }
 
     let migrations_folder = std::fs::read_dir("tests-files/migrations").unwrap();
 
@@ -109,9 +121,7 @@ fn create_schema_file_dry_run() {
         .arg("name,title,published_at")
         .arg("--dry-run");
 
-    cmd.assert().success();
-
-    cmd.assert().stdout(
+    cmd.assert().success().stdout(
         "DEFINE TABLE post SCHEMALESS;
 
 DEFINE FIELD name ON post;
@@ -134,9 +144,7 @@ fn create_event_file_dry_run() {
         .arg("post_id,created_at")
         .arg("--dry-run");
 
-    cmd.assert().success();
-
-    cmd.assert().stdout(
+    cmd.assert().success().stdout(
         "DEFINE TABLE publish_post SCHEMALESS;
 
 DEFINE FIELD post_id ON publish_post;
