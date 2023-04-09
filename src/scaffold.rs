@@ -31,6 +31,24 @@ pub fn main(template: ScaffoldTemplate) {
     // rename migrations files to match the current date
     let now = chrono::Local::now();
 
+    const SCHEMAS_DIR_NAME: &str = "schemas";
+    let schemas_dir_path = match folder_path.to_owned() {
+        Some(folder_path) => {
+            let path = Path::new(&folder_path);
+            path.join(SCHEMAS_DIR_NAME)
+        }
+        None => Path::new(SCHEMAS_DIR_NAME).to_path_buf(),
+    };
+
+    const EVENTS_DIR_NAME: &str = "events";
+    let events_dir_path = match folder_path.to_owned() {
+        Some(folder_path) => {
+            let path = Path::new(&folder_path);
+            path.join(EVENTS_DIR_NAME)
+        }
+        None => Path::new(EVENTS_DIR_NAME).to_path_buf(),
+    };
+
     const MIGRATIONS_DIR_NAME: &str = "migrations";
     let migrations_dir_path = match folder_path.to_owned() {
         Some(folder_path) => {
@@ -39,6 +57,17 @@ pub fn main(template: ScaffoldTemplate) {
         }
         None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
     };
+
+    // ensures folders exists
+    if !schemas_dir_path.exists() {
+        fs_extra::dir::create(&schemas_dir_path, false).unwrap();
+    }
+    if !events_dir_path.exists() {
+        fs_extra::dir::create(&events_dir_path, false).unwrap();
+    }
+    if !migrations_dir_path.exists() {
+        fs_extra::dir::create(&migrations_dir_path, false).unwrap();
+    }
 
     let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
 

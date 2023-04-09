@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use assert_cmd::Command;
 use serial_test::serial;
 
@@ -15,9 +17,23 @@ fn scaffold_empty_template() {
     cmd.assert().success();
 
     assert_eq!(
-        dir_diff::is_different("templates/empty", "tests-files").unwrap(),
+        dir_diff::is_different("templates/empty/schemas", "tests-files/schemas").unwrap(),
         false
     );
+
+    let is_empty_events_folder = Path::new("tests-files/events")
+        .read_dir()
+        .unwrap()
+        .next()
+        .is_none();
+    assert!(is_empty_events_folder);
+
+    let is_empty_migrations_folder = Path::new("tests-files/migrations")
+        .read_dir()
+        .unwrap()
+        .next()
+        .is_none();
+    assert!(is_empty_migrations_folder);
 }
 
 #[test]
