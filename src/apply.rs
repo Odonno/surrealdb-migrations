@@ -31,12 +31,14 @@ pub async fn main(
     username: Option<String>,
     password: Option<String>,
 ) {
-    let url = url.unwrap_or("localhost:8000".to_owned());
+    let db_config = config::retrieve_db_config();
+
+    let url = url.or(db_config.url).unwrap_or("localhost:8000".to_owned());
 
     let client = Surreal::new::<Ws>(url.to_owned()).await.unwrap();
 
-    let username = username.unwrap_or("root".to_owned());
-    let password = password.unwrap_or("root".to_owned());
+    let username = username.or(db_config.username).unwrap_or("root".to_owned());
+    let password = password.or(db_config.password).unwrap_or("root".to_owned());
 
     client
         .signin(Root {
@@ -46,8 +48,8 @@ pub async fn main(
         .await
         .unwrap();
 
-    let ns = ns.unwrap_or("test".to_owned());
-    let db = db.unwrap_or("test".to_owned());
+    let ns = ns.or(db_config.ns).unwrap_or("test".to_owned());
+    let db = db.or(db_config.db).unwrap_or("test".to_owned());
 
     client
         .use_ns(ns.to_owned())

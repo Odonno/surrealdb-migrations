@@ -12,9 +12,9 @@ fn apply_initial_schema_changes() {
     let mut child_process = std::process::Command::new("surreal")
         .arg("start")
         .arg("--user")
-        .arg("root")
+        .arg("admin")
         .arg("--pass")
-        .arg("root")
+        .arg("admin")
         .arg("memory")
         .spawn()
         .unwrap();
@@ -84,9 +84,9 @@ fn apply_new_schema_changes() {
     let mut child_process = std::process::Command::new("surreal")
         .arg("start")
         .arg("--user")
-        .arg("root")
+        .arg("admin")
         .arg("--pass")
-        .arg("root")
+        .arg("admin")
         .arg("memory")
         .spawn()
         .unwrap();
@@ -184,9 +184,9 @@ fn apply_initial_migrations() {
     let mut child_process = std::process::Command::new("surreal")
         .arg("start")
         .arg("--user")
-        .arg("root")
+        .arg("admin")
         .arg("--pass")
-        .arg("root")
+        .arg("admin")
         .arg("memory")
         .spawn()
         .unwrap();
@@ -244,9 +244,9 @@ fn apply_with_skipped_migrations() {
     let mut child_process = std::process::Command::new("surreal")
         .arg("start")
         .arg("--user")
-        .arg("root")
+        .arg("admin")
         .arg("--pass")
-        .arg("root")
+        .arg("admin")
         .arg("memory")
         .spawn()
         .unwrap();
@@ -315,9 +315,9 @@ fn apply_new_migrations() {
     let mut child_process = std::process::Command::new("surreal")
         .arg("start")
         .arg("--user")
-        .arg("root")
+        .arg("admin")
         .arg("--pass")
-        .arg("root")
+        .arg("admin")
         .arg("memory")
         .spawn()
         .unwrap();
@@ -385,6 +385,79 @@ Migration files successfully executed!\n",
 Event files successfully executed!
 Executing migration AddPost...
 Executing migration CommentPost...
+Migration files successfully executed!\n",
+            )
+        });
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    child_process.kill().unwrap();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn apply_with_db_configuration() {
+    helpers::clear_files_dir();
+
+    let mut child_process = std::process::Command::new("surreal")
+        .arg("start")
+        .arg("--user")
+        .arg("root")
+        .arg("--pass")
+        .arg("root")
+        .arg("memory")
+        .spawn()
+        .unwrap();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        let result = cmd.assert().try_success();
+
+        match result {
+            Ok(_) => {}
+            Err(error) => {
+                child_process.kill().unwrap();
+                panic!("{}", error);
+            }
+        }
+    }
+
+    // remove files in folder test-files/migrations
+    let migrations_files_dir = std::path::Path::new("tests-files/migrations");
+
+    if migrations_files_dir.exists() {
+        std::fs::remove_dir_all(migrations_files_dir).unwrap();
+        std::fs::create_dir(migrations_files_dir).unwrap();
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply")
+            .arg("--username")
+            .arg("root")
+            .arg("--password")
+            .arg("root")
+            .arg("--ns")
+            .arg("namespace")
+            .arg("--db")
+            .arg("database");
+
+        let result = cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
             )
         });

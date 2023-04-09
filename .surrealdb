@@ -1,2 +1,9 @@
 [core]
     path = "./tests-files"
+
+[db]
+    url = "localhost:8000"
+    username = "admin"
+    password = "admin"
+    ns = "test"
+    db = "test"
