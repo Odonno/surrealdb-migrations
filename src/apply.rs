@@ -1,84 +1,26 @@
 use std::{collections::HashSet, path::Path};
 
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
-use reqwest::{
-    header::{HeaderMap, ACCEPT},
-    Response,
-};
 use serde::{Deserialize, Serialize};
+use surrealdb::{engine::remote::ws::Ws, opt::auth::Root, Surreal};
 
 use crate::{config, definitions};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct ScriptMigration {
-    id: String,
     script_name: String,
     executed_at: String,
 }
 
-struct SurrealDbQueryParams {
-    url: String,
-    ns: String,
-    db: String,
-    username: String,
-    password: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct EmptySurrealDbInstructionResponse {
-    time: String,
-    status: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct SurrealDbInstructionResponse<T> {
-    time: String,
-    status: String,
-    result: Option<Vec<T>>,
-}
-
-type EmptySurrealDbResponse = Vec<EmptySurrealDbInstructionResponse>;
-type SurrealDbResponse<T> = Vec<SurrealDbInstructionResponse<T>>;
-
-type GetScriptMigrationsResponse = SurrealDbResponse<ScriptMigration>;
-
-type ExecuteSchemaResponse = EmptySurrealDbResponse;
-type ExecuteEventResponse = EmptySurrealDbResponse;
-type ExecuteMigrationResponse = EmptySurrealDbResponse;
-
-async fn execute_query(params: &SurrealDbQueryParams, query: String) -> Response {
-    let client = reqwest::Client::new();
-
-    let mut headers = HeaderMap::new();
-    headers.insert(ACCEPT, "application/json".parse().unwrap());
-    headers.insert("NS", params.ns.parse().unwrap());
-    headers.insert("DB", params.db.parse().unwrap());
-
-    client
-        .post(params.url.to_owned())
-        .basic_auth(params.username.to_owned(), Some(params.password.to_owned()))
-        .headers(headers.to_owned())
-        .body(query)
-        .send()
-        .await
-        .unwrap()
-}
-
-async fn execute_transaction(params: &SurrealDbQueryParams, inner_query: String) -> Response {
-    let query = format!(
+fn within_transaction(inner_query: String) -> String {
+    format!(
         "BEGIN TRANSACTION;
 
 {}
 
 COMMIT TRANSACTION;",
         inner_query
-    );
-
-    execute_query(params, query).await
-}
-
-fn has_error(data: &EmptySurrealDbResponse) -> bool {
-    data.iter().any(|r| r.status != "OK")
+    )
 }
 
 pub async fn main(
@@ -89,40 +31,34 @@ pub async fn main(
     username: Option<String>,
     password: Option<String>,
 ) {
-    let url = url.unwrap_or("http://127.0.0.1:8000/sql".to_owned());
+    let url = url.unwrap_or("localhost:8000".to_owned());
+
+    let client = Surreal::new::<Ws>(url.to_owned()).await.unwrap();
 
     let username = username.unwrap_or("root".to_owned());
     let password = password.unwrap_or("root".to_owned());
 
-    let ns = ns.unwrap_or("test".to_owned());
-    let db = db.unwrap_or("test".to_owned());
-
-    let query_params = SurrealDbQueryParams {
-        url,
-        ns,
-        db,
-        username,
-        password,
-    };
-
-    let response = execute_query(&query_params, "SELECT * FROM script_migration;".to_owned()).await;
-
-    if response.status() != 200 {
-        panic!("RPC error");
-    }
-
-    let data = response
-        .json::<GetScriptMigrationsResponse>()
+    client
+        .signin(Root {
+            username: &username,
+            password: &password,
+        })
         .await
         .unwrap();
 
-    if data[0].status != "OK" {
-        panic!("RPC error");
-    }
+    let ns = ns.unwrap_or("test".to_owned());
+    let db = db.unwrap_or("test".to_owned());
 
-    let migrations_applied = &data[0].result.as_deref().unwrap();
-    let mut migrations_applied = migrations_applied.iter().collect::<Vec<_>>();
-    migrations_applied.sort_by_key(|m| &m.executed_at);
+    client
+        .use_ns(ns.to_owned())
+        .use_db(db.to_owned())
+        .await
+        .unwrap();
+
+    let mut migrations_applied: Vec<ScriptMigration> =
+        client.select("script_migration").await.unwrap();
+
+    migrations_applied.sort_by_key(|m| m.executed_at.clone());
 
     let mut config = HashSet::new();
     config.insert(DirEntryAttr::Name);
@@ -170,18 +106,15 @@ pub async fn main(
         .collect::<Vec<_>>()
         .join("\n");
 
-    let response = execute_transaction(&query_params, schema_definitions.to_owned()).await;
+    let response = client
+        .query(within_transaction(schema_definitions.to_owned()))
+        .await
+        .unwrap();
 
-    // TODO : find & display error
-    if response.status() != 200 {
-        panic!("RPC error");
-    }
+    let result = response.check();
 
-    let data = response.json::<ExecuteSchemaResponse>().await.unwrap();
-
-    // TODO : find & display error
-    if has_error(&data) {
-        panic!("RPC error");
+    if let Err(error) = result {
+        panic!("{}", error);
     }
 
     println!("Schema files successfully executed!");
@@ -203,16 +136,15 @@ pub async fn main(
         .collect::<Vec<_>>()
         .join("\n");
 
-    let response = execute_transaction(&query_params, event_definitions.to_owned()).await;
+    let response = client
+        .query(within_transaction(event_definitions.to_owned()))
+        .await
+        .unwrap();
 
-    if response.status() != 200 {
-        panic!("RPC error");
-    }
+    let result = response.check();
 
-    let data = response.json::<ExecuteEventResponse>().await.unwrap();
-
-    if has_error(&data) {
-        panic!("RPC error");
+    if let Err(error) = result {
+        panic!("{}", error);
     }
 
     println!("Event files successfully executed!");
@@ -438,16 +370,12 @@ CREATE script_migration SET script_name = '{}';",
 
         println!("Executing migration {}...", script_display_name);
 
-        let response = execute_transaction(&query_params, query).await;
+        let response = client.query(within_transaction(query)).await.unwrap();
 
-        if response.status() != 200 {
-            panic!("RPC error");
-        }
+        let result = response.check();
 
-        let data = response.json::<ExecuteMigrationResponse>().await.unwrap();
-
-        if has_error(&data) {
-            panic!("RPC error");
+        if let Err(error) = result {
+            panic!("{}", error);
         }
     }
 
