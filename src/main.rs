@@ -11,6 +11,7 @@ mod definitions;
 mod list;
 mod models;
 mod scaffold;
+mod surrealdb;
 
 #[tokio::main]
 async fn main() {
