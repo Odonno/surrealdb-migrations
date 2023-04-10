@@ -1,6 +1,7 @@
 use clap::Parser;
 use cli::{Action, Args, CreateAction};
 use create::CreateOperation;
+use std::process;
 
 mod apply;
 mod cli;
@@ -31,7 +32,10 @@ async fn main() {
                 Some(CreateAction::Migration { name }) => {
                     create::main(name, CreateOperation::Migration, None, false)
                 }
-                None => panic!("No action specified for `create` command"),
+                None => {
+                    eprintln!("No action specified for `create` command");
+                    process::exit(1);
+                }
             },
         },
         Action::Apply {

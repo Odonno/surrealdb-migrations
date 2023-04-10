@@ -69,9 +69,26 @@ Migration files successfully executed!\n",
 
 #[test]
 #[serial]
-#[ignore]
 fn cannot_apply_if_surreal_instance_not_running() {
-    todo!();
+    helpers::clear_files_dir();
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("scaffold").arg("blog");
+
+        cmd.assert().success();
+    }
+
+    {
+        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+        cmd.arg("apply");
+
+        cmd.assert()
+            .failure()
+            .stderr("There was an error processing a remote WS request\n");
+    }
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, process};
 
 use crate::config;
 
@@ -45,13 +45,15 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
     if !dry_run {
         // check that directory exists
         if !folder_path.exists() {
-            panic!("Directory {} doesn't exist", dir_name);
+            eprintln!("Directory {} doesn't exist", dir_name);
+            process::exit(1);
         }
 
         // check that file doesn't already exist
 
         if file_path.exists() {
-            panic!("File {} already exists", filename);
+            eprintln!("File {} already exists", filename);
+            process::exit(1);
         }
     }
 
