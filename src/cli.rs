@@ -38,16 +38,52 @@ pub enum Action {
         /// This parameter allows you to skip ulterior migrations.
         #[clap(long)]
         up: Option<String>,
+        /// Url of the surrealdb instance.
+        /// Default value is `localhost:8000`.
         #[clap(long)]
         url: Option<String>,
+        /// Namespace to use inside the surrealdb instance.
+        /// Default value is `test`.
         #[clap(long)]
         ns: Option<String>,
+        /// Name of the database to use inside the surrealdb instance.
+        /// Default value is `test`.
         #[clap(long)]
         db: Option<String>,
+        /// Username used to authenticate to the surrealdb instance.
+        /// Default value is `root`.
         #[clap(short, long)]
         username: Option<String>,
+        /// Password used to authenticate to the surrealdb instance.
+        /// Default value is `root`.
         #[clap(short, long)]
         password: Option<String>,
+    },
+    /// List all migrations applied to the database
+    #[clap(aliases = vec!["ls"])]
+    List {
+        /// Url of the surrealdb instance.
+        /// Default value is `localhost:8000`.
+        #[clap(long)]
+        url: Option<String>,
+        /// Namespace to use inside the surrealdb instance.
+        /// Default value is `test`.
+        #[clap(long)]
+        ns: Option<String>,
+        /// Name of the database to use inside the surrealdb instance.
+        /// Default value is `test`.
+        #[clap(long)]
+        db: Option<String>,
+        /// Username used to authenticate to the surrealdb instance.
+        /// Default value is `root`.
+        #[clap(short, long)]
+        username: Option<String>,
+        /// Password used to authenticate to the surrealdb instance.
+        /// Default value is `root`.
+        #[clap(short, long)]
+        password: Option<String>,
+        #[clap(long)]
+        no_color: bool,
     },
 }
 
@@ -58,7 +94,7 @@ pub enum CreateAction {
     Schema {
         /// Name of the schema to generate
         name: String,
-        /// A list of fields to define on the table
+        /// A list of fields to define on the table, using "," as a delimiter
         #[clap(short, long, value_delimiter = ',')]
         fields: Option<Vec<String>>,
         #[clap(long)]
@@ -69,7 +105,7 @@ pub enum CreateAction {
     Event {
         /// Name of the event to generate
         name: String,
-        /// A list of fields to define on the table
+        /// A list of fields to define on the table, using "," as a delimiter
         #[clap(short, long, value_delimiter = ',')]
         fields: Option<Vec<String>>,
         #[clap(long)]

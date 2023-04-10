@@ -1,15 +1,8 @@
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
-use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::Path, process};
 use surrealdb::{engine::remote::ws::Ws, opt::auth::Root, Surreal};
 
-use crate::{config, definitions};
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ScriptMigration {
-    script_name: String,
-    executed_at: String,
-}
+use crate::{config, definitions, models::ScriptMigration};
 
 fn within_transaction(inner_query: String) -> String {
     format!(
@@ -71,7 +64,6 @@ pub async fn main(
     }
 
     let mut migrations_applied: Vec<ScriptMigration> = response.unwrap();
-
     migrations_applied.sort_by_key(|m| m.executed_at.clone());
 
     let mut config = HashSet::new();

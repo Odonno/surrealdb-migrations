@@ -8,6 +8,8 @@ mod cli;
 mod config;
 mod create;
 mod definitions;
+mod list;
+mod models;
 mod scaffold;
 
 #[tokio::main]
@@ -46,5 +48,13 @@ async fn main() {
             username,
             password,
         } => apply::main(up, url, ns, db, username, password).await,
+        Action::List {
+            url,
+            ns,
+            db,
+            username,
+            password,
+            no_color,
+        } => list::main(url, ns, db, username, password, no_color).await,
     };
 }
