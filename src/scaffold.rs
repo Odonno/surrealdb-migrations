@@ -1,6 +1,5 @@
-use std::path::Path;
-
 use fs_extra::dir::CopyOptions;
+use std::path::Path;
 
 use crate::{cli::ScaffoldTemplate, config};
 

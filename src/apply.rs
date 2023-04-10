@@ -1,7 +1,6 @@
-use std::{collections::HashSet, path::Path};
-
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use serde::{Deserialize, Serialize};
+use std::{collections::HashSet, path::Path, process};
 use surrealdb::{engine::remote::ws::Ws, opt::auth::Root, Surreal};
 
 use crate::{config, definitions};
@@ -35,7 +34,14 @@ pub async fn main(
 
     let url = url.or(db_config.url).unwrap_or("localhost:8000".to_owned());
 
-    let client = Surreal::new::<Ws>(url.to_owned()).await.unwrap();
+    let connection = Surreal::new::<Ws>(url.to_owned()).await;
+
+    if let Err(error) = connection {
+        eprintln!("{}", error);
+        process::exit(1);
+    }
+
+    let client = connection.unwrap();
 
     let username = username.or(db_config.username).unwrap_or("root".to_owned());
     let password = password.or(db_config.password).unwrap_or("root".to_owned());
@@ -57,8 +63,14 @@ pub async fn main(
         .await
         .unwrap();
 
-    let mut migrations_applied: Vec<ScriptMigration> =
-        client.select("script_migration").await.unwrap();
+    let response = client.select("script_migration").await;
+
+    if let Err(error) = response {
+        eprintln!("{}", error);
+        process::exit(1);
+    }
+
+    let mut migrations_applied: Vec<ScriptMigration> = response.unwrap();
 
     migrations_applied.sort_by_key(|m| m.executed_at.clone());
 
@@ -100,7 +112,10 @@ pub async fn main(
 
             let path = match path {
                 DirEntryValue::String(path) => path,
-                _ => panic!("Cannot get path to schema files"),
+                _ => {
+                    eprintln!("Cannot get path to schema files");
+                    process::exit(1);
+                }
             };
 
             fs_extra::file::read_to_string(path).unwrap()
@@ -116,7 +131,8 @@ pub async fn main(
     let result = response.check();
 
     if let Err(error) = result {
-        panic!("{}", error);
+        eprintln!("{}", error);
+        process::exit(1);
     }
 
     println!("Schema files successfully executed!");
@@ -130,7 +146,10 @@ pub async fn main(
 
             let path = match path {
                 DirEntryValue::String(path) => path,
-                _ => panic!("Cannot get path to schema files"),
+                _ => {
+                    eprintln!("Cannot get path to event files");
+                    process::exit(1);
+                }
             };
 
             fs_extra::file::read_to_string(path).unwrap()
@@ -146,7 +165,8 @@ pub async fn main(
     let result = response.check();
 
     if let Err(error) = result {
-        panic!("{}", error);
+        eprintln!("{}", error);
+        process::exit(1);
     }
 
     println!("Event files successfully executed!");
@@ -190,21 +210,30 @@ pub async fn main(
 
                     let name = match name {
                         DirEntryValue::String(name) => name,
-                        _ => panic!("Cannot get name to definition files"),
+                        _ => {
+                            eprintln!("Cannot get name to definition files");
+                            process::exit(1);
+                        }
                     };
 
                     name != "_initial.json"
                 })
                 .take_while(|file| match file.get(&DirEntryAttr::Name).unwrap() {
                     DirEntryValue::String(name) => name != &last_migration_applied.script_name,
-                    _ => panic!("Cannot get name to definition files"),
+                    _ => {
+                        eprintln!("Cannot get name to definition files");
+                        process::exit(1);
+                    }
                 })
                 .map(|file| {
                     let path = file.get(&DirEntryAttr::Path).unwrap();
 
                     let path = match path {
                         DirEntryValue::String(path) => path,
-                        _ => panic!("Cannot get path to definition files"),
+                        _ => {
+                            eprintln!("Cannot get name to definition files");
+                            process::exit(1);
+                        }
                     };
 
                     fs_extra::file::read_to_string(path).unwrap()
@@ -321,7 +350,10 @@ pub async fn main(
 
         let is_file = match is_file {
             DirEntryValue::Boolean(is_file) => is_file,
-            _ => panic!("Cannot detect if the migration file is a file or a folder"),
+            _ => {
+                eprintln!("Cannot detect if the migration file is a file or a folder");
+                process::exit(1);
+            }
         };
 
         if !is_file {
@@ -330,7 +362,10 @@ pub async fn main(
 
         let name = match name {
             DirEntryValue::String(name) => name,
-            _ => panic!("Cannot get name of the migration file"),
+            _ => {
+                eprintln!("Cannot get name of the migration file");
+                process::exit(1);
+            }
         };
 
         match &up {
@@ -352,7 +387,10 @@ pub async fn main(
 
         let path = match path {
             DirEntryValue::String(path) => path,
-            _ => panic!("Cannot get path to migration files"),
+            _ => {
+                eprintln!("Cannot get path to migration files");
+                process::exit(1);
+            }
         };
 
         let inner_query = fs_extra::file::read_to_string(path).unwrap();
@@ -377,7 +415,8 @@ CREATE script_migration SET script_name = '{}';",
         let result = response.check();
 
         if let Err(error) = result {
-            panic!("{}", error);
+            eprintln!("{}", error);
+            process::exit(1);
         }
     }
 
