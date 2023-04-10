@@ -1,6 +1,7 @@
 use assert_cmd::Command;
 use chrono::Local;
 use serial_test::serial;
+use std::process::Stdio;
 
 use crate::helpers;
 
@@ -16,6 +17,9 @@ fn list_empty_migrations() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -85,6 +89,9 @@ fn list_blog_migrations() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 

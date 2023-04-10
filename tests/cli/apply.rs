@@ -1,5 +1,6 @@
 use assert_cmd::Command;
 use serial_test::serial;
+use std::process::Stdio;
 
 use crate::helpers;
 
@@ -15,6 +16,9 @@ fn apply_initial_schema_changes() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -103,6 +107,9 @@ fn apply_new_schema_changes() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -202,6 +209,9 @@ fn apply_initial_migrations() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -261,6 +271,9 @@ fn apply_with_skipped_migrations() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -338,6 +351,9 @@ fn apply_new_migrations() {
         .arg("--pass")
         .arg("root")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
@@ -439,6 +455,9 @@ fn apply_with_db_configuration() {
         .arg("--pass")
         .arg("admin")
         .arg("memory")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 
