@@ -5,7 +5,6 @@ use crate::helpers;
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_initial_schema_changes() {
     helpers::clear_files_dir();
 
@@ -77,7 +76,6 @@ fn cannot_apply_if_surreal_instance_not_running() {
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_new_schema_changes() {
     helpers::clear_files_dir();
 
@@ -177,7 +175,6 @@ Migration files successfully executed!\n",
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_initial_migrations() {
     helpers::clear_files_dir();
 
@@ -237,7 +234,6 @@ Migration files successfully executed!\n",
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_with_skipped_migrations() {
     helpers::clear_files_dir();
 
@@ -308,7 +304,6 @@ Migration files successfully executed!\n",
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_new_migrations() {
     helpers::clear_files_dir();
 
@@ -403,7 +398,6 @@ Migration files successfully executed!\n",
 
 #[test]
 #[serial]
-#[ignore]
 fn apply_with_db_configuration() {
     helpers::clear_files_dir();
 
