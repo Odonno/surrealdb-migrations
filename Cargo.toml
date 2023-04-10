@@ -15,7 +15,9 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.24"
+chrono-human-duration = "0.1.1"
 clap = { version = "4.1.8", features = ["derive"] }
+cli-table = "0.4.7"
 diffy = "0.3.0"
 fs_extra = "1.3.0"
 regex = "1.7.1"
@@ -29,4 +31,3 @@ surrealdb = "1.0.0-beta.9"
 assert_cmd = "2.0.10"
 dir-diff = "0.3.2"
 serial_test = "2.0.0"
-
