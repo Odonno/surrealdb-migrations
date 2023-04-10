@@ -283,13 +283,20 @@ fn apply_with_skipped_migrations() {
     // read first migration file in folder test-files/migrations
     let migrations_files_dir = std::path::Path::new("tests-files/migrations");
 
-    let first_migration_file = migrations_files_dir
-        .read_dir()
-        .unwrap()
-        .next()
-        .unwrap()
-        .unwrap()
-        .path();
+    let migration_files = migrations_files_dir.read_dir().unwrap().collect::<Vec<_>>();
+    let mut migration_files = migration_files
+        .iter()
+        .map(|result| result.as_ref().unwrap().path())
+        .collect::<Vec<_>>();
+    migration_files.sort_by(|a, b| {
+        a.file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .cmp(&b.file_name().unwrap().to_str().unwrap())
+    });
+
+    let first_migration_file = &migration_files[0];
 
     let first_migration_name = first_migration_file.file_stem().unwrap().to_str().unwrap();
 
@@ -353,13 +360,20 @@ fn apply_new_migrations() {
     // read first migration file in folder test-files/migrations
     let migrations_files_dir = std::path::Path::new("tests-files/migrations");
 
-    let first_migration_file = migrations_files_dir
-        .read_dir()
-        .unwrap()
-        .next()
-        .unwrap()
-        .unwrap()
-        .path();
+    let migration_files = migrations_files_dir.read_dir().unwrap().collect::<Vec<_>>();
+    let mut migration_files = migration_files
+        .iter()
+        .map(|result| result.as_ref().unwrap().path())
+        .collect::<Vec<_>>();
+    migration_files.sort_by(|a, b| {
+        a.file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .cmp(&b.file_name().unwrap().to_str().unwrap())
+    });
+
+    let first_migration_file = &migration_files[0];
 
     let first_migration_name = first_migration_file.file_stem().unwrap().to_str().unwrap();
 

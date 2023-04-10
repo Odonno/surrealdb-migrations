@@ -343,7 +343,31 @@ pub async fn main(
     }
 
     // filter migrations not already applied & apply migrations
-    for migration_file in migrations_files.items {
+    let mut sorted_migrations_files = migrations_files.items.iter().collect::<Vec<_>>();
+    sorted_migrations_files.sort_by(|a, b| {
+        let a = a.get(&DirEntryAttr::Name).unwrap();
+        let b = b.get(&DirEntryAttr::Name).unwrap();
+
+        let a = match a {
+            DirEntryValue::String(a) => a,
+            _ => {
+                eprintln!("Cannot get name to migration files");
+                process::exit(1);
+            }
+        };
+
+        let b = match b {
+            DirEntryValue::String(b) => b,
+            _ => {
+                eprintln!("Cannot get name to migration files");
+                process::exit(1);
+            }
+        };
+
+        a.cmp(b)
+    });
+
+    for migration_file in sorted_migrations_files {
         let name = migration_file.get(&DirEntryAttr::Name).unwrap();
         let path = migration_file.get(&DirEntryAttr::Path).unwrap();
         let is_file = migration_file.get(&DirEntryAttr::IsFile).unwrap();
