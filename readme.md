@@ -90,3 +90,17 @@ Finally, when you are ready, you can apply your schema and migrations to the dat
 ```
 surrealdb-migrations apply
 ```
+
+### Predefined templates
+
+To help you get started quickly, there is a list of predefined templates you can use:
+
+- `empty` - The smallest migration project you can create, a clean schema with an already defined `script_migration` table to store the applied migrations
+- `blog` - A blog domain model, with users having the ability to publish/unpublish posts and comments
+- `ecommerce` - An ecommerce domain model, with customers having the ability to purchase products
+
+You can scaffold a project using any of these templates using the following command line:
+
+```
+surrealdb-migrations scaffold --template <TEMPLATE>
+```
