@@ -6,6 +6,7 @@ use std::process;
 mod apply;
 mod cli;
 mod config;
+mod constants;
 mod create;
 mod definitions;
 mod list;
