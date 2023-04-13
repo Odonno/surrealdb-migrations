@@ -85,3 +85,54 @@ fn scaffold_ecommerce_template() {
     let migration_files = std::fs::read_dir("tests-files/migrations").unwrap();
     assert_eq!(migration_files.count(), 3);
 }
+
+#[test]
+#[serial]
+fn scaffold_fails_if_schemas_folder_already_exists() {
+    helpers::clear_files_dir();
+
+    fs_extra::dir::create("tests-files", false).unwrap();
+    fs_extra::dir::create("tests-files/schemas", false).unwrap();
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+    cmd.arg("scaffold").arg("blog");
+
+    cmd.assert()
+        .failure()
+        .stderr("Error: 'schemas' folder already exists.\n");
+}
+
+#[test]
+#[serial]
+fn scaffold_fails_if_events_folder_already_exists() {
+    helpers::clear_files_dir();
+
+    fs_extra::dir::create("tests-files", false).unwrap();
+    fs_extra::dir::create("tests-files/events", false).unwrap();
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+    cmd.arg("scaffold").arg("blog");
+
+    cmd.assert()
+        .failure()
+        .stderr("Error: 'events' folder already exists.\n");
+}
+
+#[test]
+#[serial]
+fn scaffold_fails_if_migrations_folder_already_exists() {
+    helpers::clear_files_dir();
+
+    fs_extra::dir::create("tests-files", false).unwrap();
+    fs_extra::dir::create("tests-files/migrations", false).unwrap();
+
+    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+
+    cmd.arg("scaffold").arg("blog");
+
+    cmd.assert()
+        .failure()
+        .stderr("Error: 'migrations' folder already exists.\n");
+}
