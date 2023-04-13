@@ -4,18 +4,17 @@ use std::{
     process,
 };
 
-use crate::{cli::ScaffoldTemplate, config};
+use crate::{
+    cli::ScaffoldTemplate,
+    config,
+    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+};
 
 pub fn main(template: ScaffoldTemplate) {
     let folder_path = config::retrieve_folder_path();
 
-    const SCHEMAS_DIR_NAME: &str = "schemas";
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
-
-    const EVENTS_DIR_NAME: &str = "events";
     let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
-
-    const MIGRATIONS_DIR_NAME: &str = "migrations";
     let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     fails_if_folder_already_exists(&schemas_dir_path, SCHEMAS_DIR_NAME);

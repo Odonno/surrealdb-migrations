@@ -1,6 +1,9 @@
 use std::{path::Path, process};
 
-use crate::config;
+use crate::{
+    config,
+    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+};
 
 pub enum CreateOperation {
     Schema,
@@ -12,9 +15,9 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
     let folder_path = config::retrieve_folder_path();
 
     let dir_name = match operation {
-        CreateOperation::Schema => "schemas",
-        CreateOperation::Event => "events",
-        CreateOperation::Migration => "migrations",
+        CreateOperation::Schema => SCHEMAS_DIR_NAME,
+        CreateOperation::Event => EVENTS_DIR_NAME,
+        CreateOperation::Migration => MIGRATIONS_DIR_NAME,
     };
 
     // retrieve folder path

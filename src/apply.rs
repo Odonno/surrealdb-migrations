@@ -1,7 +1,13 @@
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use std::{collections::HashSet, path::Path, process};
 
-use crate::{config, definitions, models::ScriptMigration, surrealdb};
+use crate::{
+    config,
+    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    definitions,
+    models::ScriptMigration,
+    surrealdb,
+};
 
 fn within_transaction(inner_query: String) -> String {
     format!(
@@ -41,22 +47,19 @@ pub async fn main(
 
     let folder_path = config::retrieve_folder_path();
 
-    const SCHEMAS_FOLDER: &str = "schemas";
     let schemas_path = match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(SCHEMAS_FOLDER),
-        None => Path::new(SCHEMAS_FOLDER).to_path_buf(),
+        Some(folder_path) => Path::new(&folder_path).join(SCHEMAS_DIR_NAME),
+        None => Path::new(SCHEMAS_DIR_NAME).to_path_buf(),
     };
 
-    const EVENTS_FOLDER: &str = "events";
     let events_path = match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(EVENTS_FOLDER),
-        None => Path::new(EVENTS_FOLDER).to_path_buf(),
+        Some(folder_path) => Path::new(&folder_path).join(EVENTS_DIR_NAME),
+        None => Path::new(EVENTS_DIR_NAME).to_path_buf(),
     };
 
-    const MIGRATIONS_FOLDER: &str = "migrations";
     let migrations_path = match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(MIGRATIONS_FOLDER),
-        None => Path::new(MIGRATIONS_FOLDER).to_path_buf(),
+        Some(folder_path) => Path::new(&folder_path).join(MIGRATIONS_DIR_NAME),
+        None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
     };
 
     let schemas_files = fs_extra::dir::ls(schemas_path, &config).unwrap();
