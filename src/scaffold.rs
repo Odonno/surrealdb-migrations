@@ -1,5 +1,8 @@
 use fs_extra::dir::CopyOptions;
-use std::{path::Path, process};
+use std::{
+    path::{Path, PathBuf},
+    process,
+};
 
 use crate::{cli::ScaffoldTemplate, config};
 
@@ -7,53 +10,46 @@ pub fn main(template: ScaffoldTemplate) {
     let folder_path = config::retrieve_folder_path();
 
     const SCHEMAS_DIR_NAME: &str = "schemas";
-    let schemas_dir_path = match folder_path.to_owned() {
-        Some(folder_path) => {
-            let path = Path::new(&folder_path);
-            path.join(SCHEMAS_DIR_NAME)
-        }
-        None => Path::new(SCHEMAS_DIR_NAME).to_path_buf(),
-    };
+    let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
 
     const EVENTS_DIR_NAME: &str = "events";
-    let events_dir_path = match folder_path.to_owned() {
-        Some(folder_path) => {
-            let path = Path::new(&folder_path);
-            path.join(EVENTS_DIR_NAME)
-        }
-        None => Path::new(EVENTS_DIR_NAME).to_path_buf(),
-    };
+    let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
 
     const MIGRATIONS_DIR_NAME: &str = "migrations";
-    let migrations_dir_path = match folder_path.to_owned() {
+    let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
+
+    fails_if_folder_already_exists(&schemas_dir_path, SCHEMAS_DIR_NAME);
+    fails_if_folder_already_exists(&events_dir_path, EVENTS_DIR_NAME);
+    fails_if_folder_already_exists(&migrations_dir_path, MIGRATIONS_DIR_NAME);
+
+    copy_template_files_to_current_dir(template, folder_path);
+
+    ensures_folder_exists(&schemas_dir_path);
+    ensures_folder_exists(&events_dir_path);
+    ensures_folder_exists(&migrations_dir_path);
+
+    rename_migrations_files_to_match_current_date(&migrations_dir_path);
+}
+
+fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
+    match folder_path.to_owned() {
         Some(folder_path) => {
             let path = Path::new(&folder_path);
-            path.join(MIGRATIONS_DIR_NAME)
+            path.join(dir_name)
         }
-        None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
-    };
+        None => Path::new(dir_name).to_path_buf(),
+    }
+}
 
-    // fails if any folder "schemas", "events", "migrations" already exists
-    if schemas_dir_path.exists() {
-        eprintln!("Error: 'schemas' folder already exists.");
+fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) {
+    if dir_path.exists() {
+        eprintln!("Error: '{}' folder already exists.", dir_name);
         process::exit(1);
     }
-    if events_dir_path.exists() {
-        eprintln!("Error: 'events' folder already exists.");
-        process::exit(1);
-    }
-    if migrations_dir_path.exists() {
-        eprintln!("Error: 'migrations' folder already exists.");
-        process::exit(1);
-    }
+}
 
-    // copy template files to current directory
-    let template_dir_name = match template {
-        ScaffoldTemplate::Empty => "empty",
-        ScaffoldTemplate::Blog => "blog",
-        ScaffoldTemplate::Ecommerce => "ecommerce",
-    };
-    let template_dir_name = format!("templates/{}", template_dir_name);
+fn copy_template_files_to_current_dir(template: ScaffoldTemplate, folder_path: Option<String>) {
+    let template_dir_name = get_template_dir_name(template);
 
     let to = match folder_path.to_owned() {
         Some(folder_path) => folder_path,
@@ -66,46 +62,53 @@ pub fn main(template: ScaffoldTemplate) {
         &CopyOptions::new().content_only(true),
     )
     .unwrap();
+}
 
-    // ensures folders exists
-    if !schemas_dir_path.exists() {
-        fs_extra::dir::create(&schemas_dir_path, false).unwrap();
-    }
-    if !events_dir_path.exists() {
-        fs_extra::dir::create(&events_dir_path, false).unwrap();
-    }
-    if !migrations_dir_path.exists() {
-        fs_extra::dir::create(&migrations_dir_path, false).unwrap();
-    }
+fn get_template_dir_name(template: ScaffoldTemplate) -> String {
+    let template_dir_name = get_template_name(template);
+    format!("templates/{}", template_dir_name)
+}
 
-    let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
+fn get_template_name(template: ScaffoldTemplate) -> &'static str {
+    match template {
+        ScaffoldTemplate::Empty => "empty",
+        ScaffoldTemplate::Blog => "blog",
+        ScaffoldTemplate::Ecommerce => "ecommerce",
+    }
+}
 
-    // rename migrations files to match the current date
+fn ensures_folder_exists(dir_path: &PathBuf) {
+    if !dir_path.exists() {
+        fs_extra::dir::create(&dir_path, false).unwrap();
+    }
+}
+
+fn rename_migrations_files_to_match_current_date(migrations_dir_path: &PathBuf) {
     let now = chrono::Local::now();
     let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_").unwrap();
 
-    for migration_file in migrations_dir {
-        let filename = migration_file.unwrap().file_name();
-        let should_rename = regex.is_match(filename.to_str().unwrap());
+    let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
 
-        if should_rename {
-            let captures = regex.captures(filename.to_str().unwrap()).unwrap();
+    let migration_filenames_to_rename = migrations_dir
+        .map(|file| file.unwrap().file_name())
+        .filter(|filename| regex.is_match(filename.to_str().unwrap()))
+        .collect::<Vec<_>>();
 
-            let seconds = captures.get(1).unwrap().as_str();
+    for filename in migration_filenames_to_rename {
+        let captures = regex.captures(filename.to_str().unwrap()).unwrap();
+        let seconds = captures.get(1).unwrap().as_str();
 
-            let replace_str = format!("{}{}_", now.format("%Y%m%d_%H%M"), seconds);
+        let new_filename_prefix = format!("{}{}_", now.format("%Y%m%d_%H%M"), seconds);
+        let new_filename = regex.replace(filename.to_str().unwrap(), new_filename_prefix);
 
-            let new_filename = regex.replace(filename.to_str().unwrap(), replace_str);
+        let from = format!(
+            "{}/{}",
+            migrations_dir_path.to_str().clone().unwrap(),
+            filename.to_str().unwrap()
+        );
 
-            std::fs::rename(
-                format!(
-                    "{}/{}",
-                    migrations_dir_path.to_str().clone().unwrap(),
-                    filename.to_str().unwrap()
-                ),
-                format!("{}/{}", migrations_dir_path.to_str().unwrap(), new_filename),
-            )
-            .unwrap();
-        }
+        let to = format!("{}/{}", migrations_dir_path.to_str().unwrap(), new_filename);
+
+        std::fs::rename(from, to).unwrap();
     }
 }
