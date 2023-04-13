@@ -1,35 +1,10 @@
 use fs_extra::dir::CopyOptions;
-use std::path::Path;
+use std::{path::Path, process};
 
 use crate::{cli::ScaffoldTemplate, config};
 
 pub fn main(template: ScaffoldTemplate) {
-    // TODO : fails if any folder "schemas", "events", "migrations" already exists
-
-    let template_dir_name = match template {
-        ScaffoldTemplate::Empty => "empty",
-        ScaffoldTemplate::Blog => "blog",
-        ScaffoldTemplate::Ecommerce => "ecommerce",
-    };
-
-    let template_dir_name = format!("templates/{}", template_dir_name);
-
-    // copy template files to current directory
     let folder_path = config::retrieve_folder_path();
-    let to = match folder_path.to_owned() {
-        Some(folder_path) => folder_path,
-        None => ".".to_owned(),
-    };
-
-    fs_extra::dir::copy(
-        template_dir_name,
-        to,
-        &CopyOptions::new().content_only(true),
-    )
-    .unwrap();
-
-    // rename migrations files to match the current date
-    let now = chrono::Local::now();
 
     const SCHEMAS_DIR_NAME: &str = "schemas";
     let schemas_dir_path = match folder_path.to_owned() {
@@ -58,6 +33,40 @@ pub fn main(template: ScaffoldTemplate) {
         None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
     };
 
+    // fails if any folder "schemas", "events", "migrations" already exists
+    if schemas_dir_path.exists() {
+        eprintln!("Error: 'schemas' folder already exists.");
+        process::exit(1);
+    }
+    if events_dir_path.exists() {
+        eprintln!("Error: 'events' folder already exists.");
+        process::exit(1);
+    }
+    if migrations_dir_path.exists() {
+        eprintln!("Error: 'migrations' folder already exists.");
+        process::exit(1);
+    }
+
+    // copy template files to current directory
+    let template_dir_name = match template {
+        ScaffoldTemplate::Empty => "empty",
+        ScaffoldTemplate::Blog => "blog",
+        ScaffoldTemplate::Ecommerce => "ecommerce",
+    };
+    let template_dir_name = format!("templates/{}", template_dir_name);
+
+    let to = match folder_path.to_owned() {
+        Some(folder_path) => folder_path,
+        None => ".".to_owned(),
+    };
+
+    fs_extra::dir::copy(
+        template_dir_name,
+        to,
+        &CopyOptions::new().content_only(true),
+    )
+    .unwrap();
+
     // ensures folders exists
     if !schemas_dir_path.exists() {
         fs_extra::dir::create(&schemas_dir_path, false).unwrap();
@@ -71,6 +80,8 @@ pub fn main(template: ScaffoldTemplate) {
 
     let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
 
+    // rename migrations files to match the current date
+    let now = chrono::Local::now();
     let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_").unwrap();
 
     for migration_file in migrations_dir {
