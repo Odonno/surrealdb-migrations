@@ -31,6 +31,9 @@ pub enum Action {
         /// Name of the migration to create
         name: Option<String>,
     },
+    /// Remove last migration file
+    #[clap(aliases = vec!["rm"])]
+    Remove {},
     /// Apply migration(s) to the database
     #[clap(aliases = vec!["a"])]
     Apply {

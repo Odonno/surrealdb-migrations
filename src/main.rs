@@ -11,6 +11,7 @@ mod create;
 mod definitions;
 mod list;
 mod models;
+mod remove;
 mod scaffold;
 mod surrealdb;
 
@@ -42,6 +43,7 @@ async fn main() {
                 }
             },
         },
+        Action::Remove {} => remove::main(),
         Action::Apply {
             up,
             url,

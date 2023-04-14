@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-migrations"
-version = "0.9.0"
+version = "0.9.1"
 dependencies = [
  "assert_cmd",
  "chrono",
