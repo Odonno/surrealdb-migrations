@@ -1,4 +1,4 @@
-use std::process;
+use anyhow::Result;
 use surrealdb::{
     engine::remote::ws::{Client, Ws},
     opt::auth::Root,
@@ -13,22 +13,39 @@ pub async fn create_surrealdb_client(
     db: Option<String>,
     username: Option<String>,
     password: Option<String>,
-) -> Surreal<Client> {
+) -> Result<Surreal<Client>> {
     let db_config = config::retrieve_db_config();
 
-    let url = url.or(db_config.url).unwrap_or("localhost:8000".to_owned());
+    let client = create_surrealdb_connection(url, &db_config).await?;
+    sign_in(username, password, &db_config, &client).await?;
+    set_namespace_and_database(ns, db, &db_config, &client).await?;
 
-    let connection = Surreal::new::<Ws>(url.to_owned()).await;
+    Ok(client)
+}
 
-    if let Err(error) = connection {
-        eprintln!("{}", error);
-        process::exit(1);
-    }
+async fn create_surrealdb_connection(
+    url: Option<String>,
+    db_config: &config::DbConfig,
+) -> Result<Surreal<Client>, surrealdb::Error> {
+    let url = url
+        .or(db_config.url.to_owned())
+        .unwrap_or("localhost:8000".to_owned());
 
-    let client = connection.unwrap();
+    Surreal::new::<Ws>(url.to_owned()).await
+}
 
-    let username = username.or(db_config.username).unwrap_or("root".to_owned());
-    let password = password.or(db_config.password).unwrap_or("root".to_owned());
+async fn sign_in(
+    username: Option<String>,
+    password: Option<String>,
+    db_config: &config::DbConfig,
+    client: &Surreal<Client>,
+) -> Result<(), surrealdb::Error> {
+    let username = username
+        .or(db_config.username.to_owned())
+        .unwrap_or("root".to_owned());
+    let password = password
+        .or(db_config.password.to_owned())
+        .unwrap_or("root".to_owned());
 
     client
         .signin(Root {
@@ -36,16 +53,16 @@ pub async fn create_surrealdb_client(
             password: &password,
         })
         .await
-        .unwrap();
+}
 
-    let ns = ns.or(db_config.ns).unwrap_or("test".to_owned());
-    let db = db.or(db_config.db).unwrap_or("test".to_owned());
+async fn set_namespace_and_database(
+    ns: Option<String>,
+    db: Option<String>,
+    db_config: &config::DbConfig,
+    client: &Surreal<Client>,
+) -> Result<(), surrealdb::Error> {
+    let ns = ns.or(db_config.ns.to_owned()).unwrap_or("test".to_owned());
+    let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
 
-    client
-        .use_ns(ns.to_owned())
-        .use_db(db.to_owned())
-        .await
-        .unwrap();
-
-    client
+    client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
 }
