@@ -28,7 +28,14 @@ pub async fn main(
     username: Option<String>,
     password: Option<String>,
 ) {
-    let client = surrealdb::create_surrealdb_client(url, ns, db, username, password).await;
+    let client_result = surrealdb::create_surrealdb_client(url, ns, db, username, password).await;
+
+    if let Err(error) = client_result {
+        eprintln!("{}", error);
+        process::exit(1);
+    }
+
+    let client = client_result.unwrap();
 
     let response = client.select("script_migration").await;
 
