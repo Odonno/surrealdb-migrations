@@ -104,3 +104,23 @@ You can scaffold a project using any of these templates using the following comm
 ```
 surrealdb-migrations scaffold <TEMPLATE>
 ```
+
+### Configuration
+
+You can create a `.surrealdb` configuration file at the root of your project. This way you won't have to set the same configuration values every time.
+
+```toml
+[core]
+    path = "./tests-files"
+
+[db]
+    url = "localhost:8000"
+    username = "root"
+    password = "root"
+    ns = "test"
+    db = "test"
+```
+
+In the `core` section, you can define the path to your schema/migration files, if it is not the current folder.
+
+In the `db` section, you can define the values used to access your SurrealDB database. It can be the `url`, `username`, `password`, the namespace `ns` or the name of the database `db`.
