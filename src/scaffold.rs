@@ -33,10 +33,7 @@ pub fn main(template: ScaffoldTemplate) {
 
 fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
     match folder_path.to_owned() {
-        Some(folder_path) => {
-            let path = Path::new(&folder_path);
-            path.join(dir_name)
-        }
+        Some(folder_path) => Path::new(&folder_path).join(dir_name),
         None => Path::new(dir_name).to_path_buf(),
     }
 }

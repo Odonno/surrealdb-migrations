@@ -5,7 +5,7 @@ use surrealdb::{
     Surreal,
 };
 
-use crate::config;
+use crate::{config, models::ScriptMigration};
 
 pub async fn create_surrealdb_client(
     url: Option<String>,
@@ -65,4 +65,29 @@ async fn set_namespace_and_database(
     let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
 
     client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
+}
+
+pub async fn list_script_migration_ordered_by_execution_date(
+    client: &Surreal<Client>,
+) -> Result<Vec<ScriptMigration>> {
+    let mut result = list_script_migration(client).await?;
+    result.sort_by_key(|m| m.executed_at.clone());
+
+    Ok(result)
+}
+
+async fn list_script_migration(client: &Surreal<Client>) -> Result<Vec<ScriptMigration>> {
+    let result = client.select("script_migration").await?;
+    Ok(result)
+}
+
+pub fn within_transaction(inner_query: String) -> String {
+    format!(
+        "BEGIN TRANSACTION;
+
+{}
+
+COMMIT TRANSACTION;",
+        inner_query
+    )
 }
