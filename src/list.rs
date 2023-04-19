@@ -3,7 +3,7 @@ use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 use std::process;
 
-use crate::{models::ScriptMigration, surrealdb};
+use crate::surrealdb;
 
 pub async fn main(
     url: Option<String>,
@@ -22,15 +22,14 @@ pub async fn main(
 
     let client = client_result.unwrap();
 
-    let response = client.select("script_migration").await;
+    let response = surrealdb::list_script_migration_ordered_by_execution_date(&client).await;
 
     if let Err(error) = response {
         eprintln!("{}", error);
         process::exit(1);
     }
 
-    let mut migrations_applied: Vec<ScriptMigration> = response.unwrap();
-    migrations_applied.sort_by_key(|m| m.executed_at.clone());
+    let migrations_applied = response.unwrap();
 
     if migrations_applied.is_empty() {
         println!("No migrations applied yet!");
