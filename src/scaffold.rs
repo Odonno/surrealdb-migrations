@@ -1,5 +1,6 @@
-use fs_extra::dir::CopyOptions;
+use include_dir::{include_dir, Dir};
 use std::{
+    io::Write,
     path::{Path, PathBuf},
     process,
 };
@@ -48,24 +49,17 @@ fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) {
 }
 
 fn copy_template_files_to_current_dir(template: ScaffoldTemplate, folder_path: Option<String>) {
-    let template_dir_name = get_template_dir_name(template);
+    const TEMPLATES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
+
+    let template_dir_name = get_template_name(template);
+    let from = TEMPLATES_DIR.get_dir(template_dir_name).unwrap();
 
     let to = match folder_path.to_owned() {
         Some(folder_path) => folder_path,
         None => ".".to_owned(),
     };
 
-    fs_extra::dir::copy(
-        template_dir_name,
-        to,
-        &CopyOptions::new().content_only(true),
-    )
-    .unwrap();
-}
-
-fn get_template_dir_name(template: ScaffoldTemplate) -> String {
-    let template_dir_name = get_template_name(template);
-    format!("templates/{}", template_dir_name)
+    extract(from, to).unwrap();
 }
 
 fn get_template_name(template: ScaffoldTemplate) -> &'static str {
@@ -74,6 +68,36 @@ fn get_template_name(template: ScaffoldTemplate) -> &'static str {
         ScaffoldTemplate::Blog => "blog",
         ScaffoldTemplate::Ecommerce => "ecommerce",
     }
+}
+
+// 💡 Function extract customized because it is not implemented in the "include_dir" crate.
+// cf. https://github.com/Michael-F-Bryan/include_dir/pull/60
+pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
+    fn extract_dir<S: AsRef<Path>>(dir: Dir<'_>, path: S) -> std::io::Result<()> {
+        let path = path.as_ref();
+
+        for dir in dir.dirs() {
+            let dir_path = dir.path().components().skip(1).collect::<PathBuf>();
+
+            std::fs::create_dir_all(path.join(dir_path))?;
+            extract_dir(dir.clone(), path)?;
+        }
+
+        for file in dir.files() {
+            let file_path = file.path().components().skip(1).collect::<PathBuf>();
+
+            let mut fsf = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(path.join(file_path))?;
+            fsf.write_all(file.contents())?;
+            fsf.sync_all()?;
+        }
+
+        Ok(())
+    }
+
+    extract_dir(dir.clone(), path)
 }
 
 fn ensures_folder_exists(dir_path: &PathBuf) {
