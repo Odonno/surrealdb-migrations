@@ -51,7 +51,13 @@ async fn main() {
             db,
             username,
             password,
-        } => apply::main(up, url, ns, db, username, password).await,
+        } => {
+            let result = apply::execute(up, url, ns, db, username, password, true).await;
+            if let Err(err) = result {
+                eprintln!("{}", err);
+                process::exit(1);
+            }
+        }
         Action::List {
             url,
             ns,

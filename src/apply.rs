@@ -4,7 +4,6 @@ use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
 use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
-    process,
 };
 
 use crate::{
@@ -14,22 +13,6 @@ use crate::{
     models::ScriptMigration,
     surrealdb,
 };
-
-pub async fn main(
-    up: Option<String>,
-    url: Option<String>,
-    ns: Option<String>,
-    db: Option<String>,
-    username: Option<String>,
-    password: Option<String>,
-) {
-    let result = execute(up, url, ns, db, username, password, true).await;
-
-    if let Err(err) = result {
-        eprintln!("{}", err);
-        process::exit(1);
-    }
-}
 
 pub async fn execute(
     up: Option<String>,
