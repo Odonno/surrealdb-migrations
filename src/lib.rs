@@ -46,7 +46,6 @@ mod apply;
 mod config;
 mod constants;
 mod definitions;
-mod list;
 mod models;
 mod surrealdb;
 
