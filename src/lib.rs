@@ -1,3 +1,45 @@
+//! An awesome SurrealDB migration tool, with a user-friendly CLI
+//! and a versatile Rust library that enables seamless integration into any project.
+//!
+//! # The philosophy
+//!
+//! The SurrealDB Migrations project aims to simplify the creation of a SurrealDB database schema
+//! and the evolution of the database through migrations.
+//! A typical SurrealDB migration project is divided into 3 categories: schema, event and migration.
+//!
+//! A schema file represents no more than one SurrealDB table.
+//! The list of schemas can be seen as the Query model (in a CQRS pattern).
+//! The `schemas` folder can be seen as a view of the current data model.
+//!
+//! An event file represents no more than one SurrealDB event and the underlying table.
+//! The list of events can be seen as the Command model (in a CQRS pattern).
+//! The `events` folder can be seen as a view of the different ways to update the data model.
+//!
+//! A migration file represents a change in SurrealDB data.
+//! It can be a change in the point of time between two schema changes.
+//! Examples are:
+//! when a column is renamed or dropped,
+//! when a table is renamed or dropped,
+//! when a new data is required (with default value), etc...
+//!
+//! # Get started
+//!
+//! ```rust,no_run
+//! use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+//!
+//! #[tokio::main]
+//! async fn main() {
+//!     // Create a SurrealdbConfiguration instance with default values
+//!     let db_configuration = SurrealdbConfiguration::default();
+//!
+//!     // Apply all migrations
+//!     SurrealdbMigrations::new(db_configuration)
+//!         .up()
+//!         .await
+//!         .expect("Failed to apply migrations");
+//! }
+//! ```
+
 use anyhow::Result;
 use models::ScriptMigration;
 mod apply;
@@ -8,6 +50,7 @@ mod list;
 mod models;
 mod surrealdb;
 
+/// The configuration used to connect to a SurrealDB instance.
 pub struct SurrealdbConfiguration {
     /// Url of the surrealdb instance.
     /// Default value is `localhost:8000`.
@@ -47,6 +90,7 @@ impl SurrealdbConfiguration {
     }
 }
 
+/// The main entry point for the library, used to apply migrations.
 pub struct SurrealdbMigrations {
     db_configuration: SurrealdbConfiguration,
 }

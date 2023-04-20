@@ -2,18 +2,28 @@
 
 # SurrealDB Migrations
 
-An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations).
+An awesome SurrealDB migration tool, with a user-friendly CLI and a versatile Rust library that enables seamless integration into any project.
+
+> **Warning**
+> This project is not production-ready, use at your own risk.
+
+This project can be used:
+
+- as a Rust library
+
+```
+cargo add surrealdb-migrations
+```
+
+- or as a CLI
 
 ```
 cargo install surrealdb-migrations
 ```
 
-> **Warning**
-> This project is not production-ready, use at your own risk.
+## The philosophy
 
-### The philosophy
-
-The SurrealDB Migrations aims to simplify the creation of a SurrealDB database schema and the evolution of the database through migrations. A SurrealDB migration project is divided into 3 categories: schema, event and migration.
+The SurrealDB Migrations project aims to simplify the creation of a SurrealDB database schema and the evolution of the database through migrations. A typical SurrealDB migration project is divided into 3 categories: schema, event and migration.
 
 A schema file represents no more than one SurrealDB table. The list of schemas can be seen as the Query model (in a CQRS pattern). The `schemas` folder can be seen as a view of the current data model.
 
@@ -21,7 +31,9 @@ An event file represents no more than one SurrealDB event and the underlying tab
 
 A migration file represents a change in SurrealDB data. It can be a change in the point of time between two schema changes. Examples are: when a column is renamed or dropped, when a table is renamed or dropped, when a new data is required (with default value), etc...
 
-### Get started
+## Get started
+
+### 1. Scaffold
 
 You can start a migration project by scaffolding a new project using the following command line:
 
@@ -38,7 +50,11 @@ This will create the necessary folders and files in order to perform migrations.
 
 There are a number of pre-defined templates so you can play around and get started quickly.
 
+### 2. Change schema and/or create data change migrations
+
 Once you have created your migration project, you can start writing your own model. Based on the folders you saw earlier, you can create schema files, event files and migration files.
+
+#### Schemas
 
 You can create strict schema files that represent tables stored in SurrealDB.
 
@@ -57,6 +73,8 @@ DEFINE FIELD author ON post;
 DEFINE FIELD created_at ON post;
 DEFINE FIELD status ON post;
 ```
+
+#### Events
 
 You can also create events in the same way.
 
@@ -77,6 +95,8 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 );
 ```
 
+#### Migrations
+
 And when updating data, you can create migration files this way:
 
 ```
@@ -85,13 +105,35 @@ surrealdb-migrations create AddAdminUser
 
 This will create a new file using the current date & time of the day, like `20230317_153201_AddAdminUser.surql` for example. All migrations files should be listed in a temporal order.
 
+### 3. Apply to your database
+
 Finally, when you are ready, you can apply your schema and migrations to the database using the following command line:
 
 ```
 surrealdb-migrations apply
 ```
 
-### Predefined templates
+Or directly inside your Rust project using the following code:
+
+```rust
+use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+
+#[tokio::main]
+async fn main() {
+    let db_configuration = SurrealdbConfiguration::default();
+
+    SurrealdbMigrations::new(db_configuration)
+        .up()
+        .await
+        .expect("Failed to apply migrations");
+}
+```
+
+### 4. Repeat
+
+Repeat the process from step 2. Change schema and/or create data change migrations.
+
+## Predefined templates
 
 To help you get started quickly, there is a list of predefined templates you can use:
 
@@ -105,7 +147,7 @@ You can scaffold a project using any of these templates using the following comm
 surrealdb-migrations scaffold <TEMPLATE>
 ```
 
-### Configuration
+## Configuration
 
 You can create a `.surrealdb` configuration file at the root of your project. This way you won't have to set the same configuration values every time.
 
