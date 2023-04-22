@@ -32,7 +32,7 @@ fn cannot_remove_if_no_migration_file_left() -> Result<()> {
 
     cmd.assert()
         .failure()
-        .stderr("Error: no migration files left\n");
+        .stderr("Error: No migration files left\n");
 
     Ok(())
 }

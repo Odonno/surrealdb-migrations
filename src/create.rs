@@ -1,4 +1,5 @@
-use std::{path::Path, process};
+use anyhow::{anyhow, Result};
+use std::path::Path;
 
 use crate::{
     config,
@@ -11,7 +12,12 @@ pub enum CreateOperation {
     Migration,
 }
 
-pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>>, dry_run: bool) {
+pub fn main(
+    name: String,
+    operation: CreateOperation,
+    fields: Option<Vec<String>>,
+    dry_run: bool,
+) -> Result<()> {
     let folder_path = config::retrieve_folder_path();
 
     let dir_name = match operation {
@@ -20,7 +26,7 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
         CreateOperation::Migration => MIGRATIONS_DIR_NAME,
     };
 
-    // retrieve folder path
+    // Retrieve folder path
     let folder_path = match folder_path.to_owned() {
         Some(folder_path) => {
             let path = Path::new(&folder_path);
@@ -46,21 +52,18 @@ pub fn main(name: String, operation: CreateOperation, fields: Option<Vec<String>
     let file_path = folder_path.join(&filename);
 
     if !dry_run {
-        // check that directory exists
+        // Check that directory exists
         if !folder_path.exists() {
-            eprintln!("Directory {} doesn't exist", dir_name);
-            process::exit(1);
+            return Err(anyhow!("Directory {} doesn't exist", dir_name));
         }
 
-        // check that file doesn't already exist
-
+        // Check that file doesn't already exist
         if file_path.exists() {
-            eprintln!("File {} already exists", filename);
-            process::exit(1);
+            return Err(anyhow!("File {} already exists", filename));
         }
     }
 
-    // generate content
+    // Generate content
     let field_definitions = match fields {
         Some(fields) => fields
             .iter()
@@ -96,9 +99,11 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
         }
         false => {
             // create file
-            fs_extra::file::write_all(&file_path, &content).unwrap();
+            fs_extra::file::write_all(&file_path, &content)?;
 
             println!("File {} created successfully", filename);
         }
     }
+
+    Ok(())
 }

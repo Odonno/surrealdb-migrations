@@ -1,8 +1,8 @@
+use anyhow::{anyhow, Context, Result};
 use include_dir::{include_dir, Dir};
 use std::{
     io::Write,
     path::{Path, PathBuf},
-    process,
 };
 
 use crate::{
@@ -11,24 +11,26 @@ use crate::{
     constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
 };
 
-pub fn main(template: ScaffoldTemplate) {
+pub fn main(template: ScaffoldTemplate) -> Result<()> {
     let folder_path = config::retrieve_folder_path();
 
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
     let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
     let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
-    fails_if_folder_already_exists(&schemas_dir_path, SCHEMAS_DIR_NAME);
-    fails_if_folder_already_exists(&events_dir_path, EVENTS_DIR_NAME);
-    fails_if_folder_already_exists(&migrations_dir_path, MIGRATIONS_DIR_NAME);
+    fails_if_folder_already_exists(&schemas_dir_path, SCHEMAS_DIR_NAME)?;
+    fails_if_folder_already_exists(&events_dir_path, EVENTS_DIR_NAME)?;
+    fails_if_folder_already_exists(&migrations_dir_path, MIGRATIONS_DIR_NAME)?;
 
-    copy_template_files_to_current_dir(template, folder_path);
+    copy_template_files_to_current_dir(template, folder_path)?;
 
-    ensures_folder_exists(&schemas_dir_path);
-    ensures_folder_exists(&events_dir_path);
-    ensures_folder_exists(&migrations_dir_path);
+    ensures_folder_exists(&schemas_dir_path)?;
+    ensures_folder_exists(&events_dir_path)?;
+    ensures_folder_exists(&migrations_dir_path)?;
 
-    rename_migrations_files_to_match_current_date(&migrations_dir_path);
+    rename_migrations_files_to_match_current_date(&migrations_dir_path)?;
+
+    Ok(())
 }
 
 fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
@@ -38,25 +40,32 @@ fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
     }
 }
 
-fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) {
-    if dir_path.exists() {
-        eprintln!("Error: '{}' folder already exists.", dir_name);
-        process::exit(1);
+fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) -> Result<()> {
+    match dir_path.exists() {
+        true => Err(anyhow!("'{}' folder already exists.", dir_name)),
+        false => Ok(()),
     }
 }
 
-fn copy_template_files_to_current_dir(template: ScaffoldTemplate, folder_path: Option<String>) {
+fn copy_template_files_to_current_dir(
+    template: ScaffoldTemplate,
+    folder_path: Option<String>,
+) -> Result<()> {
     const TEMPLATES_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates");
 
     let template_dir_name = get_template_name(template);
-    let from = TEMPLATES_DIR.get_dir(template_dir_name).unwrap();
+    let from = TEMPLATES_DIR
+        .get_dir(template_dir_name)
+        .context("Cannot get template dir")?;
 
     let to = match folder_path.to_owned() {
         Some(folder_path) => folder_path,
         None => ".".to_owned(),
     };
 
-    extract(from, to).unwrap();
+    extract(from, to)?;
+
+    Ok(())
 }
 
 fn get_template_name(template: ScaffoldTemplate) -> &'static str {
@@ -97,38 +106,55 @@ pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
     extract_dir(dir.clone(), path)
 }
 
-fn ensures_folder_exists(dir_path: &PathBuf) {
+fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create(&dir_path, false).unwrap();
+        fs_extra::dir::create(&dir_path, false)?;
     }
+
+    Ok(())
 }
 
-fn rename_migrations_files_to_match_current_date(migrations_dir_path: &PathBuf) {
+fn rename_migrations_files_to_match_current_date(migrations_dir_path: &PathBuf) -> Result<()> {
     let now = chrono::Local::now();
-    let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_").unwrap();
+    let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_")?;
 
-    let migrations_dir = std::fs::read_dir(&migrations_dir_path).unwrap();
+    let migrations_dir = std::fs::read_dir(&migrations_dir_path)?;
 
     let migration_filenames_to_rename = migrations_dir
-        .map(|file| file.unwrap().file_name())
-        .filter(|filename| regex.is_match(filename.to_str().unwrap()))
+        .filter_map(|entry| match entry {
+            Ok(file) => {
+                let file_name = file.file_name().to_owned();
+                if regex.is_match(file_name.to_str().unwrap_or("")) {
+                    Some(file_name)
+                } else {
+                    None
+                }
+            }
+            Err(_) => None,
+        })
         .collect::<Vec<_>>();
 
     for filename in migration_filenames_to_rename {
-        let captures = regex.captures(filename.to_str().unwrap()).unwrap();
-        let seconds = captures.get(1).unwrap().as_str();
+        let filename = filename
+            .to_str()
+            .context("Cannot convert filename to string")?;
+
+        let captures = regex
+            .captures(filename)
+            .context("Cannot retrieve from pattern")?;
+        let seconds = captures
+            .get(1)
+            .context("Cannot retrieve from pattern")?
+            .as_str();
 
         let new_filename_prefix = format!("{}{}_", now.format("%Y%m%d_%H%M"), seconds);
-        let new_filename = regex.replace(filename.to_str().unwrap(), new_filename_prefix);
+        let new_filename = regex.replace(filename, new_filename_prefix);
 
-        let from = format!(
-            "{}/{}",
-            migrations_dir_path.to_str().clone().unwrap(),
-            filename.to_str().unwrap()
-        );
+        let from = format!("{}/{}", migrations_dir_path.display(), filename);
+        let to = format!("{}/{}", migrations_dir_path.display(), new_filename);
 
-        let to = format!("{}/{}", migrations_dir_path.to_str().unwrap(), new_filename);
-
-        std::fs::rename(from, to).unwrap();
+        std::fs::rename(from, to)?;
     }
+
+    Ok(())
 }

@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{Action, Args, CreateAction};
 use create::CreateOperation;
-use std::process;
 
 mod apply;
 mod cli;
@@ -16,7 +16,7 @@ mod scaffold;
 mod surrealdb;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
@@ -37,10 +37,7 @@ async fn main() {
                 Some(CreateAction::Migration { name }) => {
                     create::main(name, CreateOperation::Migration, None, false)
                 }
-                None => {
-                    eprintln!("No action specified for `create` command");
-                    process::exit(1);
-                }
+                None => Err(anyhow!("No action specified for `create` command")),
             },
         },
         Action::Remove {} => remove::main(),
@@ -51,13 +48,7 @@ async fn main() {
             db,
             username,
             password,
-        } => {
-            let result = apply::execute(up, url, ns, db, username, password, true).await;
-            if let Err(err) = result {
-                eprintln!("{}", err);
-                process::exit(1);
-            }
-        }
+        } => apply::execute(up, url, ns, db, username, password, true).await,
         Action::List {
             url,
             ns,
@@ -66,5 +57,5 @@ async fn main() {
             password,
             no_color,
         } => list::main(url, ns, db, username, password, no_color).await,
-    };
+    }
 }

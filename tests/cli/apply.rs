@@ -37,9 +37,12 @@ fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
 
     cmd.arg("apply");
 
-    cmd.assert()
-        .failure()
-        .stderr("There was an error processing a remote WS request\n");
+    cmd.assert().failure().stderr(
+        "Error: There was an error processing a remote WS request
+
+Caused by:
+    There was an error processing a remote WS request\n",
+    );
 
     Ok(())
 }
