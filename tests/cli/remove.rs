@@ -1,52 +1,38 @@
-use assert_cmd::Command;
+use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers;
+use crate::helpers::common::*;
 
 #[test]
 #[serial]
-fn remove_last_migration() {
-    helpers::clear_files_dir();
+fn remove_last_migration() -> Result<()> {
+    clear_files_dir()?;
+    scaffold_blog_template()?;
 
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
-        cmd.arg("scaffold").arg("blog");
+    cmd.arg("remove");
 
-        cmd.assert().success();
-    }
+    cmd.assert()
+        .success()
+        .stdout("Migration 'CommentPost' successfully removed\n");
 
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("remove");
-
-        cmd.assert()
-            .success()
-            .stdout("Migration 'CommentPost' successfully removed\n");
-    }
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn cannot_remove_if_no_migration_file_left() {
-    helpers::clear_files_dir();
+fn cannot_remove_if_no_migration_file_left() -> Result<()> {
+    clear_files_dir()?;
+    scaffold_empty_template()?;
 
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
-        cmd.arg("scaffold").arg("empty");
+    cmd.arg("remove");
 
-        cmd.assert().success();
-    }
+    cmd.assert()
+        .failure()
+        .stderr("Error: no migration files left\n");
 
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("remove");
-
-        cmd.assert()
-            .failure()
-            .stderr("Error: no migration files left\n");
-    }
+    Ok(())
 }
