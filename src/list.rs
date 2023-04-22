@@ -1,7 +1,7 @@
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
-use std::process;
 
 use crate::surrealdb;
 
@@ -12,24 +12,11 @@ pub async fn main(
     username: Option<String>,
     password: Option<String>,
     no_color: bool,
-) {
-    let client_result = surrealdb::create_surrealdb_client(url, ns, db, username, password).await;
+) -> Result<()> {
+    let client = surrealdb::create_surrealdb_client(url, ns, db, username, password).await?;
 
-    if let Err(error) = client_result {
-        eprintln!("{}", error);
-        process::exit(1);
-    }
-
-    let client = client_result.unwrap();
-
-    let response = surrealdb::list_script_migration_ordered_by_execution_date(&client).await;
-
-    if let Err(error) = response {
-        eprintln!("{}", error);
-        process::exit(1);
-    }
-
-    let migrations_applied = response.unwrap();
+    let migrations_applied =
+        surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
 
     if migrations_applied.is_empty() {
         println!("No migrations applied yet!");
@@ -47,9 +34,13 @@ pub async fn main(
                     .collect::<Vec<_>>()
                     .join("_");
 
-                let executed_at = DateTime::parse_from_rfc3339(&m.executed_at).unwrap();
-                let since = now.signed_duration_since(executed_at);
-                let since = since.format_human().to_string();
+                let since = match DateTime::parse_from_rfc3339(&m.executed_at) {
+                    Ok(executed_at) => {
+                        let since = now.signed_duration_since(executed_at);
+                        since.format_human().to_string()
+                    }
+                    Err(_) => "N/A".to_string(),
+                };
 
                 let file_name = m.script_name.clone() + ".surql";
 
@@ -73,8 +64,10 @@ pub async fn main(
             .color_choice(color_choice)
             .border(Border::builder().build());
 
-        let table_display = table.display().unwrap();
+        let table_display = table.display()?;
 
         println!("{}", table_display);
     }
+
+    Ok(())
 }

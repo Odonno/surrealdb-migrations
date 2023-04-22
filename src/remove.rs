@@ -1,9 +1,10 @@
+use anyhow::{anyhow, Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
-use std::{collections::HashSet, path::Path, process};
+use std::{collections::HashSet, path::Path};
 
 use crate::{config, constants::MIGRATIONS_DIR_NAME};
 
-pub fn main() {
+pub fn main() -> Result<()> {
     let folder_path = config::retrieve_folder_path();
 
     let migrations_path = match folder_path.to_owned() {
@@ -16,55 +17,43 @@ pub fn main() {
     config.insert(DirEntryAttr::Path);
     config.insert(DirEntryAttr::FullName);
 
-    let migrations_files = fs_extra::dir::ls(&migrations_path, &config).unwrap();
+    let migrations_files = fs_extra::dir::ls(&migrations_path, &config)?;
 
     if migrations_files.items.is_empty() {
-        eprintln!("Error: no migration files left");
-        process::exit(1);
+        return Err(anyhow!("No migration files left"));
     }
 
-    // get last migration in migrations folder
     let mut sorted_migrations_files = migrations_files.items.iter().collect::<Vec<_>>();
     sorted_migrations_files.sort_by(|a, b| {
-        let a = a.get(&DirEntryAttr::Name).unwrap();
-        let b = b.get(&DirEntryAttr::Name).unwrap();
+        let a = a.get(&DirEntryAttr::Name);
+        let b = b.get(&DirEntryAttr::Name);
 
         let a = match a {
-            DirEntryValue::String(a) => a,
-            _ => {
-                eprintln!("Cannot get name to migration files");
-                process::exit(1);
-            }
+            Some(DirEntryValue::String(a)) => Some(a),
+            _ => None,
         };
 
         let b = match b {
-            DirEntryValue::String(b) => b,
-            _ => {
-                eprintln!("Cannot get name to migration files");
-                process::exit(1);
-            }
+            Some(DirEntryValue::String(b)) => Some(b),
+            _ => None,
         };
 
-        a.cmp(b)
+        a.cmp(&b)
     });
 
-    let last_migration = sorted_migrations_files.last().unwrap();
+    let last_migration = sorted_migrations_files
+        .last()
+        .context("Cannot get last migration")?;
 
     let last_migration_filename = match last_migration.get(&DirEntryAttr::Name) {
-        Some(DirEntryValue::String(last_migration_filename)) => last_migration_filename,
-        _ => {
-            eprintln!("Cannot get name to migration files");
-            process::exit(1);
-        }
-    };
+        Some(DirEntryValue::String(last_migration_filename)) => Ok(last_migration_filename),
+        _ => Err(anyhow!("Cannot get name to migration files")),
+    }?;
 
     let last_migration_fullname = match last_migration.get(&DirEntryAttr::FullName) {
-        Some(DirEntryValue::String(last_migration_filename)) => last_migration_filename,
-        _ => {
-            eprintln!("Cannot get name to migration files");
-            process::exit(1);
-        }
-    };
+        Some(DirEntryValue::String(last_migration_filename)) => Ok(last_migration_filename),
+        _ => Err(anyhow!("Cannot get name to migration files")),
+    }?;
 
     let last_migration_display_name = last_migration_filename
         .split("_")
@@ -73,21 +62,23 @@ pub fn main() {
         .collect::<Vec<_>>()
         .join("_");
 
-    // remove migration file
+    // Remove migration file
     let migration_file = migrations_path.join(last_migration_fullname);
-    std::fs::remove_file(migration_file).unwrap();
+    std::fs::remove_file(migration_file)?;
 
-    // remove definition file if exists
+    // Remove definition file if exists
     let migration_definition_file_path = Path::new(&migrations_path)
         .join("definitions")
         .join(format!("{}.json", last_migration_filename));
 
     if migration_definition_file_path.exists() {
-        std::fs::remove_file(migration_definition_file_path).unwrap();
+        std::fs::remove_file(migration_definition_file_path)?;
     }
 
     println!(
         "Migration '{}' successfully removed",
         last_migration_display_name
     );
+
+    Ok(())
 }
