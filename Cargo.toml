@@ -1,9 +1,10 @@
 [package]
 name = "surrealdb-migrations"
-version = "0.9.2"
+version = "0.9.3"
 description = "An awesome CLI for SurrealDB migrations (provides commands to scaffold, create and apply migrations)."
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
+documentation = "https://docs.rs/surrealdb-migrations/"
 readme = "readme.md"
 license = "MIT"
 license-file = "LICENSE"
