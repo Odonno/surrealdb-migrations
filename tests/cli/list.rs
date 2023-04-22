@@ -1,136 +1,39 @@
-use assert_cmd::Command;
+use anyhow::Result;
 use chrono::Local;
 use serial_test::serial;
-use std::process::Stdio;
 
-use crate::helpers;
+use crate::helpers::common::*;
 
 #[test]
 #[serial]
-fn list_empty_migrations() {
-    helpers::clear_files_dir();
+fn list_empty_migrations() -> Result<()> {
+    run_with_surreal_instance(|| {
+        clear_files_dir()?;
+        scaffold_empty_template()?;
+        apply_migrations()?;
 
-    let mut child_process = std::process::Command::new("surreal")
-        .arg("start")
-        .arg("--user")
-        .arg("root")
-        .arg("--pass")
-        .arg("root")
-        .arg("memory")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .unwrap();
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("scaffold").arg("empty");
-
-        let result = cmd.assert().try_success();
-
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("apply");
-
-        let result = cmd.assert().try_success();
-
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
+        let mut cmd = create_cmd()?;
         cmd.arg("list");
 
-        let result = cmd
-            .assert()
+        cmd.assert()
             .try_success()
-            .and_then(|assert| assert.try_stdout("No migrations applied yet!\n"));
+            .and_then(|assert| assert.try_stdout("No migrations applied yet!\n"))?;
 
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    child_process.kill().unwrap();
+        Ok(())
+    })
 }
 
 #[test]
 #[serial]
-fn list_blog_migrations() {
-    helpers::clear_files_dir();
+fn list_blog_migrations() -> Result<()> {
+    run_with_surreal_instance(|| {
+        let now = Local::now();
 
-    let mut child_process = std::process::Command::new("surreal")
-        .arg("start")
-        .arg("--user")
-        .arg("root")
-        .arg("--pass")
-        .arg("root")
-        .arg("memory")
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .unwrap();
+        clear_files_dir()?;
+        scaffold_blog_template()?;
+        apply_migrations()?;
 
-    let now = Local::now();
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("scaffold").arg("blog");
-
-        let result = cmd.assert().try_success();
-
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
-
-        cmd.arg("apply");
-
-        let result = cmd.assert().try_success();
-
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+        let mut cmd = create_cmd()?;
 
         cmd.arg("list").arg("--no-color");
 
@@ -147,21 +50,11 @@ fn list_blog_migrations() {
 \n",
             date_prefix
         );
-        println!("{}", expected);
 
-        let result = cmd
-            .assert()
+        cmd.assert()
             .try_success()
-            .and_then(|assert| assert.try_stdout(expected));
+            .and_then(|assert| assert.try_stdout(expected))?;
 
-        match result {
-            Ok(_) => {}
-            Err(error) => {
-                child_process.kill().unwrap();
-                panic!("{}", error);
-            }
-        }
-    }
-
-    child_process.kill().unwrap();
+        Ok(())
+    })
 }

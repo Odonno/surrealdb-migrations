@@ -1,138 +1,137 @@
-use std::path::Path;
-
-use assert_cmd::Command;
+use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers;
+use crate::helpers::common::*;
 
 #[test]
 #[serial]
-fn scaffold_empty_template() {
-    helpers::clear_files_dir();
+fn scaffold_empty_template() -> Result<()> {
+    clear_files_dir()?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("empty");
 
     cmd.assert().success();
 
-    assert_eq!(
-        dir_diff::is_different("templates/empty/schemas", "tests-files/schemas").unwrap(),
-        false
-    );
+    assert!(are_folders_equivalent(
+        "templates/empty/schemas",
+        "tests-files/schemas"
+    )?);
 
-    let is_empty_events_folder = Path::new("tests-files/events")
-        .read_dir()
-        .unwrap()
-        .next()
-        .is_none();
-    assert!(is_empty_events_folder);
+    assert!(is_empty_folder("tests-files/events")?);
+    assert!(is_empty_folder("tests-files/migrations")?);
 
-    let is_empty_migrations_folder = Path::new("tests-files/migrations")
-        .read_dir()
-        .unwrap()
-        .next()
-        .is_none();
-    assert!(is_empty_migrations_folder);
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn scaffold_blog_template() {
-    helpers::clear_files_dir();
+fn scaffold_blog_template() -> Result<()> {
+    clear_files_dir()?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("blog");
 
     cmd.assert().success();
 
-    assert_eq!(
-        dir_diff::is_different("templates/blog/schemas", "tests-files/schemas").unwrap(),
-        false
-    );
+    assert!(are_folders_equivalent(
+        "templates/blog/schemas",
+        "tests-files/schemas"
+    )?);
 
-    assert_eq!(
-        dir_diff::is_different("templates/blog/events", "tests-files/events").unwrap(),
-        false
-    );
+    assert!(are_folders_equivalent(
+        "templates/blog/events",
+        "tests-files/events"
+    )?);
 
-    let migration_files = std::fs::read_dir("tests-files/migrations").unwrap();
+    let migration_files = std::fs::read_dir("tests-files/migrations")?;
     assert_eq!(migration_files.count(), 3);
+
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn scaffold_ecommerce_template() {
-    helpers::clear_files_dir();
+fn scaffold_ecommerce_template() -> Result<()> {
+    clear_files_dir()?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("ecommerce");
 
     cmd.assert().success();
 
-    assert_eq!(
-        dir_diff::is_different("templates/ecommerce/schemas", "tests-files/schemas").unwrap(),
-        false
-    );
+    assert!(are_folders_equivalent(
+        "templates/ecommerce/schemas",
+        "tests-files/schemas"
+    )?);
 
-    assert_eq!(
-        dir_diff::is_different("templates/ecommerce/events", "tests-files/events").unwrap(),
-        false
-    );
+    assert!(are_folders_equivalent(
+        "templates/ecommerce/events",
+        "tests-files/events"
+    )?);
 
-    let migration_files = std::fs::read_dir("tests-files/migrations").unwrap();
+    let migration_files = std::fs::read_dir("tests-files/migrations")?;
     assert_eq!(migration_files.count(), 3);
+
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn scaffold_fails_if_schemas_folder_already_exists() {
-    helpers::clear_files_dir();
+fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
+    clear_files_dir()?;
 
-    fs_extra::dir::create("tests-files", false).unwrap();
-    fs_extra::dir::create("tests-files/schemas", false).unwrap();
+    fs_extra::dir::create("tests-files", false)?;
+    fs_extra::dir::create("tests-files/schemas", false)?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("blog");
 
     cmd.assert()
         .failure()
         .stderr("Error: 'schemas' folder already exists.\n");
+
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn scaffold_fails_if_events_folder_already_exists() {
-    helpers::clear_files_dir();
+fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
+    clear_files_dir()?;
 
-    fs_extra::dir::create("tests-files", false).unwrap();
-    fs_extra::dir::create("tests-files/events", false).unwrap();
+    fs_extra::dir::create("tests-files", false)?;
+    fs_extra::dir::create("tests-files/events", false)?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("blog");
 
     cmd.assert()
         .failure()
         .stderr("Error: 'events' folder already exists.\n");
+
+    Ok(())
 }
 
 #[test]
 #[serial]
-fn scaffold_fails_if_migrations_folder_already_exists() {
-    helpers::clear_files_dir();
+fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
+    clear_files_dir()?;
 
-    fs_extra::dir::create("tests-files", false).unwrap();
-    fs_extra::dir::create("tests-files/migrations", false).unwrap();
+    fs_extra::dir::create("tests-files", false)?;
+    fs_extra::dir::create("tests-files/migrations", false)?;
 
-    let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).unwrap();
+    let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold").arg("blog");
 
     cmd.assert()
         .failure()
         .stderr("Error: 'migrations' folder already exists.\n");
+
+    Ok(())
 }
