@@ -1,0 +1,63 @@
+name: Main Workflow
+
+on:
+  push:
+    branches:
+      - "main"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build
+        run: cargo build --verbose
+
+      - name: Download SurrealDB
+        run: curl -sSf https://install.surrealdb.com | sh
+
+      - name: Run tests
+        run: cargo test --verbose
+
+      - name: Publish crate
+        uses: katyo/publish-crates@v2
+        with:
+          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          ignore-unpublished-changes: true
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download SurrealDB
+        run: curl -sSf https://install.surrealdb.com | sh
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+        with:
+          version: "0.22.0"
+          args: "--engine llvm"
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v1
+        with:
+          name: code-coverage-report
+          path: cobertura.xml
