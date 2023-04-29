@@ -106,7 +106,7 @@ pub fn scaffold_blog_template() -> Result<()> {
 
 fn scaffold_template(template_name: &str) -> Result<()> {
     let mut cmd = create_cmd()?;
-    cmd.arg("scaffold").arg(template_name);
+    cmd.arg("scaffold").arg("template").arg(template_name);
     cmd.assert().try_success()?;
 
     Ok(())
@@ -214,4 +214,11 @@ pub fn is_empty_folder(folder: &str) -> Result<bool> {
     let nubmer_of_files = dir.count();
 
     Ok(nubmer_of_files == 0)
+}
+
+pub fn is_file_exists(file_path: &str) -> Result<bool> {
+    let file = Path::new(file_path);
+    let is_file_exists = file.try_exists()?;
+
+    Ok(is_file_exists)
 }

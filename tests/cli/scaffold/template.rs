@@ -10,7 +10,7 @@ fn scaffold_empty_template() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("empty");
+    cmd.arg("scaffold").arg("template").arg("empty");
 
     cmd.assert().success();
 
@@ -32,7 +32,7 @@ fn scaffold_blog_template() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("blog");
+    cmd.arg("scaffold").arg("template").arg("blog");
 
     cmd.assert().success();
 
@@ -59,7 +59,7 @@ fn scaffold_ecommerce_template() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("ecommerce");
+    cmd.arg("scaffold").arg("template").arg("ecommerce");
 
     cmd.assert().success();
 
@@ -89,7 +89,7 @@ fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("blog");
+    cmd.arg("scaffold").arg("template").arg("blog");
 
     cmd.assert()
         .failure()
@@ -108,7 +108,7 @@ fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("blog");
+    cmd.arg("scaffold").arg("template").arg("blog");
 
     cmd.assert()
         .failure()
@@ -127,11 +127,25 @@ fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
 
     let mut cmd = create_cmd()?;
 
-    cmd.arg("scaffold").arg("blog");
+    cmd.arg("scaffold").arg("template").arg("blog");
 
     cmd.assert()
         .failure()
         .stderr("Error: 'migrations' folder already exists.\n");
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn scaffold_fails_if_invalid_template_name() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold").arg("template").arg("invalid");
+
+    cmd.assert().failure();
 
     Ok(())
 }
