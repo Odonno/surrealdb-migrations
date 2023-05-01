@@ -222,9 +222,16 @@ fn convert_ast_to_surrealdb_schema(
                         false => column_name.to_case(Case::Snake),
                     };
 
+                    let column_type = detect_column_type(column);
+
+                    let type_definition = match column_type {
+                        Some(column_type) => format!(" TYPE {}", column_type),
+                        None => String::new(),
+                    };
+
                     definition.push_str(&format!(
-                        "DEFINE FIELD {} ON {};\n",
-                        column_name, table_name
+                        "DEFINE FIELD {} ON {}{};\n",
+                        column_name, table_name, type_definition
                     ));
                 }
 
@@ -235,6 +242,60 @@ fn convert_ast_to_surrealdb_schema(
     }
 
     Ok(SurrealdbSchema { tables })
+}
+
+fn detect_column_type(column: sqlparser::ast::ColumnDef) -> Option<&'static str> {
+    match column.data_type {
+        sqlparser::ast::DataType::TinyInt(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedTinyInt(_) => Some("number"),
+        sqlparser::ast::DataType::SmallInt(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedSmallInt(_) => Some("number"),
+        sqlparser::ast::DataType::Int(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedInt(_) => Some("number"),
+        sqlparser::ast::DataType::Integer(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedInteger(_) => Some("number"),
+        sqlparser::ast::DataType::MediumInt(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedMediumInt(_) => Some("number"),
+        sqlparser::ast::DataType::BigInt(_) => Some("number"),
+        sqlparser::ast::DataType::UnsignedBigInt(_) => Some("number"),
+        sqlparser::ast::DataType::Real => Some("number"),
+        sqlparser::ast::DataType::Double => Some("number"),
+        sqlparser::ast::DataType::DoublePrecision => Some("number"),
+        sqlparser::ast::DataType::Dec { .. } => Some("number"),
+        sqlparser::ast::DataType::Decimal { .. } => Some("number"),
+        sqlparser::ast::DataType::BigDecimal(_) => Some("number"),
+        sqlparser::ast::DataType::Float { .. } => Some("number"),
+        sqlparser::ast::DataType::Numeric(_) => Some("number"),
+        sqlparser::ast::DataType::BigNumeric(_) => Some("number"),
+        sqlparser::ast::DataType::Char { .. } => Some("string"),
+        sqlparser::ast::DataType::CharVarying { .. } => Some("string"),
+        sqlparser::ast::DataType::Character { .. } => Some("string"),
+        sqlparser::ast::DataType::CharacterVarying { .. } => Some("string"),
+        sqlparser::ast::DataType::Varchar { .. } => Some("string"),
+        sqlparser::ast::DataType::Nvarchar(_) => Some("string"),
+        sqlparser::ast::DataType::Text => Some("string"),
+        sqlparser::ast::DataType::Boolean => Some("bool"),
+        sqlparser::ast::DataType::Date => Some("datetime"),
+        sqlparser::ast::DataType::Time { .. } => Some("datetime"),
+        sqlparser::ast::DataType::Datetime(_) => Some("datetime"),
+        sqlparser::ast::DataType::Timestamp { .. } => Some("datetime"),
+        sqlparser::ast::DataType::Interval { .. } => Some("duration"),
+        sqlparser::ast::DataType::JSON => Some("object"),
+        sqlparser::ast::DataType::Array(_) => Some("array"),
+        sqlparser::ast::DataType::Custom(sqlparser::ast::ObjectName(identifiers), _) => {
+            if let Some(first_identifier) = identifiers.first() {
+                // 💡 MSSQL type for boolean
+                if first_identifier.value.to_string() == "BIT" {
+                    Some("bool")
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
 }
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
