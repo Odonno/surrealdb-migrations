@@ -141,6 +141,33 @@ pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
     extract_dir(dir.clone(), path)
 }
 
+#[derive(Debug)]
+enum SurrealdbFieldType {
+    Number,
+    String,
+    Boolean,
+    DateTime,
+    Duration,
+    Object,
+    Array,
+    Record(Vec<String>),
+}
+
+#[derive(Debug)]
+struct SurrealdbSchemaFieldDefinition {
+    field_name: String,
+    field_type: Option<SurrealdbFieldType>,
+}
+
+type SurrealdbSchemaName = String;
+type SurrealdbSchemaDefinition = Vec<SurrealdbSchemaFieldDefinition>;
+type SurrealdbSchemaTable = HashMap<SurrealdbSchemaName, SurrealdbSchemaDefinition>;
+
+#[derive(Debug)]
+struct SurrealdbSchema {
+    tables: SurrealdbSchemaTable,
+}
+
 fn scaffold_from_schema(
     schema: String,
     db_type: ScaffoldSchemaDbType,
@@ -169,11 +196,41 @@ fn scaffold_from_schema(
 
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
 
-    for (table_name, table_definition) in schema.tables {
+    for (table_name, field_definitions) in schema.tables {
         let filename = format!("{}.surql", table_name);
 
+        let mut table_definition_str = String::new();
+
+        table_definition_str.push_str(&format!("DEFINE TABLE {} SCHEMALESS;\n\n", table_name));
+
+        for field_definition in field_definitions {
+            let field_type_str = match field_definition.field_type {
+                Some(field_type) => {
+                    let display_type = match field_type {
+                        SurrealdbFieldType::Number => "number".to_string(),
+                        SurrealdbFieldType::String => "string".to_string(),
+                        SurrealdbFieldType::Boolean => "bool".to_string(),
+                        SurrealdbFieldType::DateTime => "datetime".to_string(),
+                        SurrealdbFieldType::Duration => "duration".to_string(),
+                        SurrealdbFieldType::Object => "object".to_string(),
+                        SurrealdbFieldType::Array => "array".to_string(),
+                        SurrealdbFieldType::Record(tables) => {
+                            format!("record({})", tables.join(", "))
+                        }
+                    };
+                    format!(" TYPE {}", display_type)
+                }
+                None => String::new(),
+            };
+
+            table_definition_str.push_str(&format!(
+                "DEFINE FIELD {} ON {}{};\n",
+                field_definition.field_name, table_name, field_type_str
+            ));
+        }
+
         let path = schemas_dir_path.join(filename);
-        std::fs::write(path, table_definition)?;
+        std::fs::write(path, table_definition_str)?;
     }
 
     Ok(())
@@ -193,15 +250,6 @@ fn get_sql_dialect(db_type: ScaffoldSchemaDbType) -> Box<dyn sqlparser::dialect:
     }
 }
 
-type SurrealdbSchemaName = String;
-type SurrealdbSchemaDefinition = String;
-type SurrealdbSchemaTable = HashMap<SurrealdbSchemaName, SurrealdbSchemaDefinition>;
-
-#[derive(Debug)]
-struct SurrealdbSchema {
-    tables: SurrealdbSchemaTable,
-}
-
 fn convert_ast_to_surrealdb_schema(
     ast: Vec<sqlparser::ast::Statement>,
     preserve_casing: bool,
@@ -210,8 +258,13 @@ fn convert_ast_to_surrealdb_schema(
 
     for statement in ast {
         match statement {
-            sqlparser::ast::Statement::CreateTable { name, columns, .. } => {
-                let mut definition = SurrealdbSchemaDefinition::new();
+            sqlparser::ast::Statement::CreateTable {
+                name,
+                columns,
+                constraints,
+                ..
+            } => {
+                let mut field_definitions = SurrealdbSchemaDefinition::new();
 
                 let table_name = name.to_string();
                 let table_name = match preserve_casing {
@@ -219,29 +272,80 @@ fn convert_ast_to_surrealdb_schema(
                     false => table_name.to_case(Case::Snake),
                 };
 
-                definition.push_str(&format!("DEFINE TABLE {} SCHEMALESS;\n\n", table_name));
-
                 for column in columns {
-                    let column_name = column.name.value.to_string();
-                    let column_name = match preserve_casing {
-                        true => column_name,
-                        false => column_name.to_case(Case::Snake),
+                    let field_name = column.name.value.to_string();
+                    let field_name = match preserve_casing {
+                        true => field_name,
+                        false => field_name.to_case(Case::Snake),
                     };
 
-                    let column_type = detect_column_type(column);
+                    let mut field_type = detect_field_type(column);
 
-                    let type_definition = match column_type {
-                        Some(column_type) => format!(" TYPE {}", column_type),
-                        None => String::new(),
-                    };
+                    // Detect record type from foreign key (if any)
+                    for constraint in &constraints {
+                        match constraint {
+                            sqlparser::ast::TableConstraint::ForeignKey {
+                                columns,
+                                foreign_table,
+                                referred_columns,
+                                ..
+                            } => {
+                                if columns.len() != 1 {
+                                    continue;
+                                }
 
-                    definition.push_str(&format!(
-                        "DEFINE FIELD {} ON {}{};\n",
-                        column_name, table_name, type_definition
-                    ));
+                                if referred_columns.len() != 1 {
+                                    continue;
+                                }
+
+                                let column_identifier = columns.first().unwrap().value.to_string();
+                                let column_identifier = match preserve_casing {
+                                    true => column_identifier,
+                                    false => column_identifier.to_case(Case::Snake),
+                                };
+
+                                if field_name != column_identifier {
+                                    continue;
+                                }
+
+                                let referred_column =
+                                    referred_columns.first().unwrap().value.to_string();
+
+                                if referred_column.to_lowercase() != "id" {
+                                    continue;
+                                }
+
+                                let foreign_table = foreign_table.0.first();
+                                if foreign_table.is_none() {
+                                    continue;
+                                }
+
+                                let foreign_table = foreign_table.unwrap().value.to_string();
+                                let foreign_table = match preserve_casing {
+                                    true => foreign_table,
+                                    false => foreign_table.to_case(Case::Snake),
+                                };
+
+                                field_type = match field_type {
+                                    Some(SurrealdbFieldType::Record(tables)) => {
+                                        Some(SurrealdbFieldType::Record(
+                                            tables.into_iter().chain(vec![foreign_table]).collect(),
+                                        ))
+                                    }
+                                    _ => Some(SurrealdbFieldType::Record(vec![foreign_table])),
+                                };
+                            }
+                            _ => {}
+                        }
+                    }
+
+                    field_definitions.push(SurrealdbSchemaFieldDefinition {
+                        field_name,
+                        field_type,
+                    });
                 }
 
-                tables.insert(table_name, definition);
+                tables.insert(table_name, field_definitions);
             }
             _ => {}
         }
@@ -250,49 +354,49 @@ fn convert_ast_to_surrealdb_schema(
     Ok(SurrealdbSchema { tables })
 }
 
-fn detect_column_type(column: sqlparser::ast::ColumnDef) -> Option<&'static str> {
+fn detect_field_type(column: sqlparser::ast::ColumnDef) -> Option<SurrealdbFieldType> {
     match column.data_type {
-        sqlparser::ast::DataType::TinyInt(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedTinyInt(_) => Some("number"),
-        sqlparser::ast::DataType::SmallInt(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedSmallInt(_) => Some("number"),
-        sqlparser::ast::DataType::Int(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedInt(_) => Some("number"),
-        sqlparser::ast::DataType::Integer(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedInteger(_) => Some("number"),
-        sqlparser::ast::DataType::MediumInt(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedMediumInt(_) => Some("number"),
-        sqlparser::ast::DataType::BigInt(_) => Some("number"),
-        sqlparser::ast::DataType::UnsignedBigInt(_) => Some("number"),
-        sqlparser::ast::DataType::Real => Some("number"),
-        sqlparser::ast::DataType::Double => Some("number"),
-        sqlparser::ast::DataType::DoublePrecision => Some("number"),
-        sqlparser::ast::DataType::Dec { .. } => Some("number"),
-        sqlparser::ast::DataType::Decimal { .. } => Some("number"),
-        sqlparser::ast::DataType::BigDecimal(_) => Some("number"),
-        sqlparser::ast::DataType::Float { .. } => Some("number"),
-        sqlparser::ast::DataType::Numeric(_) => Some("number"),
-        sqlparser::ast::DataType::BigNumeric(_) => Some("number"),
-        sqlparser::ast::DataType::Char { .. } => Some("string"),
-        sqlparser::ast::DataType::CharVarying { .. } => Some("string"),
-        sqlparser::ast::DataType::Character { .. } => Some("string"),
-        sqlparser::ast::DataType::CharacterVarying { .. } => Some("string"),
-        sqlparser::ast::DataType::Varchar { .. } => Some("string"),
-        sqlparser::ast::DataType::Nvarchar(_) => Some("string"),
-        sqlparser::ast::DataType::Text => Some("string"),
-        sqlparser::ast::DataType::Boolean => Some("bool"),
-        sqlparser::ast::DataType::Date => Some("datetime"),
-        sqlparser::ast::DataType::Time { .. } => Some("datetime"),
-        sqlparser::ast::DataType::Datetime(_) => Some("datetime"),
-        sqlparser::ast::DataType::Timestamp { .. } => Some("datetime"),
-        sqlparser::ast::DataType::Interval { .. } => Some("duration"),
-        sqlparser::ast::DataType::JSON => Some("object"),
-        sqlparser::ast::DataType::Array(_) => Some("array"),
+        sqlparser::ast::DataType::TinyInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedTinyInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::SmallInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedSmallInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Int(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Integer(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedInteger(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::MediumInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedMediumInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::BigInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::UnsignedBigInt(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Real => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Double => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::DoublePrecision => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Dec { .. } => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Decimal { .. } => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::BigDecimal(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Float { .. } => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Numeric(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::BigNumeric(_) => Some(SurrealdbFieldType::Number),
+        sqlparser::ast::DataType::Char { .. } => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::CharVarying { .. } => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::Character { .. } => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::CharacterVarying { .. } => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::Varchar { .. } => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::Nvarchar(_) => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::Text => Some(SurrealdbFieldType::String),
+        sqlparser::ast::DataType::Boolean => Some(SurrealdbFieldType::Boolean),
+        sqlparser::ast::DataType::Date => Some(SurrealdbFieldType::DateTime),
+        sqlparser::ast::DataType::Time { .. } => Some(SurrealdbFieldType::DateTime),
+        sqlparser::ast::DataType::Datetime(_) => Some(SurrealdbFieldType::DateTime),
+        sqlparser::ast::DataType::Timestamp { .. } => Some(SurrealdbFieldType::DateTime),
+        sqlparser::ast::DataType::Interval { .. } => Some(SurrealdbFieldType::Duration),
+        sqlparser::ast::DataType::JSON => Some(SurrealdbFieldType::Object),
+        sqlparser::ast::DataType::Array(_) => Some(SurrealdbFieldType::Array),
         sqlparser::ast::DataType::Custom(sqlparser::ast::ObjectName(identifiers), _) => {
             if let Some(first_identifier) = identifiers.first() {
                 // 💡 MSSQL type for boolean
                 if first_identifier.value.to_string() == "BIT" {
-                    Some("bool")
+                    Some(SurrealdbFieldType::Boolean)
                 } else {
                     None
                 }
