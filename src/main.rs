@@ -21,12 +21,12 @@ async fn main() -> Result<()> {
 
     match args.command {
         Action::Scaffold { command } => match command {
-            ScaffoldAction::Template { template } => scaffold::from_template(template),
+            ScaffoldAction::Template { template } => scaffold::template::main(template),
             ScaffoldAction::Schema {
                 schema,
                 db_type,
                 preserve_casing,
-            } => scaffold::from_schema(schema, db_type, preserve_casing),
+            } => scaffold::schema::main(schema, db_type, preserve_casing),
         },
         Action::Create { command, name } => match name {
             Some(name) => create::main(name, CreateOperation::Migration, None, false),
