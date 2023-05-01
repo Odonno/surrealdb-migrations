@@ -43,8 +43,10 @@ fn scaffold_from_create_table() -> Result<()> {
         "tests-files/schemas/script_migration.surql"
     )?);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
 
+    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
@@ -56,9 +58,6 @@ DEFINE FIELD status ON post TYPE string;
 DEFINE FIELD created_at ON post TYPE datetime;
 "
     );
-
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
-    assert_eq!(schema_files.count(), 2);
 
     assert!(is_empty_folder("tests-files/events")?);
     assert!(is_empty_folder("tests-files/migrations")?);
@@ -86,8 +85,10 @@ fn scaffold_from_schema_file_but_preserve_casing() -> Result<()> {
         "tests-files/schemas/script_migration.surql"
     )?);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/Post.surql")?;
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
 
+    let post_schema = std::fs::read_to_string("tests-files/schemas/Post.surql")?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE Post SCHEMALESS;
@@ -99,9 +100,6 @@ DEFINE FIELD Status ON Post TYPE string;
 DEFINE FIELD CreatedAt ON Post TYPE datetime;
 "
     );
-
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
-    assert_eq!(schema_files.count(), 2);
 
     assert!(is_empty_folder("tests-files/events")?);
     assert!(is_empty_folder("tests-files/migrations")?);
@@ -128,8 +126,10 @@ fn scaffold_from_create_table_with_many_types() -> Result<()> {
         "tests-files/schemas/script_migration.surql"
     )?);
 
-    let test_schema = std::fs::read_to_string("tests-files/schemas/test.surql")?;
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
 
+    let test_schema = std::fs::read_to_string("tests-files/schemas/test.surql")?;
     assert_eq!(
         test_schema,
         "DEFINE TABLE test SCHEMALESS;
@@ -155,8 +155,72 @@ DEFINE FIELD variant ON test;
 "
     );
 
+    assert!(is_empty_folder("tests-files/events")?);
+    assert!(is_empty_folder("tests-files/migrations")?);
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn scaffold_from_create_multiple_table_with_relations() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold")
+        .arg("schema")
+        .arg("schema-files/mssql/create_table_with_relations.sql")
+        .arg("--db-type")
+        .arg("mssql");
+
+    cmd.assert().success();
+
+    assert!(is_file_exists(
+        "tests-files/schemas/script_migration.surql"
+    )?);
+
     let schema_files = std::fs::read_dir("tests-files/schemas")?;
-    assert_eq!(schema_files.count(), 2);
+    assert_eq!(schema_files.count(), 4);
+
+    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    assert_eq!(
+        post_schema,
+        "DEFINE TABLE post SCHEMALESS;
+
+DEFINE FIELD id ON post;
+DEFINE FIELD title ON post TYPE string;
+DEFINE FIELD content ON post TYPE string;
+DEFINE FIELD status ON post TYPE string;
+DEFINE FIELD created_at ON post TYPE datetime;
+"
+    );
+
+    let user_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
+    assert_eq!(
+        user_schema,
+        "DEFINE TABLE user SCHEMALESS;
+
+DEFINE FIELD id ON user;
+DEFINE FIELD username ON user TYPE string;
+DEFINE FIELD email ON user TYPE string;
+DEFINE FIELD password ON user TYPE string;
+DEFINE FIELD registered_at ON user TYPE datetime;
+"
+    );
+
+    let comment_schema = std::fs::read_to_string("tests-files/schemas/comment.surql")?;
+    assert_eq!(
+        comment_schema,
+        "DEFINE TABLE comment SCHEMALESS;
+
+DEFINE FIELD id ON comment;
+DEFINE FIELD content ON comment TYPE string;
+DEFINE FIELD created_at ON comment TYPE datetime;
+DEFINE FIELD user ON comment TYPE record(user);
+DEFINE FIELD post ON comment TYPE record(post);
+"
+    );
 
     assert!(is_empty_folder("tests-files/events")?);
     assert!(is_empty_folder("tests-files/migrations")?);
