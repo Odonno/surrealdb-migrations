@@ -26,6 +26,26 @@ fn scaffold_fails_from_empty_schema_file() -> Result<()> {
 
 #[test]
 #[serial]
+fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold")
+        .arg("schema")
+        .arg("schema-files/mssql/create_table_with_script_migration.sql")
+        .arg("--db-type")
+        .arg("mssql");
+
+    cmd.assert()
+        .failure()
+        .stderr("Error: The table 'script_migration' is reserved for internal use.\n");
+
+    Ok(())
+}
+
+#[test]
+#[serial]
 fn scaffold_from_create_table() -> Result<()> {
     clear_files_dir()?;
 
@@ -203,7 +223,9 @@ DEFINE FIELD created_at ON post TYPE datetime;
 
 DEFINE FIELD id ON user;
 DEFINE FIELD username ON user TYPE string;
+DEFINE INDEX user_username_index ON user COLUMNS username UNIQUE;
 DEFINE FIELD email ON user TYPE string;
+DEFINE INDEX user_email_index ON user COLUMNS email UNIQUE;
 DEFINE FIELD password ON user TYPE string;
 DEFINE FIELD registered_at ON user TYPE datetime;
 "
@@ -230,20 +252,43 @@ DEFINE FIELD post ON comment TYPE record(post);
 
 #[test]
 #[serial]
-fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -> Result<()> {
+fn scaffold_from_create_table_with_unique_index() -> Result<()> {
     clear_files_dir()?;
 
     let mut cmd = create_cmd()?;
 
     cmd.arg("scaffold")
         .arg("schema")
-        .arg("schema-files/mssql/create_table_with_script_migration.sql")
+        .arg("schema-files/mssql/create_table_with_unique_index.sql")
         .arg("--db-type")
         .arg("mssql");
 
-    cmd.assert()
-        .failure()
-        .stderr("Error: The table 'script_migration' is reserved for internal use.\n");
+    cmd.assert().success();
+
+    assert!(is_file_exists(
+        "tests-files/schemas/script_migration.surql"
+    )?);
+
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
+
+    let test_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
+    assert_eq!(
+        test_schema,
+        "DEFINE TABLE user SCHEMALESS;
+
+DEFINE FIELD id ON user;
+DEFINE FIELD username ON user TYPE string;
+DEFINE INDEX user_username_index ON user COLUMNS username UNIQUE;
+DEFINE FIELD email ON user TYPE string;
+DEFINE INDEX user_email_index ON user COLUMNS email UNIQUE;
+DEFINE FIELD password ON user TYPE string;
+DEFINE FIELD registered_at ON user TYPE datetime;
+"
+    );
+
+    assert!(is_empty_folder("tests-files/events")?);
+    assert!(is_empty_folder("tests-files/migrations")?);
 
     Ok(())
 }

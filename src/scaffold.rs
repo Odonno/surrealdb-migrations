@@ -155,12 +155,25 @@ enum SurrealdbFieldType {
 
 #[derive(Debug)]
 struct SurrealdbSchemaFieldDefinition {
-    field_name: String,
-    field_type: Option<SurrealdbFieldType>,
+    name: String,
+    type_: Option<SurrealdbFieldType>,
+}
+
+#[derive(Debug)]
+struct SurrealdbSchemaIndexDefinition {
+    name: String,
+    field_names: Vec<String>,
+    unique: bool,
+}
+
+#[derive(Debug)]
+enum SurrealdbSchemaLineDefinition {
+    Field(SurrealdbSchemaFieldDefinition),
+    Index(SurrealdbSchemaIndexDefinition),
 }
 
 type SurrealdbSchemaName = String;
-type SurrealdbSchemaDefinition = Vec<SurrealdbSchemaFieldDefinition>;
+type SurrealdbSchemaDefinition = Vec<SurrealdbSchemaLineDefinition>;
 type SurrealdbSchemaTable = HashMap<SurrealdbSchemaName, SurrealdbSchemaDefinition>;
 
 #[derive(Debug)]
@@ -196,37 +209,58 @@ fn scaffold_from_schema(
 
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
 
-    for (table_name, field_definitions) in schema.tables {
+    for (table_name, line_definitions) in schema.tables {
         let filename = format!("{}.surql", table_name);
+
+        println!("{:?}", line_definitions);
 
         let mut table_definition_str = String::new();
 
         table_definition_str.push_str(&format!("DEFINE TABLE {} SCHEMALESS;\n\n", table_name));
 
-        for field_definition in field_definitions {
-            let field_type_str = match field_definition.field_type {
-                Some(field_type) => {
-                    let display_type = match field_type {
-                        SurrealdbFieldType::Number => "number".to_string(),
-                        SurrealdbFieldType::String => "string".to_string(),
-                        SurrealdbFieldType::Boolean => "bool".to_string(),
-                        SurrealdbFieldType::DateTime => "datetime".to_string(),
-                        SurrealdbFieldType::Duration => "duration".to_string(),
-                        SurrealdbFieldType::Object => "object".to_string(),
-                        SurrealdbFieldType::Array => "array".to_string(),
-                        SurrealdbFieldType::Record(tables) => {
-                            format!("record({})", tables.join(", "))
+        for line_definition in line_definitions {
+            match line_definition {
+                SurrealdbSchemaLineDefinition::Field(field_definition) => {
+                    let field_type_str = match field_definition.type_ {
+                        Some(field_type) => {
+                            let display_type = match field_type {
+                                SurrealdbFieldType::Number => "number".to_string(),
+                                SurrealdbFieldType::String => "string".to_string(),
+                                SurrealdbFieldType::Boolean => "bool".to_string(),
+                                SurrealdbFieldType::DateTime => "datetime".to_string(),
+                                SurrealdbFieldType::Duration => "duration".to_string(),
+                                SurrealdbFieldType::Object => "object".to_string(),
+                                SurrealdbFieldType::Array => "array".to_string(),
+                                SurrealdbFieldType::Record(tables) => {
+                                    format!("record({})", tables.join(", "))
+                                }
+                            };
+                            format!(" TYPE {}", display_type)
                         }
+                        None => String::new(),
                     };
-                    format!(" TYPE {}", display_type)
-                }
-                None => String::new(),
-            };
 
-            table_definition_str.push_str(&format!(
-                "DEFINE FIELD {} ON {}{};\n",
-                field_definition.field_name, table_name, field_type_str
-            ));
+                    table_definition_str.push_str(&format!(
+                        "DEFINE FIELD {} ON {}{};\n",
+                        field_definition.name, table_name, field_type_str
+                    ));
+                }
+                SurrealdbSchemaLineDefinition::Index(index_definition) => {
+                    let suffix = if index_definition.unique {
+                        " UNIQUE"
+                    } else {
+                        ""
+                    };
+
+                    table_definition_str.push_str(&format!(
+                        "DEFINE INDEX {} ON {} COLUMNS {}{};\n",
+                        index_definition.name,
+                        table_name,
+                        index_definition.field_names.join(", "),
+                        suffix
+                    ));
+                }
+            }
         }
 
         let path = schemas_dir_path.join(filename);
@@ -264,7 +298,7 @@ fn convert_ast_to_surrealdb_schema(
                 constraints,
                 ..
             } => {
-                let mut field_definitions = SurrealdbSchemaDefinition::new();
+                let mut line_definitions = SurrealdbSchemaDefinition::new();
 
                 let table_name = name.to_string();
                 let table_name = match preserve_casing {
@@ -279,7 +313,7 @@ fn convert_ast_to_surrealdb_schema(
                         false => field_name.to_case(Case::Snake),
                     };
 
-                    let mut field_type = detect_field_type(column);
+                    let mut field_type = detect_field_type(&column);
 
                     // Detect record type from foreign key (if any)
                     for constraint in &constraints {
@@ -339,13 +373,41 @@ fn convert_ast_to_surrealdb_schema(
                         }
                     }
 
-                    field_definitions.push(SurrealdbSchemaFieldDefinition {
-                        field_name,
-                        field_type,
-                    });
+                    let line_definition =
+                        SurrealdbSchemaLineDefinition::Field(SurrealdbSchemaFieldDefinition {
+                            name: field_name.to_string(),
+                            type_: field_type,
+                        });
+                    line_definitions.push(line_definition);
+
+                    // Detect unique constraints
+                    for column_option in &column.options {
+                        let option_name = &column_option.name;
+                        let option_name = match option_name {
+                            Some(name) => name.value.to_string(),
+                            None => format!("{}_{}_index", table_name, field_name.to_string()),
+                        };
+
+                        match column_option.option {
+                            sqlparser::ast::ColumnOption::Unique { is_primary } => {
+                                if !is_primary {
+                                    let line_definition: SurrealdbSchemaLineDefinition =
+                                        SurrealdbSchemaLineDefinition::Index(
+                                            SurrealdbSchemaIndexDefinition {
+                                                name: option_name,
+                                                field_names: vec![field_name.to_string()],
+                                                unique: true,
+                                            },
+                                        );
+                                    line_definitions.push(line_definition);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
                 }
 
-                tables.insert(table_name, field_definitions);
+                tables.insert(table_name, line_definitions);
             }
             _ => {}
         }
@@ -354,8 +416,8 @@ fn convert_ast_to_surrealdb_schema(
     Ok(SurrealdbSchema { tables })
 }
 
-fn detect_field_type(column: sqlparser::ast::ColumnDef) -> Option<SurrealdbFieldType> {
-    match column.data_type {
+fn detect_field_type(column: &sqlparser::ast::ColumnDef) -> Option<SurrealdbFieldType> {
+    match &column.data_type {
         sqlparser::ast::DataType::TinyInt(_) => Some(SurrealdbFieldType::Number),
         sqlparser::ast::DataType::UnsignedTinyInt(_) => Some(SurrealdbFieldType::Number),
         sqlparser::ast::DataType::SmallInt(_) => Some(SurrealdbFieldType::Number),
