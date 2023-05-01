@@ -163,3 +163,23 @@ DEFINE FIELD variant ON test;
 
     Ok(())
 }
+
+#[test]
+#[serial]
+fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold")
+        .arg("schema")
+        .arg("schema-files/mssql/create_table_with_script_migration.sql")
+        .arg("--db-type")
+        .arg("mssql");
+
+    cmd.assert()
+        .failure()
+        .stderr("Error: The table 'script_migration' is reserved for internal use.\n");
+
+    Ok(())
+}
