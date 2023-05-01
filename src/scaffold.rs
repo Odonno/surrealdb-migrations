@@ -159,6 +159,12 @@ fn scaffold_from_schema(
         return Err(anyhow!("No table found in schema file."));
     }
 
+    if schema.tables.contains_key("script_migration") {
+        return Err(anyhow!(
+            "The table 'script_migration' is reserved for internal use."
+        ));
+    }
+
     copy_template_files_to_current_dir(ScaffoldTemplate::Empty, folder_path.to_owned())?;
 
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
