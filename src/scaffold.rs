@@ -108,7 +108,7 @@ pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create(&dir_path, false)?;
+        fs_extra::dir::create_all(&dir_path, false)?;
     }
 
     Ok(())

@@ -40,9 +40,6 @@ pub async fn execute(
     let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     let schemas_files = fs_extra::dir::ls(schemas_dir_path, &config)?;
-    let events_files = fs_extra::dir::ls(events_dir_path, &config)?;
-    let migrations_files = fs_extra::dir::ls(migrations_dir_path, &config)?;
-
     let schema_definitions = extract_schema_definitions(schemas_files);
     apply_schema_definitions(&client, &schema_definitions).await?;
 
@@ -50,12 +47,19 @@ pub async fn execute(
         println!("Schema files successfully executed!");
     }
 
-    let event_definitions = extract_event_definitions(events_files);
-    apply_event_definitions(&client, &event_definitions).await?;
+    let event_definitions = if events_dir_path.try_exists()? {
+        let events_files = fs_extra::dir::ls(events_dir_path, &config)?;
+        let event_definitions = extract_event_definitions(events_files);
+        apply_event_definitions(&client, &event_definitions).await?;
 
-    if display_logs {
-        println!("Event files successfully executed!");
-    }
+        if display_logs {
+            println!("Event files successfully executed!");
+        }
+
+        event_definitions
+    } else {
+        String::new()
+    };
 
     let last_migration_applied = migrations_applied.last();
 
@@ -71,12 +75,13 @@ pub async fn execute(
         last_migration_applied,
         initial_definition_path,
         definitions_path,
-        config,
+        &config,
         schema_definitions,
         event_definitions,
         folder_path,
     )?;
 
+    let migrations_files = fs_extra::dir::ls(migrations_dir_path, &config)?;
     let migration_files_to_execute =
         get_migration_files_to_execute(&migrations_files, up, &migrations_applied);
 
@@ -138,7 +143,7 @@ async fn apply_in_transaction(client: &Surreal<Client>, inner_query: &String) ->
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create(&dir_path, false)?;
+        fs_extra::dir::create_all(&dir_path, false)?;
     }
 
     Ok(())
@@ -193,7 +198,7 @@ fn create_definition_files(
     last_migration_applied: Option<&ScriptMigration>,
     initial_definition_path: PathBuf,
     definitions_path: PathBuf,
-    config: HashSet<DirEntryAttr>,
+    config: &HashSet<DirEntryAttr>,
     schema_definitions: String,
     event_definitions: String,
     folder_path: Option<String>,

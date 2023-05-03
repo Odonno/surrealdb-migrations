@@ -11,7 +11,7 @@ async fn apply_initial_schema_changes() -> Result<()> {
         Box::pin(async {
             clear_files_dir()?;
             scaffold_blog_template()?;
-            empty_folder("tests-files/migrations")?;
+            remove_folder("tests-files/migrations")?;
 
             let configuration = SurrealdbConfiguration::default();
             SurrealdbMigrations::new(configuration).up().await?;
@@ -106,6 +106,31 @@ async fn apply_with_db_configuration() -> Result<()> {
             clear_files_dir()?;
             scaffold_blog_template()?;
             empty_folder("tests-files/migrations")?;
+
+            let configuration = SurrealdbConfiguration {
+                url: None,
+                username: Some("admin".to_string()),
+                password: Some("admin".to_string()),
+                ns: Some("namespace".to_string()),
+                db: Some("database".to_string()),
+            };
+            SurrealdbMigrations::new(configuration).up().await?;
+
+            Ok(())
+        })
+    })
+    .await
+}
+
+#[tokio::test]
+#[serial]
+async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
+    run_with_surreal_instance_with_admin_user_async(|| {
+        Box::pin(async {
+            clear_files_dir()?;
+            scaffold_blog_template()?;
+            empty_folder("tests-files/migrations")?;
+            remove_folder("tests-files/events")?;
 
             let configuration = SurrealdbConfiguration {
                 url: None,
