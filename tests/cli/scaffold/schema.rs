@@ -272,9 +272,9 @@ fn scaffold_from_create_table_with_unique_index() -> Result<()> {
     let schema_files = std::fs::read_dir("tests-files/schemas")?;
     assert_eq!(schema_files.count(), 2);
 
-    let test_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
+    let user_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
     assert_eq!(
-        test_schema,
+        user_schema,
         "DEFINE TABLE user SCHEMALESS;
 
 DEFINE FIELD id ON user;
@@ -291,4 +291,65 @@ DEFINE FIELD registered_at ON user TYPE datetime;
     assert!(is_empty_folder("tests-files/migrations")?);
 
     Ok(())
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn scaffold_from_create_table_with_multi_column_unique_index() -> Result<()> {
+    todo!();
+}
+
+#[test]
+#[serial]
+fn scaffold_from_create_table_with_index() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold")
+        .arg("schema")
+        .arg("schema-files/mssql/create_table_with_index.sql")
+        .arg("--db-type")
+        .arg("mssql");
+
+    cmd.assert().success();
+
+    assert!(is_file_exists(
+        "tests-files/schemas/script_migration.surql"
+    )?);
+
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
+
+    let user_schema = std::fs::read_to_string("tests-files/schemas/daily_sales.surql")?;
+    assert_eq!(
+        user_schema,
+        "DEFINE TABLE daily_sales SCHEMALESS;
+
+DEFINE FIELD id ON daily_sales;
+DEFINE FIELD value ON daily_sales TYPE number;
+DEFINE FIELD date ON daily_sales TYPE datetime;
+DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
+"
+    );
+
+    assert!(is_empty_folder("tests-files/events")?);
+    assert!(is_empty_folder("tests-files/migrations")?);
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn scaffold_from_create_table_with_multi_column_index() -> Result<()> {
+    todo!();
+}
+
+#[test]
+#[serial]
+#[ignore]
+fn scaffold_from_create_table_with_default_value() -> Result<()> {
+    todo!();
 }

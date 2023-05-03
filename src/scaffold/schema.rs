@@ -95,8 +95,6 @@ fn scaffold_from_schema(
     for (table_name, line_definitions) in schema.tables {
         let filename = format!("{}.surql", table_name);
 
-        println!("{:?}", line_definitions);
-
         let mut table_definition_str = String::new();
 
         table_definition_str.push_str(&format!("DEFINE TABLE {} SCHEMALESS;\n\n", table_name));
@@ -291,6 +289,55 @@ fn convert_ast_to_surrealdb_schema(
                 }
 
                 tables.insert(table_name, line_definitions);
+            }
+            sqlparser::ast::Statement::CreateIndex {
+                name,
+                table_name,
+                columns,
+                unique,
+                ..
+            } => {
+                let table_name = match table_name.0.first() {
+                    Some(table_name) => table_name.value.to_string(),
+                    None => {
+                        continue;
+                    }
+                };
+                let table_name = match preserve_casing {
+                    true => table_name,
+                    false => table_name.to_case(Case::Snake),
+                };
+
+                let field_names = columns
+                    .iter()
+                    .map(|c| match &c.expr {
+                        sqlparser::ast::Expr::Identifier(ident) => ident.value.to_string(),
+                        _ => {
+                            panic!("Only identifier expressions are supported for index columns");
+                        }
+                    })
+                    .map(|name| match preserve_casing {
+                        true => name,
+                        false => name.to_case(Case::Snake),
+                    })
+                    .collect::<Vec<_>>();
+
+                let index_name = match name.0.first() {
+                    Some(name) => name.value.to_string(),
+                    None => format!("{}_{}_index", table_name, field_names.join("_")),
+                };
+
+                let line_definition: SurrealdbSchemaLineDefinition =
+                    SurrealdbSchemaLineDefinition::Index(SurrealdbSchemaIndexDefinition {
+                        name: index_name,
+                        field_names,
+                        unique,
+                    });
+
+                let line_definitions = tables
+                    .entry(table_name)
+                    .or_insert(SurrealdbSchemaDefinition::new());
+                line_definitions.push(line_definition);
             }
             _ => {}
         }
