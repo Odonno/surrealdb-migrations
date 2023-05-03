@@ -144,6 +144,16 @@ pub fn empty_folder(folder: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn remove_folder(folder: &str) -> Result<()> {
+    let migrations_files_dir = std::path::Path::new(folder);
+
+    if migrations_files_dir.exists() {
+        std::fs::remove_dir_all(migrations_files_dir)?;
+    }
+
+    Ok(())
+}
+
 pub fn add_new_schema_file() -> Result<()> {
     let schemas_files_dir = std::path::Path::new("tests-files/schemas");
 

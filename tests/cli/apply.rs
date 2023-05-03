@@ -9,7 +9,7 @@ fn apply_initial_schema_changes() -> Result<()> {
     run_with_surreal_instance(|| {
         clear_files_dir()?;
         scaffold_blog_template()?;
-        empty_folder("tests-files/migrations")?;
+        remove_folder("tests-files/migrations")?;
 
         let mut cmd = create_cmd()?;
 
@@ -180,6 +180,30 @@ fn apply_with_db_configuration() -> Result<()> {
             assert.try_stdout(
                 "Schema files successfully executed!
 Event files successfully executed!
+Migration files successfully executed!\n",
+            )
+        })?;
+
+        Ok(())
+    })
+}
+
+#[test]
+#[serial]
+fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
+    run_with_surreal_instance(|| {
+        clear_files_dir()?;
+        scaffold_blog_template()?;
+        empty_folder("tests-files/migrations")?;
+        remove_folder("tests-files/events")?;
+
+        let mut cmd = create_cmd()?;
+
+        cmd.arg("apply");
+
+        cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
 Migration files successfully executed!\n",
             )
         })?;
