@@ -1,6 +1,6 @@
 use anyhow::Result;
 use surrealdb::{
-    engine::remote::ws::{Client, Ws},
+    engine::remote::ws::{Client, Ws, Wss},
     opt::auth::Root,
     Surreal,
 };
@@ -31,7 +31,15 @@ async fn create_surrealdb_connection(
         .or(db_config.url.to_owned())
         .unwrap_or("localhost:8000".to_owned());
 
-    Surreal::new::<Ws>(url.to_owned()).await
+    if is_local_instance(url.to_owned()) {
+        Surreal::new::<Ws>(url.to_owned()).await
+    } else {
+        Surreal::new::<Wss>(url.to_owned()).await
+    }
+}
+
+fn is_local_instance(url: String) -> bool {
+    url == "localhost" || url.starts_with("localhost:")
 }
 
 async fn sign_in(
@@ -90,4 +98,33 @@ pub fn within_transaction(inner_query: String) -> String {
 COMMIT TRANSACTION;",
         inner_query
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn localhost_should_be_local_instance() {
+        let url = "localhost";
+        assert!(is_local_instance(url.to_owned()));
+    }
+
+    #[test]
+    fn localhost_on_port_8000_should_be_local_instance() {
+        let url = "localhost:8000";
+        assert!(is_local_instance(url.to_owned()));
+    }
+
+    #[test]
+    fn localhost_without_port_value_should_be_local_instance() {
+        let url = "localhost:";
+        assert!(is_local_instance(url.to_owned()));
+    }
+
+    #[test]
+    fn remote_should_not_be_local_instance() {
+        let url = "cloud.surrealdb.com";
+        assert!(!is_local_instance(url.to_owned()));
+    }
 }
