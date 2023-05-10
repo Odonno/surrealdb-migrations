@@ -71,7 +71,7 @@ fn scaffold_from_create_table() -> Result<()> {
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
 
-DEFINE FIELD id ON post;
+DEFINE FIELD id ON post ASSERT $value != NONE;
 DEFINE FIELD title ON post TYPE string;
 DEFINE FIELD content ON post TYPE string;
 DEFINE FIELD status ON post TYPE string;
@@ -113,7 +113,7 @@ fn scaffold_from_schema_file_but_preserve_casing() -> Result<()> {
         post_schema,
         "DEFINE TABLE Post SCHEMALESS;
 
-DEFINE FIELD Id ON Post;
+DEFINE FIELD Id ON Post ASSERT $value != NONE;
 DEFINE FIELD Title ON Post TYPE string;
 DEFINE FIELD Content ON Post TYPE string;
 DEFINE FIELD Status ON Post TYPE string;
@@ -154,7 +154,7 @@ fn scaffold_from_create_table_with_many_types() -> Result<()> {
         test_schema,
         "DEFINE TABLE test SCHEMALESS;
 
-DEFINE FIELD id ON test;
+DEFINE FIELD id ON test ASSERT $value != NONE;
 DEFINE FIELD char ON test TYPE string;
 DEFINE FIELD n_char ON test TYPE string;
 DEFINE FIELD varchar ON test TYPE string;
@@ -208,11 +208,11 @@ fn scaffold_from_create_multiple_table_with_relations() -> Result<()> {
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
 
-DEFINE FIELD id ON post;
-DEFINE FIELD title ON post TYPE string;
-DEFINE FIELD content ON post TYPE string;
-DEFINE FIELD status ON post TYPE string;
-DEFINE FIELD created_at ON post TYPE datetime;
+DEFINE FIELD id ON post ASSERT $value != NONE;
+DEFINE FIELD title ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD content ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD status ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD created_at ON post TYPE datetime ASSERT $value != NONE;
 "
     );
 
@@ -221,13 +221,13 @@ DEFINE FIELD created_at ON post TYPE datetime;
         user_schema,
         "DEFINE TABLE user SCHEMALESS;
 
-DEFINE FIELD id ON user;
-DEFINE FIELD username ON user TYPE string;
+DEFINE FIELD id ON user ASSERT $value != NONE;
+DEFINE FIELD username ON user TYPE string ASSERT $value != NONE;
 DEFINE INDEX user_username_index ON user COLUMNS username UNIQUE;
-DEFINE FIELD email ON user TYPE string;
+DEFINE FIELD email ON user TYPE string ASSERT $value != NONE;
 DEFINE INDEX user_email_index ON user COLUMNS email UNIQUE;
-DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime;
+DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
+DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
 "
     );
 
@@ -236,11 +236,11 @@ DEFINE FIELD registered_at ON user TYPE datetime;
         comment_schema,
         "DEFINE TABLE comment SCHEMALESS;
 
-DEFINE FIELD id ON comment;
-DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime;
-DEFINE FIELD user ON comment TYPE record(user);
-DEFINE FIELD post ON comment TYPE record(post);
+DEFINE FIELD id ON comment ASSERT $value != NONE;
+DEFINE FIELD content ON comment TYPE string ASSERT $value != NONE;
+DEFINE FIELD created_at ON comment TYPE datetime ASSERT $value != NONE;
+DEFINE FIELD user ON comment TYPE record(user) ASSERT $value != NONE;
+DEFINE FIELD post ON comment TYPE record(post) ASSERT $value != NONE;
 "
     );
 
@@ -277,13 +277,13 @@ fn scaffold_from_create_table_with_unique_index() -> Result<()> {
         user_schema,
         "DEFINE TABLE user SCHEMALESS;
 
-DEFINE FIELD id ON user;
-DEFINE FIELD username ON user TYPE string;
+DEFINE FIELD id ON user ASSERT $value != NONE;
+DEFINE FIELD username ON user TYPE string ASSERT $value != NONE;
 DEFINE INDEX user_username_index ON user COLUMNS username UNIQUE;
-DEFINE FIELD email ON user TYPE string;
+DEFINE FIELD email ON user TYPE string ASSERT $value != NONE;
 DEFINE INDEX user_email_index ON user COLUMNS email UNIQUE;
-DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime;
+DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
+DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
 "
     );
 
@@ -327,9 +327,9 @@ fn scaffold_from_create_table_with_index() -> Result<()> {
         user_schema,
         "DEFINE TABLE daily_sales SCHEMALESS;
 
-DEFINE FIELD id ON daily_sales;
-DEFINE FIELD value ON daily_sales TYPE number;
-DEFINE FIELD date ON daily_sales TYPE datetime;
+DEFINE FIELD id ON daily_sales ASSERT $value != NONE;
+DEFINE FIELD value ON daily_sales TYPE number ASSERT $value != NONE;
+DEFINE FIELD date ON daily_sales TYPE datetime ASSERT $value != NONE;
 DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
 "
     );
@@ -345,6 +345,47 @@ DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
 #[ignore]
 fn scaffold_from_create_table_with_multi_column_index() -> Result<()> {
     todo!();
+}
+
+#[test]
+#[serial]
+fn scaffold_from_create_table_with_not_null_assert() -> Result<()> {
+    clear_files_dir()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("scaffold")
+        .arg("schema")
+        .arg("schema-files/mssql/create_table_with_not_null.sql")
+        .arg("--db-type")
+        .arg("mssql");
+
+    cmd.assert().success();
+
+    assert!(is_file_exists(
+        "tests-files/schemas/script_migration.surql"
+    )?);
+
+    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert_eq!(schema_files.count(), 2);
+
+    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    assert_eq!(
+        post_schema,
+        "DEFINE TABLE post SCHEMALESS;
+
+DEFINE FIELD id ON post ASSERT $value != NONE;
+DEFINE FIELD title ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD content ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD status ON post TYPE string ASSERT $value != NONE;
+DEFINE FIELD created_at ON post TYPE datetime ASSERT $value != NONE;
+"
+    );
+
+    assert!(is_empty_folder("tests-files/events")?);
+    assert!(is_empty_folder("tests-files/migrations")?);
+
+    Ok(())
 }
 
 #[test]
