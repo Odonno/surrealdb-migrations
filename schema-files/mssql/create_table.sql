@@ -1,7 +1,7 @@
 CREATE TABLE Post (
     [Id] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-    [Title] NVARCHAR(255) NOT NULL,
-    [Content] TEXT NOT NULL,
-    [Status] NVARCHAR(50) NOT NULL,
-    [CreatedAt] DATETIME NOT NULL,
+    [Title] NVARCHAR(255),
+    [Content] TEXT,
+    [Status] NVARCHAR(50),
+    [CreatedAt] DATETIME,
 )

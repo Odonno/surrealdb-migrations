@@ -40,6 +40,7 @@ enum SurrealdbFieldType {
 struct SurrealdbSchemaFieldDefinition {
     name: String,
     type_: Option<SurrealdbFieldType>,
+    not_null: bool,
 }
 
 #[derive(Debug)]
@@ -121,9 +122,15 @@ fn scaffold_from_schema(
                         None => String::new(),
                     };
 
+                    let assert_str = if field_definition.not_null {
+                        " ASSERT $value != NONE"
+                    } else {
+                        ""
+                    };
+
                     table_definition_str.push_str(&format!(
-                        "DEFINE FIELD {} ON {}{};\n",
-                        field_definition.name, table_name, field_type_str
+                        "DEFINE FIELD {} ON {}{}{};\n",
+                        field_definition.name, table_name, field_type_str, assert_str
                     ));
                 }
                 SurrealdbSchemaLineDefinition::Index(index_definition) => {
@@ -254,17 +261,30 @@ fn convert_ast_to_surrealdb_schema(
                         }
                     }
 
+                    let mut is_not_null = false;
+
+                    // Detect unique constraints
+                    for column_option in &column.options {
+                        match column_option.option {
+                            sqlparser::ast::ColumnOption::NotNull => {
+                                is_not_null = true;
+                            }
+                            _ => {}
+                        }
+                    }
+
                     let line_definition =
                         SurrealdbSchemaLineDefinition::Field(SurrealdbSchemaFieldDefinition {
                             name: field_name.to_string(),
                             type_: field_type,
+                            not_null: is_not_null,
                         });
                     line_definitions.push(line_definition);
 
                     // Detect unique constraints
                     for column_option in &column.options {
                         let option_name = &column_option.name;
-                        let option_name = match option_name {
+                        let index_name = match option_name {
                             Some(name) => name.value.to_string(),
                             None => format!("{}_{}_index", table_name, field_name.to_string()),
                         };
@@ -275,7 +295,7 @@ fn convert_ast_to_surrealdb_schema(
                                     let line_definition: SurrealdbSchemaLineDefinition =
                                         SurrealdbSchemaLineDefinition::Index(
                                             SurrealdbSchemaIndexDefinition {
-                                                name: option_name,
+                                                name: index_name,
                                                 field_names: vec![field_name.to_string()],
                                                 unique: true,
                                             },
