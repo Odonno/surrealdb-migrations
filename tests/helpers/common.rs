@@ -171,6 +171,19 @@ DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();";
 }
 
 pub fn get_first_migration_name() -> Result<String> {
+    let first_migration_file = get_first_migration_file()?;
+
+    let first_migration_name = first_migration_file
+        .file_stem()
+        .ok_or_else(|| anyhow!("Could not get file stem"))?
+        .to_str()
+        .ok_or_else(|| anyhow!("Could not convert file stem to str"))?
+        .to_owned();
+
+    Ok(first_migration_name)
+}
+
+pub fn get_first_migration_file() -> Result<PathBuf> {
     let migrations_files_dir = std::path::Path::new("tests-files/migrations");
 
     let mut migration_files = fs::read_dir(migrations_files_dir)?
@@ -187,14 +200,7 @@ pub fn get_first_migration_name() -> Result<String> {
         .first()
         .ok_or_else(|| anyhow!("No migration files found"))?;
 
-    let first_migration_name = first_migration_file
-        .file_stem()
-        .ok_or_else(|| anyhow!("Could not get file stem"))?
-        .to_str()
-        .ok_or_else(|| anyhow!("Could not convert file stem to str"))?
-        .to_owned();
-
-    Ok(first_migration_name)
+    Ok(first_migration_file.to_path_buf())
 }
 
 pub fn are_folders_equivalent(folder_one: &str, folder_two: &str) -> Result<bool> {

@@ -48,6 +48,7 @@ mod constants;
 mod definitions;
 mod models;
 mod surrealdb;
+mod validate_version_order;
 
 /// The configuration used to connect to a SurrealDB instance.
 pub struct SurrealdbConfiguration {
@@ -98,6 +99,37 @@ impl SurrealdbMigrations {
     /// Create a new instance of SurrealdbMigrations.
     pub fn new(db_configuration: SurrealdbConfiguration) -> SurrealdbMigrations {
         SurrealdbMigrations { db_configuration }
+    }
+
+    /// Validate the version order of the migrations so that you cannot run migrations if there are
+    /// gaps in the migrations history.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use anyhow::Result;
+    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db_configuration = SurrealdbConfiguration::default();
+    /// let runner = SurrealdbMigrations::new(db_configuration);
+    ///
+    /// runner.validate_version_order().await?;
+    /// runner.up().await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn validate_version_order(&self) -> Result<()> {
+        validate_version_order::main(
+            self.db_configuration.url.clone(),
+            self.db_configuration.ns.clone(),
+            self.db_configuration.db.clone(),
+            self.db_configuration.username.clone(),
+            self.db_configuration.password.clone(),
+        )
+        .await
     }
 
     /// Apply schema definitions and apply all migrations.
