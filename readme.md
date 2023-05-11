@@ -166,3 +166,11 @@ You can create a `.surrealdb` configuration file at the root of your project. Th
 In the `core` section, you can define the path to your schema/migration files, if it is not the current folder.
 
 In the `db` section, you can define the values used to access your SurrealDB database. It can be the `url`, `username`, `password`, the namespace `ns` or the name of the database `db`.
+
+## Credits
+
+Inspired by awesome projects:
+
+- [Entity Framework](https://github.com/dotnet/efcore)
+- [Fluent Migrator](https://github.com/fluentmigrator/fluentmigrator)
+- [kards-social](https://github.com/theopensource-company/kards-social) by Micha de Vries [@kearfy](https://github.com/kearfy)
