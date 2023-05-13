@@ -3,14 +3,14 @@ use regex::Regex;
 use serial_test::serial;
 use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[tokio::test]
 #[serial]
 async fn ok_if_no_migration_file() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_empty_template()?;
 
             let configuration = SurrealdbConfiguration::default();
@@ -29,7 +29,7 @@ async fn ok_if_no_migration_file() -> Result<()> {
 async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
@@ -50,7 +50,7 @@ async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
 async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
@@ -72,7 +72,7 @@ async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Res
 async fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
@@ -83,7 +83,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
 
             runner.up().await?;
 
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let result = runner.validate_version_order().await;

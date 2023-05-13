@@ -1,12 +1,12 @@
 use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn remove_last_migration() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_blog_template()?;
 
     let mut cmd = create_cmd()?;
@@ -23,7 +23,7 @@ fn remove_last_migration() -> Result<()> {
 #[test]
 #[serial]
 fn cannot_remove_if_no_migration_file_left() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_empty_template()?;
 
     let mut cmd = create_cmd()?;

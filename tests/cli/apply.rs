@@ -1,13 +1,13 @@
 use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn apply_initial_schema_changes() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
         remove_folder("tests-files/migrations")?;
 
@@ -30,7 +30,7 @@ Migration files successfully executed!\n",
 #[test]
 #[serial]
 fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_blog_template()?;
 
     let mut cmd = create_cmd()?;
@@ -51,7 +51,7 @@ Caused by:
 #[serial]
 fn apply_new_schema_changes() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
 
         empty_folder("tests-files/migrations")?;
@@ -80,7 +80,7 @@ Migration files successfully executed!\n",
 #[serial]
 fn apply_initial_migrations() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
 
         let mut cmd = create_cmd()?;
@@ -106,7 +106,7 @@ Migration files successfully executed!\n",
 #[serial]
 fn apply_with_skipped_migrations() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
 
         let first_migration_name = get_first_migration_name()?;
@@ -132,7 +132,7 @@ Migration files successfully executed!\n",
 #[serial]
 fn apply_new_migrations() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
 
         let first_migration_name = get_first_migration_name()?;
@@ -160,7 +160,7 @@ Migration files successfully executed!\n",
 #[serial]
 fn apply_with_db_configuration() -> Result<()> {
     run_with_surreal_instance_with_admin_user(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
         empty_folder("tests-files/migrations")?;
 
@@ -192,7 +192,7 @@ Migration files successfully executed!\n",
 #[serial]
 fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
         empty_folder("tests-files/migrations")?;
         remove_folder("tests-files/events")?;
@@ -217,7 +217,7 @@ Migration files successfully executed!\n",
 async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             remove_folder("tests-files/migrations")?;
 
@@ -242,7 +242,7 @@ async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
 async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let mut cmd = create_cmd()?;

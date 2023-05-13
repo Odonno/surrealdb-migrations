@@ -2,13 +2,13 @@ use anyhow::Result;
 use chrono::Local;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn list_empty_migrations() -> Result<()> {
     run_with_surreal_instance(|| {
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_empty_template()?;
         apply_migrations()?;
 
@@ -29,7 +29,7 @@ fn list_blog_migrations() -> Result<()> {
     run_with_surreal_instance(|| {
         let now = Local::now();
 
-        clear_files_dir()?;
+        clear_tests_files()?;
         scaffold_blog_template()?;
         apply_migrations()?;
 
