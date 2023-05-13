@@ -50,6 +50,7 @@ mod surrealdb;
 mod validate_version_order;
 
 use anyhow::Result;
+use apply::ApplyArgs;
 pub use input::SurrealdbConfiguration;
 use models::ScriptMigration;
 
@@ -126,7 +127,13 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn up(&self) -> Result<()> {
-        apply::execute(None, &self.db_configuration, false).await
+        let args = ApplyArgs {
+            up: None,
+            db_configuration: &self.db_configuration,
+            display_logs: false,
+            dry_run: false,
+        };
+        apply::main(args).await
     }
 
     /// Apply schema definitions and all migrations up to and including the named migration.
@@ -150,7 +157,13 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn up_to(&self, name: &str) -> Result<()> {
-        apply::execute(Some(name.to_string()), &self.db_configuration, false).await
+        let args = ApplyArgs {
+            up: Some(name.to_string()),
+            db_configuration: &self.db_configuration,
+            display_logs: false,
+            dry_run: false,
+        };
+        apply::main(args).await
     }
 
     /// List script migrations that have been applied to the database.

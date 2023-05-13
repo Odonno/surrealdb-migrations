@@ -1,10 +1,17 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use assert_cmd::Command;
 use std::{
+    collections::HashMap,
     fs, io,
     path::{Path, PathBuf},
     process::{Child, Stdio},
 };
+use surrealdb::{
+    engine::remote::ws::{Client, Ws},
+    opt::auth::Root,
+    Surreal,
+};
+use surrealdb_migrations::SurrealdbConfiguration;
 
 pub fn clear_files_dir() -> Result<()> {
     let files_dir = std::path::Path::new("tests-files");
@@ -94,6 +101,78 @@ fn start_surreal_process(username: &str, password: &str) -> Result<Child> {
         .spawn()?;
 
     Ok(child_process)
+}
+
+pub async fn check_surrealdb_empty() -> Result<()> {
+    let db_configuration = SurrealdbConfiguration::default();
+
+    let client = create_surrealdb_client(&db_configuration).await?;
+
+    let mut response = client.query("INFO FOR DB;").await?;
+
+    let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
+    let table_definitions = result.context("Failed to get table definitions")?;
+
+    if table_definitions.len() > 0 {
+        return Err(anyhow!("SurrealDB instance is not empty"));
+    }
+
+    Ok(())
+}
+
+type SurrealdbTableDefinitions = HashMap<String, String>;
+
+pub async fn create_surrealdb_client(
+    db_configuration: &SurrealdbConfiguration,
+) -> Result<Surreal<Client>> {
+    let SurrealdbConfiguration {
+        url,
+        username,
+        password,
+        ns,
+        db,
+    } = db_configuration;
+
+    let client = create_surrealdb_connection(url.clone()).await?;
+    sign_in(username.clone(), password.clone(), &client).await?;
+    set_namespace_and_database(ns.clone(), db.clone(), &client).await?;
+
+    Ok(client)
+}
+
+async fn create_surrealdb_connection(
+    url: Option<String>,
+) -> Result<Surreal<Client>, surrealdb::Error> {
+    let url = url.unwrap_or("localhost:8000".to_owned());
+
+    Surreal::new::<Ws>(url.to_owned()).await
+}
+
+async fn sign_in(
+    username: Option<String>,
+    password: Option<String>,
+    client: &Surreal<Client>,
+) -> Result<(), surrealdb::Error> {
+    let username = username.unwrap_or("root".to_owned());
+    let password = password.unwrap_or("root".to_owned());
+
+    client
+        .signin(Root {
+            username: &username,
+            password: &password,
+        })
+        .await
+}
+
+async fn set_namespace_and_database(
+    ns: Option<String>,
+    db: Option<String>,
+    client: &Surreal<Client>,
+) -> Result<(), surrealdb::Error> {
+    let ns = ns.unwrap_or("test".to_owned());
+    let db = db.unwrap_or("test".to_owned());
+
+    client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
 }
 
 pub fn scaffold_empty_template() -> Result<()> {

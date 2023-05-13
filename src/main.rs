@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use apply::ApplyArgs;
 use clap::Parser;
 use cli::{Action, Args, CreateAction, ScaffoldAction};
 use create::CreateOperation;
@@ -57,6 +58,7 @@ async fn main() -> Result<()> {
             db,
             username,
             password,
+            dry_run,
         } => {
             let db_configuration = SurrealdbConfiguration {
                 url,
@@ -65,7 +67,13 @@ async fn main() -> Result<()> {
                 username,
                 password,
             };
-            apply::execute(up, &db_configuration, true).await
+            let args = ApplyArgs {
+                up,
+                db_configuration: &db_configuration,
+                display_logs: true,
+                dry_run,
+            };
+            apply::main(args).await
         }
         Action::List {
             url,

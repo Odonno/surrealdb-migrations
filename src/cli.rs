@@ -55,6 +55,8 @@ pub enum Action {
         /// Default value is `root`.
         #[clap(short, long)]
         password: Option<String>,
+        #[clap(long)]
+        dry_run: bool,
     },
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]

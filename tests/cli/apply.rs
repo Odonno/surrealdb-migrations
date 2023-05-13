@@ -211,3 +211,52 @@ Migration files successfully executed!\n",
         Ok(())
     })
 }
+
+#[tokio::test]
+#[serial]
+async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_files_dir()?;
+            scaffold_blog_template()?;
+            remove_folder("tests-files/migrations")?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("apply").arg("--dry-run");
+
+            cmd.assert()
+                .try_success()
+                .and_then(|assert| assert.try_stdout(""))?;
+
+            check_surrealdb_empty().await?;
+
+            Ok(())
+        })
+    })
+    .await
+}
+
+#[tokio::test]
+#[serial]
+async fn apply_initial_migrations_in_dry_run() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_files_dir()?;
+            scaffold_blog_template()?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("apply").arg("--dry-run");
+
+            cmd.assert()
+                .try_success()
+                .and_then(|assert| assert.try_stdout(""))?;
+
+            check_surrealdb_empty().await?;
+
+            Ok(())
+        })
+    })
+    .await
+}

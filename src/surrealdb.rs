@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use surrealdb::{
     engine::remote::ws::{Client, Ws},
     opt::auth::Root,
@@ -85,7 +85,47 @@ async fn list_script_migration(client: &Surreal<Client>) -> Result<Vec<ScriptMig
     Ok(result)
 }
 
-pub fn within_transaction(inner_query: String) -> String {
+pub async fn apply_in_transaction(
+    client: &Surreal<Client>,
+    inner_query: &String,
+    action: TransactionAction,
+) -> Result<()> {
+    let query = format_transaction(inner_query.to_owned(), &action);
+    let response = client.query(query).await?;
+
+    match action {
+        TransactionAction::Rollback => {
+            let first_error = response.check().err().context("Error on rollback")?;
+            let is_rollback_success = first_error.to_string()
+                == "The query was not executed due to a cancelled transaction";
+
+            if is_rollback_success {
+                Ok(())
+            } else {
+                Err(anyhow!(first_error))
+            }
+        }
+        TransactionAction::Commit => {
+            response.check()?;
+            Ok(())
+        }
+    }
+}
+
+fn format_transaction(inner_query: String, action: &TransactionAction) -> String {
+    match action {
+        TransactionAction::Commit => format_transaction_with_commit(inner_query),
+        TransactionAction::Rollback => format_transaction_with_rollback(inner_query),
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum TransactionAction {
+    Commit,
+    Rollback,
+}
+
+fn format_transaction_with_commit(inner_query: String) -> String {
     format!(
         "BEGIN TRANSACTION;
 
@@ -94,4 +134,50 @@ pub fn within_transaction(inner_query: String) -> String {
 COMMIT TRANSACTION;",
         inner_query
     )
+}
+
+fn format_transaction_with_rollback(inner_query: String) -> String {
+    format!(
+        "BEGIN TRANSACTION;
+
+{}
+
+CANCEL TRANSACTION;",
+        inner_query
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn within_transaction_should_return_string() {
+        let inner_query = "DEFINE TABLE post SCHEMALESS;";
+        let result = format_transaction(inner_query.to_owned(), &TransactionAction::Commit);
+
+        assert_eq!(
+            result,
+            "BEGIN TRANSACTION;
+
+DEFINE TABLE post SCHEMALESS;
+
+COMMIT TRANSACTION;"
+        );
+    }
+
+    #[test]
+    fn within_rollback_should_return_string() {
+        let inner_query = "DEFINE TABLE post SCHEMALESS;";
+        let result = format_transaction(inner_query.to_owned(), &TransactionAction::Rollback);
+
+        assert_eq!(
+            result,
+            "BEGIN TRANSACTION;
+
+DEFINE TABLE post SCHEMALESS;
+
+CANCEL TRANSACTION;"
+        );
+    }
 }
