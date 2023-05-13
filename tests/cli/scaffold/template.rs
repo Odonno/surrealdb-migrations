@@ -1,12 +1,12 @@
 use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn scaffold_empty_template() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -28,7 +28,7 @@ fn scaffold_empty_template() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_blog_template() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -55,7 +55,7 @@ fn scaffold_blog_template() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_ecommerce_template() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -82,7 +82,7 @@ fn scaffold_ecommerce_template() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     fs_extra::dir::create("tests-files", false)?;
     fs_extra::dir::create("tests-files/schemas", false)?;
@@ -101,7 +101,7 @@ fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     fs_extra::dir::create("tests-files", false)?;
     fs_extra::dir::create("tests-files/events", false)?;
@@ -120,7 +120,7 @@ fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     fs_extra::dir::create("tests-files", false)?;
     fs_extra::dir::create("tests-files/migrations", false)?;
@@ -139,7 +139,7 @@ fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_fails_if_invalid_template_name() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 

@@ -1,12 +1,12 @@
 use anyhow::Result;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn create_schema_file() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_empty_template()?;
 
     let mut cmd = create_cmd()?;
@@ -36,7 +36,7 @@ DEFINE FIELD published_at ON post;"
 #[test]
 #[serial]
 fn create_event_file() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_empty_template()?;
 
     let mut cmd = create_cmd()?;
@@ -69,7 +69,7 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 #[test]
 #[serial]
 fn create_migration_file() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_empty_template()?;
 
     let mut cmd = create_cmd()?;
@@ -88,7 +88,7 @@ fn create_migration_file() -> Result<()> {
 #[test]
 #[serial]
 fn create_schema_file_dry_run() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -113,7 +113,7 @@ DEFINE FIELD published_at ON post;\n",
 #[test]
 #[serial]
 fn create_event_file_dry_run() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 

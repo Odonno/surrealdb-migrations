@@ -2,12 +2,12 @@ use anyhow::Result;
 use pretty_assertions::assert_eq;
 use serial_test::serial;
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[test]
 #[serial]
 fn scaffold_fails_from_empty_schema_file() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -27,7 +27,7 @@ fn scaffold_fails_from_empty_schema_file() -> Result<()> {
 #[test]
 #[serial]
 fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -47,7 +47,7 @@ fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -
 #[test]
 #[serial]
 fn scaffold_from_create_table() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -88,7 +88,7 @@ DEFINE FIELD created_at ON post TYPE datetime;
 #[test]
 #[serial]
 fn scaffold_from_schema_file_but_preserve_casing() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -130,7 +130,7 @@ DEFINE FIELD CreatedAt ON Post TYPE datetime;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_many_types() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -184,7 +184,7 @@ DEFINE FIELD variant ON test;
 #[test]
 #[serial]
 fn scaffold_from_create_multiple_table_with_relations() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -253,7 +253,7 @@ DEFINE FIELD post ON comment TYPE record(post) ASSERT $value != NONE;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_unique_index() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -296,7 +296,7 @@ DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_multi_column_unique_index() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -336,7 +336,7 @@ DEFINE INDEX Vote_Username_Movie_Unique ON vote COLUMNS username, movie UNIQUE;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_index() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -376,7 +376,7 @@ DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_multi_column_index() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 
@@ -417,7 +417,7 @@ DEFINE INDEX Vote_Name_Color_Size ON product COLUMNS name, color, size;
 #[test]
 #[serial]
 fn scaffold_from_create_table_with_not_null_assert() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
 
     let mut cmd = create_cmd()?;
 

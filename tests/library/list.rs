@@ -3,14 +3,14 @@ use chrono::{DateTime, Local};
 use serial_test::serial;
 use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[tokio::test]
 #[serial]
 async fn list_empty_migrations() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_empty_template()?;
             apply_migrations()?;
 
@@ -32,7 +32,7 @@ async fn list_blog_migrations() -> Result<()> {
         Box::pin(async {
             let now = Local::now();
 
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             apply_migrations()?;
 

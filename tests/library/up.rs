@@ -2,14 +2,14 @@ use anyhow::Result;
 use serial_test::serial;
 use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
 
-use crate::helpers::common::*;
+use crate::helpers::*;
 
 #[tokio::test]
 #[serial]
 async fn apply_initial_schema_changes() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             remove_folder("tests-files/migrations")?;
 
@@ -25,7 +25,7 @@ async fn apply_initial_schema_changes() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
-    clear_files_dir()?;
+    clear_tests_files()?;
     scaffold_blog_template()?;
 
     let configuration = SurrealdbConfiguration::default();
@@ -46,7 +46,7 @@ async fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
 async fn apply_new_schema_changes() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             empty_folder("tests-files/migrations")?;
             apply_migrations()?;
@@ -66,7 +66,7 @@ async fn apply_new_schema_changes() -> Result<()> {
 async fn apply_initial_migrations() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
@@ -83,7 +83,7 @@ async fn apply_initial_migrations() -> Result<()> {
 async fn apply_new_migrations() -> Result<()> {
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
 
             let first_migration_name = get_first_migration_name()?;
@@ -103,7 +103,7 @@ async fn apply_new_migrations() -> Result<()> {
 async fn apply_with_db_configuration() -> Result<()> {
     run_with_surreal_instance_with_admin_user_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             empty_folder("tests-files/migrations")?;
 
@@ -127,7 +127,7 @@ async fn apply_with_db_configuration() -> Result<()> {
 async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     run_with_surreal_instance_with_admin_user_async(|| {
         Box::pin(async {
-            clear_files_dir()?;
+            clear_tests_files()?;
             scaffold_blog_template()?;
             empty_folder("tests-files/migrations")?;
             remove_folder("tests-files/events")?;
