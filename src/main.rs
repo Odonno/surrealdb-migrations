@@ -2,6 +2,7 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use cli::{Action, Args, CreateAction, ScaffoldAction};
 use create::CreateOperation;
+use input::SurrealdbConfiguration;
 
 mod apply;
 mod cli;
@@ -9,6 +10,7 @@ mod config;
 mod constants;
 mod create;
 mod definitions;
+mod input;
 mod list;
 mod models;
 mod remove;
@@ -55,7 +57,16 @@ async fn main() -> Result<()> {
             db,
             username,
             password,
-        } => apply::execute(up, url, ns, db, username, password, true).await,
+        } => {
+            let db_configuration = SurrealdbConfiguration {
+                url,
+                ns,
+                db,
+                username,
+                password,
+            };
+            apply::execute(up, &db_configuration, true).await
+        }
         Action::List {
             url,
             ns,
@@ -63,6 +74,15 @@ async fn main() -> Result<()> {
             username,
             password,
             no_color,
-        } => list::main(url, ns, db, username, password, no_color).await,
+        } => {
+            let db_configuration = SurrealdbConfiguration {
+                url,
+                ns,
+                db,
+                username,
+                password,
+            };
+            list::main(&db_configuration, no_color).await
+        }
     }
 }

@@ -40,34 +40,18 @@
 //! }
 //! ```
 
-use anyhow::Result;
-use models::ScriptMigration;
 mod apply;
 mod config;
 mod constants;
 mod definitions;
+mod input;
 mod models;
 mod surrealdb;
 mod validate_version_order;
 
-/// The configuration used to connect to a SurrealDB instance.
-pub struct SurrealdbConfiguration {
-    /// Url of the surrealdb instance.
-    /// Default value is `localhost:8000`.
-    pub url: Option<String>,
-    /// Namespace to use inside the surrealdb instance.
-    /// Default value is `test`.
-    pub ns: Option<String>,
-    /// Name of the database to use inside the surrealdb instance.
-    /// Default value is `test`.
-    pub db: Option<String>,
-    /// Username used to authenticate to the surrealdb instance.
-    /// Default value is `root`.
-    pub username: Option<String>,
-    /// Password used to authenticate to the surrealdb instance.
-    /// Default value is `root`.
-    pub password: Option<String>,
-}
+use anyhow::Result;
+pub use input::SurrealdbConfiguration;
+use models::ScriptMigration;
 
 impl SurrealdbConfiguration {
     /// Create an instance of SurrealdbConfiguration with default values.
@@ -122,14 +106,7 @@ impl SurrealdbMigrations {
     /// # }
     /// ```
     pub async fn validate_version_order(&self) -> Result<()> {
-        validate_version_order::main(
-            self.db_configuration.url.clone(),
-            self.db_configuration.ns.clone(),
-            self.db_configuration.db.clone(),
-            self.db_configuration.username.clone(),
-            self.db_configuration.password.clone(),
-        )
-        .await
+        validate_version_order::main(&self.db_configuration).await
     }
 
     /// Apply schema definitions and apply all migrations.
@@ -149,16 +126,7 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn up(&self) -> Result<()> {
-        apply::execute(
-            None,
-            self.db_configuration.url.clone(),
-            self.db_configuration.ns.clone(),
-            self.db_configuration.db.clone(),
-            self.db_configuration.username.clone(),
-            self.db_configuration.password.clone(),
-            false,
-        )
-        .await
+        apply::execute(None, &self.db_configuration, false).await
     }
 
     /// Apply schema definitions and all migrations up to and including the named migration.
@@ -182,16 +150,7 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn up_to(&self, name: &str) -> Result<()> {
-        apply::execute(
-            Some(name.to_string()),
-            self.db_configuration.url.clone(),
-            self.db_configuration.ns.clone(),
-            self.db_configuration.db.clone(),
-            self.db_configuration.username.clone(),
-            self.db_configuration.password.clone(),
-            false,
-        )
-        .await
+        apply::execute(Some(name.to_string()), &self.db_configuration, false).await
     }
 
     /// List script migrations that have been applied to the database.
@@ -214,14 +173,7 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn list(&self) -> Result<Vec<ScriptMigration>> {
-        let client = surrealdb::create_surrealdb_client(
-            self.db_configuration.url.clone(),
-            self.db_configuration.ns.clone(),
-            self.db_configuration.db.clone(),
-            self.db_configuration.username.clone(),
-            self.db_configuration.password.clone(),
-        )
-        .await?;
+        let client = surrealdb::create_surrealdb_client(&self.db_configuration).await?;
 
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await
     }

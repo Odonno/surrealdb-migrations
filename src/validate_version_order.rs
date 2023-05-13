@@ -6,16 +6,13 @@ use std::{
 use anyhow::{anyhow, Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
 
-use crate::{config, constants::MIGRATIONS_DIR_NAME, models::ScriptMigration, surrealdb};
+use crate::{
+    config, constants::MIGRATIONS_DIR_NAME, input::SurrealdbConfiguration, models::ScriptMigration,
+    surrealdb,
+};
 
-pub async fn main(
-    url: Option<String>,
-    ns: Option<String>,
-    db: Option<String>,
-    username: Option<String>,
-    password: Option<String>,
-) -> Result<()> {
-    let client = surrealdb::create_surrealdb_client(url, ns, db, username, password).await?;
+pub async fn main(db_configuration: &SurrealdbConfiguration) -> Result<()> {
+    let client = surrealdb::create_surrealdb_client(db_configuration).await?;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
