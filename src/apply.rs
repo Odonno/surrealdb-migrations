@@ -12,14 +12,29 @@ use crate::{
     definitions,
     input::SurrealdbConfiguration,
     models::ScriptMigration,
-    surrealdb,
+    surrealdb::{self, TransactionAction},
 };
 
-pub async fn execute(
-    up: Option<String>,
-    db_configuration: &SurrealdbConfiguration,
-    display_logs: bool,
-) -> Result<()> {
+pub struct ApplyArgs<'a> {
+    pub up: Option<String>,
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub display_logs: bool,
+    pub dry_run: bool,
+}
+
+pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
+    let ApplyArgs {
+        up,
+        db_configuration,
+        display_logs,
+        dry_run,
+    } = args;
+
+    let display_logs = match dry_run {
+        true => false,
+        false => display_logs,
+    };
+
     let client = surrealdb::create_surrealdb_client(&db_configuration).await?;
 
     let migrations_applied =
@@ -38,7 +53,7 @@ pub async fn execute(
 
     let schemas_files = fs_extra::dir::ls(schemas_dir_path, &config)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
-    apply_schema_definitions(&client, &schema_definitions).await?;
+    apply_schema_definitions(&client, &schema_definitions, dry_run).await?;
 
     if display_logs {
         println!("Schema files successfully executed!");
@@ -47,7 +62,7 @@ pub async fn execute(
     let event_definitions = if events_dir_path.try_exists()? {
         let events_files = fs_extra::dir::ls(events_dir_path, &config)?;
         let event_definitions = extract_event_definitions(events_files);
-        apply_event_definitions(&client, &event_definitions).await?;
+        apply_event_definitions(&client, &event_definitions, dry_run).await?;
 
         if display_logs {
             println!("Event files successfully executed!");
@@ -82,7 +97,7 @@ pub async fn execute(
     let migration_files_to_execute =
         get_migration_files_to_execute(&migrations_files, up, &migrations_applied);
 
-    apply_migrations(migration_files_to_execute, display_logs, client).await?;
+    apply_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
 
     if display_logs {
         println!("Migration files successfully executed!");
@@ -118,24 +133,26 @@ fn concat_files_content(files: LsResult) -> String {
 async fn apply_schema_definitions(
     client: &Surreal<Client>,
     schema_definitions: &String,
+    dry_run: bool,
 ) -> Result<()> {
-    apply_in_transaction(client, schema_definitions).await
+    let action = get_transaction_action(dry_run);
+    surrealdb::apply_in_transaction(client, schema_definitions, action).await
 }
 
 async fn apply_event_definitions(
     client: &Surreal<Client>,
     event_definitions: &String,
+    dry_run: bool,
 ) -> Result<()> {
-    apply_in_transaction(client, event_definitions).await
+    let action = get_transaction_action(dry_run);
+    surrealdb::apply_in_transaction(client, event_definitions, action).await
 }
 
-async fn apply_in_transaction(client: &Surreal<Client>, inner_query: &String) -> Result<()> {
-    let response = client
-        .query(surrealdb::within_transaction(inner_query.to_owned()))
-        .await?;
-
-    response.check()?;
-    Ok(())
+fn get_transaction_action(dry_run: bool) -> TransactionAction {
+    match dry_run {
+        true => TransactionAction::Rollback,
+        false => TransactionAction::Commit,
+    }
 }
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
@@ -415,6 +432,7 @@ async fn apply_migrations(
     migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
     display_logs: bool,
     client: Surreal<Client>,
+    dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
         let name = migration_file
@@ -454,7 +472,8 @@ CREATE script_migration SET script_name = '{}';",
             println!("Executing migration {}...", script_display_name);
         }
 
-        apply_in_transaction(&client, &query).await?;
+        let transaction_action = get_transaction_action(dry_run);
+        surrealdb::apply_in_transaction(&client, &query, transaction_action).await?;
     }
 
     Ok(())
