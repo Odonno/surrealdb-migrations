@@ -10,20 +10,17 @@ use crate::{
     config,
     constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
     definitions,
+    input::SurrealdbConfiguration,
     models::ScriptMigration,
     surrealdb,
 };
 
 pub async fn execute(
     up: Option<String>,
-    url: Option<String>,
-    ns: Option<String>,
-    db: Option<String>,
-    username: Option<String>,
-    password: Option<String>,
+    db_configuration: &SurrealdbConfiguration,
     display_logs: bool,
 ) -> Result<()> {
-    let client = surrealdb::create_surrealdb_client(url, ns, db, username, password).await?;
+    let client = surrealdb::create_surrealdb_client(&db_configuration).await?;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;

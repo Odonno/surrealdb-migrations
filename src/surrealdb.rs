@@ -5,20 +5,24 @@ use surrealdb::{
     Surreal,
 };
 
-use crate::{config, models::ScriptMigration};
+use crate::{config, input::SurrealdbConfiguration, models::ScriptMigration};
 
 pub async fn create_surrealdb_client(
-    url: Option<String>,
-    ns: Option<String>,
-    db: Option<String>,
-    username: Option<String>,
-    password: Option<String>,
+    db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Client>> {
+    let SurrealdbConfiguration {
+        url,
+        username,
+        password,
+        ns,
+        db,
+    } = db_configuration;
+
     let db_config = config::retrieve_db_config();
 
-    let client = create_surrealdb_connection(url, &db_config).await?;
-    sign_in(username, password, &db_config, &client).await?;
-    set_namespace_and_database(ns, db, &db_config, &client).await?;
+    let client = create_surrealdb_connection(url.clone(), &db_config).await?;
+    sign_in(username.clone(), password.clone(), &db_config, &client).await?;
+    set_namespace_and_database(ns.clone(), db.clone(), &db_config, &client).await?;
 
     Ok(client)
 }
