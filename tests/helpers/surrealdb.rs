@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use std::{
     collections::HashMap,
     process::{Child, Stdio},
+    thread, time,
 };
 use surrealdb::{
     engine::remote::ws::{Client, Ws},
@@ -33,6 +34,10 @@ where
     F: FnOnce() -> Result<()>,
 {
     let mut child_process = start_surreal_process(username, password)?;
+
+    while !is_surreal_ready()? {
+        thread::sleep(time::Duration::from_millis(100));
+    }
 
     let result = function();
 
@@ -66,6 +71,10 @@ where
 {
     let mut child_process = start_surreal_process(username, password)?;
 
+    while !is_surreal_ready()? {
+        tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    }
+
     let result = function().await;
 
     match child_process.kill() {
@@ -88,6 +97,21 @@ fn start_surreal_process(username: &str, password: &str) -> Result<Child> {
         .spawn()?;
 
     Ok(child_process)
+}
+
+fn is_surreal_ready() -> Result<bool> {
+    let child_process = std::process::Command::new("surreal")
+        .arg("isready")
+        .arg("--conn")
+        .arg("http://localhost:8000")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+
+    let output = child_process.wait_with_output()?;
+
+    Ok(output.status.success())
 }
 
 pub async fn check_surrealdb_empty() -> Result<()> {
