@@ -1,4 +1,7 @@
+use std::path::Path;
+
 use anyhow::Result;
+use pretty_assertions::assert_eq;
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -79,7 +82,6 @@ fn create_migration_file() -> Result<()> {
     cmd.assert().success();
 
     let migrations_folder = std::fs::read_dir("tests-files/migrations")?;
-
     assert_eq!(migrations_folder.count(), 1);
 
     Ok(())
@@ -106,6 +108,9 @@ DEFINE FIELD name ON post;
 DEFINE FIELD title ON post;
 DEFINE FIELD published_at ON post;\n",
     );
+
+    let schemas_folder = Path::new("tests-files/schemas");
+    assert_eq!(schemas_folder.exists(), false);
 
     Ok(())
 }
@@ -134,6 +139,41 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
     # TODO
 );\n",
     );
+
+    let events_folder = Path::new("tests-files/events");
+    assert_eq!(events_folder.exists(), false);
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn create_migration_file_with_down_file() -> Result<()> {
+    clear_tests_files()?;
+    scaffold_empty_template()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("create")
+        .arg("migration")
+        .arg("AddPost")
+        .arg("--down");
+
+    cmd.assert().success();
+
+    let migrations_folder = std::fs::read_dir("tests-files/migrations")?;
+    let migration_files = migrations_folder.filter(|entry| match entry {
+        Ok(entry) => entry.file_type().unwrap().is_file(),
+        Err(_) => false,
+    });
+    assert_eq!(migration_files.count(), 1);
+
+    let down_migrations_folder = std::fs::read_dir("tests-files/migrations/down")?;
+    let down_migration_files = down_migrations_folder.filter(|entry| match entry {
+        Ok(entry) => entry.file_type().unwrap().is_file(),
+        Err(_) => false,
+    });
+    assert_eq!(down_migration_files.count(), 1);
 
     Ok(())
 }
