@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use apply::ApplyArgs;
 use clap::Parser;
 use cli::{Action, Args, CreateAction, ScaffoldAction};
-use create::CreateOperation;
+use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 
 mod apply;
@@ -31,21 +31,39 @@ async fn main() -> Result<()> {
                 preserve_casing,
             } => scaffold::schema::main(schema, db_type, preserve_casing),
         },
-        Action::Create { command, name } => match name {
-            Some(name) => create::main(name, CreateOperation::Migration, None, false),
+        Action::Create {
+            command,
+            name,
+            down,
+        } => match name {
+            Some(name) => {
+                let operation = CreateOperation::Migration(CreateMigrationArgs { down });
+                let args = CreateArgs { name, operation };
+                create::main(args)
+            }
             None => match command {
                 Some(CreateAction::Schema {
                     name,
                     fields,
                     dry_run,
-                }) => create::main(name, CreateOperation::Schema, fields, dry_run),
+                }) => {
+                    let operation = CreateOperation::Schema(CreateSchemaArgs { fields, dry_run });
+                    let args = CreateArgs { name, operation };
+                    create::main(args)
+                }
                 Some(CreateAction::Event {
                     name,
                     fields,
                     dry_run,
-                }) => create::main(name, CreateOperation::Event, fields, dry_run),
-                Some(CreateAction::Migration { name }) => {
-                    create::main(name, CreateOperation::Migration, None, false)
+                }) => {
+                    let operation = CreateOperation::Event(CreateEventArgs { fields, dry_run });
+                    let args = CreateArgs { name, operation };
+                    create::main(args)
+                }
+                Some(CreateAction::Migration { name, down }) => {
+                    let operation = CreateOperation::Migration(CreateMigrationArgs { down });
+                    let args = CreateArgs { name, operation };
+                    create::main(args)
                 }
                 None => Err(anyhow!("No action specified for `create` command")),
             },

@@ -24,6 +24,9 @@ pub enum Action {
         command: Option<CreateAction>,
         /// Name of the migration to create
         name: Option<String>,
+        /// Also generates a new DOWN migration file inside the `/migrations/down` folder
+        #[clap(long)]
+        down: bool,
     },
     /// Remove last migration file
     #[clap(aliases = vec!["rm"])]
@@ -156,5 +159,8 @@ pub enum CreateAction {
     Migration {
         /// Name of the migration to generate
         name: String,
+        /// Also generates a new DOWN migration file inside the `/migrations/down` folder
+        #[clap(long)]
+        down: bool,
     },
 }
