@@ -46,8 +46,15 @@ fn scaffold_blog_template() -> Result<()> {
         "tests-files/events"
     )?);
 
-    let migration_files = std::fs::read_dir("tests-files/migrations")?;
+    let migration_files: std::fs::ReadDir = std::fs::read_dir("tests-files/migrations")?;
+    let migration_files = migration_files.filter(|entry| match entry {
+        Ok(entry) => entry.file_type().unwrap().is_file(),
+        Err(_) => false,
+    });
     assert_eq!(migration_files.count(), 3);
+
+    let down_migration_files = std::fs::read_dir("tests-files/migrations/down")?;
+    assert_eq!(down_migration_files.count(), 3);
 
     Ok(())
 }
@@ -74,7 +81,14 @@ fn scaffold_ecommerce_template() -> Result<()> {
     )?);
 
     let migration_files = std::fs::read_dir("tests-files/migrations")?;
+    let migration_files = migration_files.filter(|entry| match entry {
+        Ok(entry) => entry.file_type().unwrap().is_file(),
+        Err(_) => false,
+    });
     assert_eq!(migration_files.count(), 3);
+
+    let down_migration_files = std::fs::read_dir("tests-files/migrations/down")?;
+    assert_eq!(down_migration_files.count(), 3);
 
     Ok(())
 }
