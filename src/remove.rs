@@ -16,14 +16,25 @@ pub fn main() -> Result<()> {
     config.insert(DirEntryAttr::Name);
     config.insert(DirEntryAttr::Path);
     config.insert(DirEntryAttr::FullName);
+    config.insert(DirEntryAttr::IsFile);
 
     let migrations_files = fs_extra::dir::ls(&migrations_path, &config)?;
+    let migrations_files = migrations_files
+        .items
+        .iter()
+        .filter(
+            |migration_file| match migration_file.get(&DirEntryAttr::IsFile) {
+                Some(DirEntryValue::Boolean(is_file)) => *is_file,
+                _ => false,
+            },
+        )
+        .collect::<Vec<_>>();
 
-    if migrations_files.items.is_empty() {
+    if migrations_files.is_empty() {
         return Err(anyhow!("No migration files left"));
     }
 
-    let mut sorted_migrations_files = migrations_files.items.iter().collect::<Vec<_>>();
+    let mut sorted_migrations_files = migrations_files;
     sorted_migrations_files.sort_by(|a, b| {
         let a = a.get(&DirEntryAttr::Name);
         let b = b.get(&DirEntryAttr::Name);
@@ -73,6 +84,23 @@ pub fn main() -> Result<()> {
 
     if migration_definition_file_path.exists() {
         std::fs::remove_file(migration_definition_file_path)?;
+    }
+
+    // Remove down migration file if exists
+    let down_migration_file_path = Path::new(&migrations_path)
+        .join("down")
+        .join(last_migration_fullname);
+
+    if down_migration_file_path.exists() {
+        std::fs::remove_file(down_migration_file_path)?;
+    }
+
+    // Remove inlined down migration file if exists
+    let inlined_down_migration_file_path =
+        Path::new(&migrations_path).join(format!("{}.down.surql", last_migration_filename));
+
+    if inlined_down_migration_file_path.exists() {
+        std::fs::remove_file(inlined_down_migration_file_path)?;
     }
 
     println!(

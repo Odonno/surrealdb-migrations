@@ -17,6 +17,16 @@ fn remove_last_migration() -> Result<()> {
         .success()
         .stdout("Migration 'CommentPost' successfully removed\n");
 
+    let migration_files = std::fs::read_dir("tests-files/migrations")?;
+    let migration_files = migration_files.filter(|entry| match entry {
+        Ok(entry) => entry.file_type().unwrap().is_file(),
+        Err(_) => false,
+    });
+    assert_eq!(migration_files.count(), 2);
+
+    let down_migration_files = std::fs::read_dir("tests-files/migrations/down")?;
+    assert_eq!(down_migration_files.count(), 2);
+
     Ok(())
 }
 
