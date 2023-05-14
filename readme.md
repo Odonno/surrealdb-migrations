@@ -38,7 +38,7 @@ A migration file represents a change in SurrealDB data. It can be a change in th
 You can start a migration project by scaffolding a new project using the following command line:
 
 ```
-surrealdb-migrations scaffold template empty
+surrealdb-migrations scaffold empty
 ```
 
 This will create the necessary folders and files in order to perform migrations. The `empty` template should look like this:
