@@ -1,0 +1,2 @@
+DELETE address;
+DELETE customer;

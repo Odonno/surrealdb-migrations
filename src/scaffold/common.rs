@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use chrono::{DateTime, Local};
 use include_dir::{include_dir, Dir};
 use std::{
     io::Write,
@@ -31,7 +32,10 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
     ensures_folder_exists(&events_dir_path)?;
     ensures_folder_exists(&migrations_dir_path)?;
 
-    rename_migrations_files_to_match_current_date(&migrations_dir_path)?;
+    let now = chrono::Local::now();
+
+    rename_migrations_files_to_match_current_date(now, &migrations_dir_path)?;
+    rename_down_migrations_files_to_match_current_date(now, &migrations_dir_path)?;
 
     Ok(())
 }
@@ -117,8 +121,10 @@ fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn rename_migrations_files_to_match_current_date(migrations_dir_path: &PathBuf) -> Result<()> {
-    let now = chrono::Local::now();
+fn rename_migrations_files_to_match_current_date(
+    now: DateTime<Local>,
+    migrations_dir_path: &PathBuf,
+) -> Result<()> {
     let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_")?;
 
     let migrations_dir = std::fs::read_dir(&migrations_dir_path)?;
@@ -157,6 +163,19 @@ fn rename_migrations_files_to_match_current_date(migrations_dir_path: &PathBuf) 
         let to = format!("{}/{}", migrations_dir_path.display(), new_filename);
 
         std::fs::rename(from, to)?;
+    }
+
+    Ok(())
+}
+
+fn rename_down_migrations_files_to_match_current_date(
+    now: DateTime<Local>,
+    migrations_dir_path: &PathBuf,
+) -> Result<()> {
+    let down_migrations_dir_path = migrations_dir_path.join("down");
+
+    if down_migrations_dir_path.exists() {
+        rename_migrations_files_to_match_current_date(now, &down_migrations_dir_path)?;
     }
 
     Ok(())
