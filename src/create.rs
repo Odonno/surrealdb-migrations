@@ -34,6 +34,12 @@ pub struct CreateMigrationArgs {
 pub fn main(args: CreateArgs) -> Result<()> {
     let CreateArgs { name, operation } = args;
 
+    let dry_run = match &operation {
+        CreateOperation::Schema(args) => args.dry_run,
+        CreateOperation::Event(args) => args.dry_run,
+        CreateOperation::Migration(_) => false,
+    };
+
     let folder_path = config::retrieve_folder_path();
 
     let dir_name = match operation {
@@ -42,92 +48,23 @@ pub fn main(args: CreateArgs) -> Result<()> {
         CreateOperation::Migration(_) => MIGRATIONS_DIR_NAME,
     };
 
-    // Retrieve folder path
-    let folder_path = match folder_path.to_owned() {
-        Some(folder_path) => {
-            let path = Path::new(&folder_path);
-            path.join(dir_name)
-        }
-        None => Path::new(dir_name).to_path_buf(),
-    };
+    let folder_path = concat_path(&folder_path, dir_name);
 
-    let filename = match &operation {
-        CreateOperation::Schema(_) => format!("{}.surql", name),
-        CreateOperation::Event(_) => format!("{}.surql", name),
-        CreateOperation::Migration(_) => {
-            let now = chrono::Local::now();
-            format!(
-                "{}_{}_{}.surql",
-                now.format("%Y%m%d"),
-                now.format("%H%M%S"),
-                name
-            )
-        }
-    };
+    let filename = get_filename(&operation, &name);
 
     let file_path = folder_path.join(&filename);
 
-    let dry_run = match &operation {
-        CreateOperation::Schema(args) => args.dry_run,
-        CreateOperation::Event(args) => args.dry_run,
-        CreateOperation::Migration(_) => false,
-    };
-
     if !dry_run {
-        // Check that directory exists
         if !folder_path.exists() {
             return Err(anyhow!("Directory {} doesn't exist", dir_name));
         }
 
-        // Check that file doesn't already exist
         if file_path.exists() {
             return Err(anyhow!("File {} already exists", filename));
         }
     }
 
-    let content = match &operation {
-        CreateOperation::Schema(args) => {
-            // Generate field definitions
-            let field_definitions = match &args.fields {
-                Some(fields) => fields
-                    .iter()
-                    .map(|field| format!("DEFINE FIELD {} ON {};", field, name))
-                    .collect::<Vec<String>>()
-                    .join("\n"),
-                None => format!("# DEFINE FIELD field ON {};", name),
-            };
-
-            format!(
-                "DEFINE TABLE {0} SCHEMALESS;
-
-{1}",
-                name, field_definitions
-            )
-        }
-        CreateOperation::Event(args) => {
-            // Generate field definitions
-            let field_definitions = match &args.fields {
-                Some(fields) => fields
-                    .iter()
-                    .map(|field| format!("DEFINE FIELD {} ON {};", field, name))
-                    .collect::<Vec<String>>()
-                    .join("\n"),
-                None => format!("# DEFINE FIELD field ON {};", name),
-            };
-
-            format!(
-                "DEFINE TABLE {0} SCHEMALESS;
-
-{1}
-
-DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
-    # TODO
-);",
-                name, field_definitions
-            )
-        }
-        CreateOperation::Migration(_) => "".to_string(),
-    };
+    let content = generate_file_content(&operation, name);
 
     match dry_run {
         true => {
@@ -154,6 +91,70 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
     }
 
     Ok(())
+}
+
+fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
+    match folder_path.to_owned() {
+        Some(folder_path) => Path::new(&folder_path).join(dir_name),
+        None => Path::new(dir_name).to_path_buf(),
+    }
+}
+
+fn get_filename(operation: &CreateOperation, name: &String) -> String {
+    match operation {
+        CreateOperation::Schema(_) => format!("{}.surql", name),
+        CreateOperation::Event(_) => format!("{}.surql", name),
+        CreateOperation::Migration(_) => {
+            let now = chrono::Local::now();
+            format!(
+                "{}_{}_{}.surql",
+                now.format("%Y%m%d"),
+                now.format("%H%M%S"),
+                name
+            )
+        }
+    }
+}
+
+fn generate_file_content(operation: &CreateOperation, name: String) -> String {
+    match operation {
+        CreateOperation::Schema(args) => {
+            let field_definitions = generate_field_definitions(&args.fields, name.to_string());
+
+            format!(
+                "DEFINE TABLE {0} SCHEMALESS;
+
+{1}",
+                name, field_definitions
+            )
+        }
+        CreateOperation::Event(args) => {
+            let field_definitions = generate_field_definitions(&args.fields, name.to_string());
+
+            format!(
+                "DEFINE TABLE {0} SCHEMALESS;
+
+{1}
+
+DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
+    # TODO
+);",
+                name, field_definitions
+            )
+        }
+        CreateOperation::Migration(_) => String::from(""),
+    }
+}
+
+fn generate_field_definitions(fields: &Option<Vec<String>>, name: String) -> String {
+    match fields {
+        Some(fields) => fields
+            .iter()
+            .map(|field| format!("DEFINE FIELD {} ON {};", field, name))
+            .collect::<Vec<String>>()
+            .join("\n"),
+        None => format!("# DEFINE FIELD field ON {};", name),
+    }
 }
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
