@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     config,
-    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
     definitions,
     input::SurrealdbConfiguration,
     models::ScriptMigration,
@@ -16,15 +16,21 @@ use crate::{
 };
 
 pub struct ApplyArgs<'a> {
-    pub up: Option<String>,
+    pub operation: ApplyOperation,
     pub db_configuration: &'a SurrealdbConfiguration,
     pub display_logs: bool,
     pub dry_run: bool,
 }
 
+pub enum ApplyOperation {
+    Up,
+    UpTo(String),
+    Down(String),
+}
+
 pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
     let ApplyArgs {
-        up,
+        operation,
         db_configuration,
         display_logs,
         dry_run,
@@ -44,12 +50,14 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
     config.insert(DirEntryAttr::Name);
     config.insert(DirEntryAttr::Path);
     config.insert(DirEntryAttr::IsFile);
+    config.insert(DirEntryAttr::FullName); // Used to filter migrations files (from down files)
 
     let folder_path = config::retrieve_folder_path();
 
     let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
     let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
     let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
+    let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
 
     let schemas_files = fs_extra::dir::ls(schemas_dir_path, &config)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
@@ -73,37 +81,72 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         String::new()
     };
 
-    let last_migration_applied = migrations_applied.last();
-
-    const INITIAL_DEFINITION_FOLDER: &str = "migrations/definitions/_initial.json";
-    let initial_definition_path = concat_path(&folder_path, INITIAL_DEFINITION_FOLDER);
-
     const DEFINITIONS_FOLDER: &str = "migrations/definitions";
     let definitions_path = concat_path(&folder_path, DEFINITIONS_FOLDER);
 
+    const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
+    let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
+
     ensures_folder_exists(&definitions_path)?;
 
-    create_definition_files(
-        last_migration_applied,
-        initial_definition_path,
-        definitions_path,
-        &config,
-        schema_definitions,
-        event_definitions,
-        folder_path,
-    )?;
+    let should_create_definition_files = match &operation {
+        ApplyOperation::Up => true,
+        ApplyOperation::UpTo(_) => true,
+        ApplyOperation::Down(_) => false,
+    };
+
+    if should_create_definition_files {
+        let last_migration_applied = migrations_applied.last();
+
+        create_definition_files(
+            last_migration_applied,
+            initial_definition_path,
+            definitions_path,
+            &config,
+            schema_definitions,
+            event_definitions,
+            folder_path,
+        )?;
+    }
 
     let migrations_files = fs_extra::dir::ls(migrations_dir_path, &config)?;
-    let migration_files_to_execute =
-        get_migration_files_to_execute(&migrations_files, up, &migrations_applied);
+    let down_migrations_files = match down_migrations_dir_path.exists() {
+        true => Some(fs_extra::dir::ls(down_migrations_dir_path, &config)?),
+        false => None,
+    };
 
-    apply_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
+    let migration_files_to_execute = get_migration_files_to_execute(
+        &migrations_files,
+        &down_migrations_files,
+        &operation,
+        &migrations_applied,
+    );
+
+    let migration_direction = match &operation {
+        ApplyOperation::Up => MigrationDirection::Forward,
+        ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Down(_) => MigrationDirection::Backward,
+    };
+
+    match migration_direction {
+        MigrationDirection::Forward => {
+            apply_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
+        }
+        MigrationDirection::Backward => {
+            revert_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
+        }
+    }
 
     if display_logs {
         println!("Migration files successfully executed!");
     }
 
     Ok(())
+}
+
+enum MigrationDirection {
+    Forward,
+    Backward,
 }
 
 fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
@@ -345,22 +388,46 @@ fn create_definition_files(
 
 fn get_migration_files_to_execute<'a>(
     migrations_files: &'a LsResult,
-    up: Option<String>,
+    down_migrations_files: &'a Option<LsResult>,
+    operation: &ApplyOperation,
     migrations_applied: &'a Vec<ScriptMigration>,
 ) -> Vec<&'a HashMap<DirEntryAttr, DirEntryValue>> {
-    get_sorted_migrations_files(&migrations_files)
-        .into_iter()
+    let mut filtered_migrations_files = migrations_files
+        .items
+        .iter()
         .filter(|migration_file| {
-            filter_migration_file_to_execute(migration_file, up.to_owned(), &migrations_applied)
+            filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, false)
                 .unwrap_or(false)
         })
-        .collect::<Vec<_>>()
+        .collect::<Vec<_>>();
+
+    let filtered_down_migrations_files = match down_migrations_files {
+        Some(down_migrations_files) => down_migrations_files
+            .items
+            .iter()
+            .filter(|migration_file| {
+                filter_migration_file_to_execute(
+                    migration_file,
+                    &operation,
+                    &migrations_applied,
+                    true,
+                )
+                .unwrap_or(false)
+            })
+            .collect::<Vec<_>>(),
+        None => vec![],
+    };
+
+    filtered_migrations_files.extend(filtered_down_migrations_files);
+
+    get_sorted_migrations_files(filtered_migrations_files, &operation)
 }
 
-fn get_sorted_migrations_files(
-    migrations_files: &LsResult,
-) -> Vec<&HashMap<DirEntryAttr, DirEntryValue>> {
-    let mut sorted_migrations_files = migrations_files.items.iter().collect::<Vec<_>>();
+fn get_sorted_migrations_files<'a>(
+    migrations_files: Vec<&'a HashMap<DirEntryAttr, DirEntryValue>>,
+    operation: &ApplyOperation,
+) -> Vec<&'a HashMap<DirEntryAttr, DirEntryValue>> {
+    let mut sorted_migrations_files = migrations_files.clone();
     sorted_migrations_files.sort_by(|a, b| {
         let a = a.get(&DirEntryAttr::Name);
         let b = b.get(&DirEntryAttr::Name);
@@ -375,16 +442,21 @@ fn get_sorted_migrations_files(
             _ => None,
         };
 
-        a.cmp(&b)
+        match operation {
+            ApplyOperation::Up => a.cmp(&b),
+            ApplyOperation::UpTo(_) => a.cmp(&b),
+            ApplyOperation::Down(_) => b.cmp(&a),
+        }
     });
 
     sorted_migrations_files
 }
 
 fn filter_migration_file_to_execute(
-    migration_file: &&std::collections::HashMap<DirEntryAttr, DirEntryValue>,
-    up: Option<String>,
+    migration_file: &HashMap<DirEntryAttr, DirEntryValue>,
+    operation: &ApplyOperation,
     migrations_applied: &Vec<ScriptMigration>,
+    is_from_down_folder: bool,
 ) -> Result<bool> {
     let is_file = migration_file
         .get(&DirEntryAttr::IsFile)
@@ -399,6 +471,35 @@ fn filter_migration_file_to_execute(
         return Ok(false);
     }
 
+    let full_name = migration_file
+        .get(&DirEntryAttr::FullName)
+        .context("Cannot get full name of the migration file")?;
+    let full_name = match full_name {
+        DirEntryValue::String(full_name) => Some(full_name),
+        _ => None,
+    };
+    let full_name = full_name.context("Cannot get full name of the migration file")?;
+
+    let is_down_file = match is_from_down_folder {
+        true => true,
+        false => {
+            let is_down_file = full_name.ends_with(".down.surql");
+            is_down_file
+        }
+    };
+
+    let migration_direction = match &operation {
+        ApplyOperation::Up => MigrationDirection::Forward,
+        ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Down(_) => MigrationDirection::Backward,
+    };
+
+    match (&migration_direction, is_down_file) {
+        (MigrationDirection::Forward, true) => return Ok(false),
+        (MigrationDirection::Backward, false) => return Ok(false),
+        _ => {}
+    }
+
     let name = migration_file
         .get(&DirEntryAttr::Name)
         .context("Cannot get name of the migration file")?;
@@ -408,21 +509,28 @@ fn filter_migration_file_to_execute(
     };
     let name = name.context("Cannot get name of the migration file")?;
 
-    match &up {
-        Some(max_migration) => {
+    match &operation {
+        ApplyOperation::UpTo(max_migration) => {
             if name > max_migration {
                 return Ok(false);
             }
         }
-        None => {}
+        ApplyOperation::Up => {}
+        ApplyOperation::Down(min_migration) => {
+            if name < min_migration {
+                return Ok(false);
+            }
+        }
     }
 
     let has_already_been_applied = migrations_applied
         .iter()
         .any(|migration_applied| &migration_applied.script_name == name);
 
-    if has_already_been_applied {
-        return Ok(false);
+    match (&migration_direction, has_already_been_applied) {
+        (MigrationDirection::Forward, true) => return Ok(false),
+        (MigrationDirection::Backward, false) => return Ok(false),
+        _ => {}
     }
 
     return Ok(true);
@@ -470,6 +578,57 @@ CREATE script_migration SET script_name = '{}';",
 
         if display_logs {
             println!("Executing migration {}...", script_display_name);
+        }
+
+        let transaction_action = get_transaction_action(dry_run);
+        surrealdb::apply_in_transaction(&client, &query, transaction_action).await?;
+    }
+
+    Ok(())
+}
+
+async fn revert_migrations(
+    migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
+    display_logs: bool,
+    client: Surreal<Client>,
+    dry_run: bool,
+) -> Result<()> {
+    for migration_file in migration_files_to_execute {
+        let name = migration_file
+            .get(&DirEntryAttr::Name)
+            .context("Cannot get name of the migration file")?;
+        let name: Option<&String> = match name {
+            DirEntryValue::String(name) => Some(name),
+            _ => None,
+        };
+        let name = name.context("Cannot get name of the migration file")?;
+
+        let path = migration_file
+            .get(&DirEntryAttr::Path)
+            .context("Cannot get path of the migration file")?;
+        let path = match path {
+            DirEntryValue::String(path) => Some(path),
+            _ => None,
+        };
+        let path = path.context("Cannot get path of the migration file")?;
+
+        let inner_query = fs_extra::file::read_to_string(path)?;
+
+        let query = format!(
+            "{}
+DELETE script_migration WHERE script_name = '{}';",
+            inner_query, name
+        );
+
+        let script_display_name = name
+            .split("_")
+            .skip(2)
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>()
+            .join("_");
+
+        if display_logs {
+            println!("Reverting migration {}...", script_display_name);
         }
 
         let transaction_action = get_transaction_action(dry_run);

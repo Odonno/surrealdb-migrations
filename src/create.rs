@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     config,
-    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
 };
 
 pub struct CreateArgs {
@@ -79,7 +79,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
             };
 
             if should_create_down_file {
-                let down_folder_path = folder_path.join("down");
+                let down_folder_path = folder_path.join(DOWN_MIGRATIONS_DIR_NAME);
                 ensures_folder_exists(&down_folder_path)?;
 
                 let down_file_path = down_folder_path.join(&filename);
