@@ -127,8 +127,8 @@ impl SurrealdbMigrations {
     /// # });
     /// ```
     pub async fn up(&self) -> Result<()> {
-        let args = ApplyArgs {
-            up: None,
+        let args: ApplyArgs = ApplyArgs {
+            operation: apply::ApplyOperation::Up,
             db_configuration: &self.db_configuration,
             display_logs: false,
             dry_run: false,
@@ -158,7 +158,37 @@ impl SurrealdbMigrations {
     /// ```
     pub async fn up_to(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
-            up: Some(name.to_string()),
+            operation: apply::ApplyOperation::UpTo(name.to_string()),
+            db_configuration: &self.db_configuration,
+            display_logs: false,
+            dry_run: false,
+        };
+        apply::main(args).await
+    }
+
+    /// Revert schema definitions and all migrations down to the named migration.
+    ///
+    /// ## Arguments
+    ///
+    /// * `name` - This parameter allows you to revert applied migrations to this one.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    ///
+    /// # tokio_test::block_on(async {
+    /// let db_configuration = SurrealdbConfiguration::default();
+    ///
+    /// SurrealdbMigrations::new(db_configuration)
+    ///     .down("0") // Will revert all migrations
+    ///     .await
+    ///     .expect("Failed to revert migrations");
+    /// # });
+    /// ```
+    pub async fn down(&self, name: &str) -> Result<()> {
+        let args = ApplyArgs {
+            operation: apply::ApplyOperation::Down(name.to_string()),
             db_configuration: &self.db_configuration,
             display_logs: false,
             dry_run: false,

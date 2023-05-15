@@ -2,7 +2,10 @@ use anyhow::{anyhow, Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use std::{collections::HashSet, path::Path};
 
-use crate::{config, constants::MIGRATIONS_DIR_NAME};
+use crate::{
+    config,
+    constants::{DOWN_MIGRATIONS_DIR_NAME, MIGRATIONS_DIR_NAME},
+};
 
 pub fn main() -> Result<()> {
     let folder_path = config::retrieve_folder_path();
@@ -88,7 +91,7 @@ pub fn main() -> Result<()> {
 
     // Remove down migration file if exists
     let down_migration_file_path = Path::new(&migrations_path)
-        .join("down")
+        .join(DOWN_MIGRATIONS_DIR_NAME)
         .join(last_migration_fullname);
 
     if down_migration_file_path.exists() {

@@ -38,6 +38,10 @@ pub enum Action {
         /// This parameter allows you to skip ulterior migrations.
         #[clap(long)]
         up: Option<String>,
+        /// Apply migrations down to this migration name.
+        /// This parameter allows you to rollback applied migrations.
+        #[clap(long)]
+        down: Option<String>,
         /// Url of the surrealdb instance.
         /// Default value is `localhost:8000`.
         #[clap(long)]

@@ -8,7 +8,7 @@ use std::{
 
 use crate::{
     cli::ScaffoldTemplate,
-    constants::{EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
 };
 
 pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
@@ -172,7 +172,7 @@ fn rename_down_migrations_files_to_match_current_date(
     now: DateTime<Local>,
     migrations_dir_path: &PathBuf,
 ) -> Result<()> {
-    let down_migrations_dir_path = migrations_dir_path.join("down");
+    let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
 
     if down_migrations_dir_path.exists() {
         rename_migrations_files_to_match_current_date(now, &down_migrations_dir_path)?;

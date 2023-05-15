@@ -71,6 +71,7 @@ async fn main() -> Result<()> {
         Action::Remove {} => remove::main(),
         Action::Apply {
             up,
+            down,
             url,
             ns,
             db,
@@ -85,8 +86,18 @@ async fn main() -> Result<()> {
                 username,
                 password,
             };
+            let operation = match (up, down) {
+                (Some(_), Some(_)) => {
+                    return Err(anyhow!(
+                        "You can't specify both `up` and `down` parameters at the same time"
+                    ))
+                }
+                (Some(up), None) => apply::ApplyOperation::UpTo(up),
+                (None, Some(down)) => apply::ApplyOperation::Down(down),
+                (None, None) => apply::ApplyOperation::Up,
+            };
             let args = ApplyArgs {
-                up,
+                operation,
                 db_configuration: &db_configuration,
                 display_logs: true,
                 dry_run,
