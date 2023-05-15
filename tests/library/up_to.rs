@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use serial_test::serial;
 use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
 
@@ -15,9 +15,12 @@ async fn apply_with_skipped_migrations() -> Result<()> {
             let first_migration_name = get_first_migration_name()?;
 
             let configuration = SurrealdbConfiguration::default();
-            SurrealdbMigrations::new(configuration)
-                .up_to(&first_migration_name)
-                .await?;
+            let runner = SurrealdbMigrations::new(configuration);
+
+            runner.up_to(&first_migration_name).await?;
+
+            let migrations_applied = runner.list().await?;
+            ensure!(migrations_applied.len() == 1);
 
             Ok(())
         })

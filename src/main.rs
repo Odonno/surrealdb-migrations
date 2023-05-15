@@ -79,13 +79,6 @@ async fn main() -> Result<()> {
             password,
             dry_run,
         } => {
-            let db_configuration = SurrealdbConfiguration {
-                url,
-                ns,
-                db,
-                username,
-                password,
-            };
             let operation = match (up, down) {
                 (Some(_), Some(_)) => {
                     return Err(anyhow!(
@@ -95,6 +88,13 @@ async fn main() -> Result<()> {
                 (Some(up), None) => apply::ApplyOperation::UpTo(up),
                 (None, Some(down)) => apply::ApplyOperation::Down(down),
                 (None, None) => apply::ApplyOperation::Up,
+            };
+            let db_configuration = SurrealdbConfiguration {
+                url,
+                ns,
+                db,
+                username,
+                password,
             };
             let args = ApplyArgs {
                 operation,

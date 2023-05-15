@@ -510,14 +510,16 @@ fn filter_migration_file_to_execute(
     let name = name.context("Cannot get name of the migration file")?;
 
     match &operation {
-        ApplyOperation::UpTo(max_migration) => {
-            if name > max_migration {
+        ApplyOperation::UpTo(target_migration) => {
+            let is_beyond_target = name > target_migration;
+            if is_beyond_target {
                 return Ok(false);
             }
         }
         ApplyOperation::Up => {}
-        ApplyOperation::Down(min_migration) => {
-            if name < min_migration {
+        ApplyOperation::Down(target_migration) => {
+            let is_target_or_below = name <= target_migration;
+            if is_target_or_below {
                 return Ok(false);
             }
         }
