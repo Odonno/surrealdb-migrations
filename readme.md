@@ -167,6 +167,50 @@ In the `core` section, you can define the path to your schema/migration files, i
 
 In the `db` section, you can define the values used to access your SurrealDB database. It can be the `url`, `username`, `password`, the namespace `ns` or the name of the database `db`.
 
+## Backward migrations
+
+By default, migrations are forward-only. However, it can be interesting to revert a migration in order to undo a mistake. You will find backward migrations in two places:
+
+1. Inside the `/migrations/down` folder with the same name as your forward migration
+2. Inside the `/migrations` but with the `.down.surql` extension next to the forward migration
+
+So, a migration project with backward migrations might look like this:
+
+- /schemas
+  - script_migration.surql
+- /events
+- /migrations
+  - 20231605_205201_AddProduct.surql
+  - /down
+    - 20231605_205201_AddProduct.surql
+
+Or like this:
+
+- /schemas
+  - script_migration.surql
+- /events
+- /migrations
+  - 20231605_205201_AddProduct.surql
+  - 20231605_205201_AddProduct.down.surql
+
+If you want to create a DOWN migration file when creating the migration file, use this command:
+
+```
+surrealdb-migrations create AddProduct --down
+```
+
+If you need to, you can revert all migrations back to the one you specified.
+
+```
+surrealdb-migrations apply --down 20231605_205201_AddProduct
+```
+
+And if you need to undo all your migrations, use this command:
+
+```
+surrealdb-migrations apply --down 0
+```
+
 ## Credits
 
 Inspired by awesome projects:
