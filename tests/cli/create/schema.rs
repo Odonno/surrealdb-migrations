@@ -66,7 +66,7 @@ DEFINE FIELD published_at ON post;\n",
 
 #[test]
 #[serial]
-fn create_schemafull_table_from_config() -> Result<()> {
+fn create_schemafull_table_file_from_config() -> Result<()> {
     clear_tests_files()?;
     scaffold_empty_template()?;
     set_config_value("core", "schema", "full")?;
@@ -99,7 +99,7 @@ DEFINE FIELD published_at ON post;"
 
 #[test]
 #[serial]
-fn create_schemaless_table_from_invalid_config() -> Result<()> {
+fn create_schemaless_table_file_from_invalid_config() -> Result<()> {
     clear_tests_files()?;
     scaffold_empty_template()?;
     set_config_value("core", "schema", "invalid")?;
@@ -126,6 +126,37 @@ DEFINE FIELD published_at ON post;"
     );
 
     reset_config()?;
+
+    Ok(())
+}
+
+#[test]
+#[serial]
+fn create_schemafull_table_file_from_cli_arg() -> Result<()> {
+    clear_tests_files()?;
+    scaffold_empty_template()?;
+
+    let mut cmd = create_cmd()?;
+
+    cmd.arg("create")
+        .arg("schema")
+        .arg("post")
+        .arg("-f")
+        .arg("name,title,published_at")
+        .arg("--schemafull");
+
+    cmd.assert().success();
+
+    let post_file = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+
+    assert_eq!(
+        post_file,
+        "DEFINE TABLE post SCHEMAFULL;
+
+DEFINE FIELD name ON post;
+DEFINE FIELD title ON post;
+DEFINE FIELD published_at ON post;"
+    );
 
     Ok(())
 }

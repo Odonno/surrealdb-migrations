@@ -46,8 +46,13 @@ async fn main() -> Result<()> {
                     name,
                     fields,
                     dry_run,
+                    schemafull,
                 }) => {
-                    let operation = CreateOperation::Schema(CreateSchemaArgs { fields, dry_run });
+                    let operation = CreateOperation::Schema(CreateSchemaArgs {
+                        fields,
+                        dry_run,
+                        schemafull,
+                    });
                     let args = CreateArgs { name, operation };
                     create::main(args)
                 }
@@ -55,8 +60,13 @@ async fn main() -> Result<()> {
                     name,
                     fields,
                     dry_run,
+                    schemafull,
                 }) => {
-                    let operation = CreateOperation::Event(CreateEventArgs { fields, dry_run });
+                    let operation = CreateOperation::Event(CreateEventArgs {
+                        fields,
+                        dry_run,
+                        schemafull,
+                    });
                     let args = CreateArgs { name, operation };
                     create::main(args)
                 }
