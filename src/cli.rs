@@ -146,6 +146,9 @@ pub enum CreateAction {
         fields: Option<Vec<String>>,
         #[clap(long)]
         dry_run: bool,
+        /// Generate a `SCHEMAFULL` table
+        #[clap(long)]
+        schemafull: bool,
     },
     #[clap(aliases = vec!["e"])]
     /// Generate a new event file
@@ -157,6 +160,9 @@ pub enum CreateAction {
         fields: Option<Vec<String>>,
         #[clap(long)]
         dry_run: bool,
+        /// Generate a `SCHEMAFULL` event table
+        #[clap(long)]
+        schemafull: bool,
     },
     #[clap(aliases = vec!["m"])]
     /// Generate a new migration file

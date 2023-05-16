@@ -20,11 +20,13 @@ pub enum CreateOperation {
 pub struct CreateSchemaArgs {
     pub fields: Option<Vec<String>>,
     pub dry_run: bool,
+    pub schemafull: bool,
 }
 
 pub struct CreateEventArgs {
     pub fields: Option<Vec<String>>,
     pub dry_run: bool,
+    pub schemafull: bool,
 }
 
 pub struct CreateMigrationArgs {
@@ -119,7 +121,7 @@ fn get_filename(operation: &CreateOperation, name: &String) -> String {
 fn generate_file_content(operation: &CreateOperation, name: String) -> String {
     match operation {
         CreateOperation::Schema(args) => {
-            let table_schema_design_str = get_table_schema_design_str();
+            let table_schema_design_str = get_table_schema_design_str(args.schemafull);
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
@@ -130,7 +132,7 @@ fn generate_file_content(operation: &CreateOperation, name: String) -> String {
             )
         }
         CreateOperation::Event(args) => {
-            let table_schema_design_str = get_table_schema_design_str();
+            let table_schema_design_str = get_table_schema_design_str(args.schemafull);
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
@@ -148,15 +150,22 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
     }
 }
 
-fn get_table_schema_design_str() -> &'static str {
+fn get_table_schema_design_str(schemafull: bool) -> &'static str {
+    const SCHEMAFULL: &'static str = "SCHEMAFULL";
+    const SCHEMALESS: &'static str = "SCHEMALESS";
+
+    if schemafull {
+        return SCHEMAFULL;
+    }
+
     let table_schema_design = retrieve_table_schema_design();
 
     match table_schema_design {
         Some(table_schema_design) => match table_schema_design {
-            config::TableSchemaDesign::Schemafull => "SCHEMAFULL",
-            config::TableSchemaDesign::Schemaless => "SCHEMALESS",
+            config::TableSchemaDesign::Schemafull => SCHEMAFULL,
+            config::TableSchemaDesign::Schemaless => SCHEMALESS,
         },
-        None => "SCHEMALESS",
+        None => SCHEMALESS,
     }
 }
 
