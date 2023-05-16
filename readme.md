@@ -168,6 +168,54 @@ In the `core` section, you can define the path to your schema/migration files, i
 
 In the `db` section, you can define the values used to access your SurrealDB database. It can be the `url`, `username`, `password`, the namespace `ns` or the name of the database `db`.
 
+Here is the definition of the `.surrealdb` configuration file:
+
+```toml
+[core]
+    # Optional
+    # Type: String
+    # Description: Path to the folder that contains your migration project (root folder by default)
+    # Default: "."
+    path
+
+    # Optional
+    # Type: "less" | "full"
+    # Description: Define SCHEMALESS or SCHEMAFULL option by default when creating new table/event file
+    # Default: "less"
+    schema
+
+[db]
+    # Optional
+    # Type: String
+    # Description: Url of the surrealdb instance
+    # Default: "localhost:8000"
+    url
+
+    # Optional
+    # Type: String
+    # Description: Username used to authenticate to the surrealdb instance
+    # Default: "root"
+    username
+
+    # Optional
+    # Type: String
+    # Description: Password used to authenticate to the surrealdb instance
+    # Default: "root"
+    password
+
+    # Optional
+    # Type: String
+    # Description: Namespace to use inside the surrealdb instance
+    # Default: "test"
+    ns
+
+    # Optional
+    # Type: String
+    # Description: Name of the database to use inside the surrealdb instance
+    # Default: "test"
+    db
+```
+
 ## Backward migrations
 
 By default, migrations are forward-only. However, it can be interesting to revert a migration in order to undo a mistake. You will find backward migrations in two places:
