@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use std::path::{Path, PathBuf};
 
 use crate::{
-    config,
+    config::{self, retrieve_table_schema_design},
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
 };
 
@@ -119,30 +119,44 @@ fn get_filename(operation: &CreateOperation, name: &String) -> String {
 fn generate_file_content(operation: &CreateOperation, name: String) -> String {
     match operation {
         CreateOperation::Schema(args) => {
+            let table_schema_design_str = get_table_schema_design_str();
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE {0} SCHEMALESS;
+                "DEFINE TABLE {0} {1};
 
-{1}",
-                name, field_definitions
+{2}",
+                name, table_schema_design_str, field_definitions
             )
         }
         CreateOperation::Event(args) => {
+            let table_schema_design_str = get_table_schema_design_str();
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE {0} SCHEMALESS;
+                "DEFINE TABLE {0} {1};
 
-{1}
+{2}
 
 DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
     # TODO
 );",
-                name, field_definitions
+                name, table_schema_design_str, field_definitions
             )
         }
         CreateOperation::Migration(_) => String::from(""),
+    }
+}
+
+fn get_table_schema_design_str() -> &'static str {
+    let table_schema_design = retrieve_table_schema_design();
+
+    match table_schema_design {
+        Some(table_schema_design) => match table_schema_design {
+            config::TableSchemaDesign::Schemafull => "SCHEMAFULL",
+            config::TableSchemaDesign::Schemaless => "SCHEMALESS",
+        },
+        None => "SCHEMALESS",
     }
 }
 

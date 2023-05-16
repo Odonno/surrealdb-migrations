@@ -1,0 +1,2 @@
+# ignore these files & folders on cargo watch
+.surrealdb
