@@ -154,6 +154,7 @@ You can create a `.surrealdb` configuration file at the root of your project. Th
 ```toml
 [core]
     path = "./tests-files"
+    schema = "less"
 
 [db]
     url = "localhost:8000"
