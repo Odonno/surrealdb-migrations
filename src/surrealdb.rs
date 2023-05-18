@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use surrealdb::{
-    engine::remote::ws::{Client, Ws},
+    engine::any::{connect, Any},
     opt::auth::Root,
     Surreal,
 };
@@ -9,8 +9,9 @@ use crate::{config, input::SurrealdbConfiguration, models::ScriptMigration};
 
 pub async fn create_surrealdb_client(
     db_configuration: &SurrealdbConfiguration,
-) -> Result<Surreal<Client>> {
+) -> Result<Surreal<Any>> {
     let SurrealdbConfiguration {
+        address,
         url,
         username,
         password,
@@ -20,7 +21,7 @@ pub async fn create_surrealdb_client(
 
     let db_config = config::retrieve_db_config();
 
-    let client = create_surrealdb_connection(url.clone(), &db_config).await?;
+    let client = create_surrealdb_connection(url.clone(), address.clone(), &db_config).await?;
     sign_in(username.clone(), password.clone(), &db_config, &client).await?;
     set_namespace_and_database(ns.clone(), db.clone(), &db_config, &client).await?;
 
@@ -29,20 +30,25 @@ pub async fn create_surrealdb_client(
 
 async fn create_surrealdb_connection(
     url: Option<String>,
+    address: Option<String>,
     db_config: &config::DbConfig,
-) -> Result<Surreal<Client>, surrealdb::Error> {
+) -> Result<Surreal<Any>, surrealdb::Error> {
     let url = url
         .or(db_config.url.to_owned())
         .unwrap_or("localhost:8000".to_owned());
 
-    Surreal::new::<Ws>(url.to_owned()).await
+    let address = address
+        .or(db_config.address.to_owned())
+        .unwrap_or(format!("ws://{}", url));
+
+    connect(address).await
 }
 
 async fn sign_in(
     username: Option<String>,
     password: Option<String>,
     db_config: &config::DbConfig,
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
 ) -> Result<(), surrealdb::Error> {
     let username = username
         .or(db_config.username.to_owned())
@@ -63,7 +69,7 @@ async fn set_namespace_and_database(
     ns: Option<String>,
     db: Option<String>,
     db_config: &config::DbConfig,
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
 ) -> Result<(), surrealdb::Error> {
     let ns = ns.or(db_config.ns.to_owned()).unwrap_or("test".to_owned());
     let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
@@ -72,7 +78,7 @@ async fn set_namespace_and_database(
 }
 
 pub async fn list_script_migration_ordered_by_execution_date(
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
 ) -> Result<Vec<ScriptMigration>> {
     let mut result = list_script_migration(client).await?;
     result.sort_by_key(|m| m.executed_at.clone());
@@ -80,13 +86,13 @@ pub async fn list_script_migration_ordered_by_execution_date(
     Ok(result)
 }
 
-async fn list_script_migration(client: &Surreal<Client>) -> Result<Vec<ScriptMigration>> {
+async fn list_script_migration(client: &Surreal<Any>) -> Result<Vec<ScriptMigration>> {
     let result = client.select("script_migration").await?;
     Ok(result)
 }
 
 pub async fn apply_in_transaction(
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
     inner_query: &String,
     action: TransactionAction,
 ) -> Result<()> {

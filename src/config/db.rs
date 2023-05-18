@@ -1,6 +1,7 @@
 use super::common::retrieve_config_value;
 
 pub struct DbConfig {
+    pub address: Option<String>,
     pub url: Option<String>,
     pub username: Option<String>,
     pub password: Option<String>,
@@ -10,6 +11,7 @@ pub struct DbConfig {
 
 pub fn retrieve_db_config() -> DbConfig {
     DbConfig {
+        address: retrieve_config_value("db", "address"),
         url: retrieve_config_value("db", "url"),
         username: retrieve_config_value("db", "username"),
         password: retrieve_config_value("db", "password"),

@@ -42,6 +42,11 @@ pub enum Action {
         /// This parameter allows you to rollback applied migrations.
         #[clap(long)]
         down: Option<String>,
+        /// Address of the surrealdb instance.
+        /// Default value is `ws://localhost:8000`.
+        #[clap(long)]
+        address: Option<String>,
+        #[deprecated(since = "0.9.6", note = "Please use `address` instead")]
         /// Url of the surrealdb instance.
         /// Default value is `localhost:8000`.
         #[clap(long)]
@@ -68,6 +73,11 @@ pub enum Action {
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]
     List {
+        /// Address of the surrealdb instance.
+        /// Default value is `ws://localhost:8000`.
+        #[clap(long)]
+        address: Option<String>,
+        #[deprecated(since = "0.9.6", note = "Please use `address` instead")]
         /// Url of the surrealdb instance.
         /// Default value is `localhost:8000`.
         #[clap(long)]

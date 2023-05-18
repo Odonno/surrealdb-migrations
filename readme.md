@@ -116,16 +116,30 @@ surrealdb-migrations apply
 Or directly inside your Rust project using the following code:
 
 ```rust
-use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+use surrealdb_migrations::SurrealdbMigrations;
+use surrealdb::engine::any::connect;
+use surrealdb::opt::auth::Root;
 
 #[tokio::main]
-async fn main() {
-    let db_configuration = SurrealdbConfiguration::default();
+async fn main() -> Result<()> {
+    let db = connect("ws://localhost:8000").await?;
 
-    SurrealdbMigrations::new(db_configuration)
+    // Signin as a namespace, database, or root user
+    db.signin(Root {
+        username: "root",
+        password: "root",
+    }).await?;
+
+    // Select a specific namespace / database
+    db.use_ns("namespace").use_db("database").await?;
+
+    // Apply all migrations
+    SurrealdbMigrations::new(db)
         .up()
         .await
         .expect("Failed to apply migrations");
+
+    Ok(())
 }
 ```
 
@@ -157,7 +171,7 @@ You can create a `.surrealdb` configuration file at the root of your project. Th
     schema = "less"
 
 [db]
-    url = "localhost:8000"
+    address = "ws://localhost:8000"
     username = "root"
     password = "root"
     ns = "test"
@@ -187,9 +201,9 @@ Here is the definition of the `.surrealdb` configuration file:
 [db]
     # Optional
     # Type: String
-    # Description: Url of the surrealdb instance
-    # Default: "localhost:8000"
-    url
+    # Description: Address of the surrealdb instance
+    # Default: "ws://localhost:8000"
+    address
 
     # Optional
     # Type: String

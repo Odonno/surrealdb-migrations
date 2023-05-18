@@ -3,17 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::{anyhow, Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
 
-use crate::{
-    config, constants::MIGRATIONS_DIR_NAME, input::SurrealdbConfiguration, models::ScriptMigration,
-    surrealdb,
-};
+use crate::{config, constants::MIGRATIONS_DIR_NAME, models::ScriptMigration, surrealdb};
 
-pub async fn main(db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let client = surrealdb::create_surrealdb_client(db_configuration).await?;
-
+pub async fn main(client: &Surreal<Any>) -> Result<()> {
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
 
