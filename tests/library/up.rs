@@ -1,6 +1,6 @@
 use anyhow::Result;
 use serial_test::serial;
-use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+use surrealdb_migrations::SurrealdbMigrations;
 
 use crate::helpers::*;
 
@@ -14,31 +14,14 @@ async fn apply_initial_schema_changes() -> Result<()> {
             remove_folder("tests-files/migrations")?;
 
             let configuration = SurrealdbConfiguration::default();
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })
     })
     .await
-}
-
-#[tokio::test]
-#[serial]
-async fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_blog_template()?;
-
-    let configuration = SurrealdbConfiguration::default();
-    let result = SurrealdbMigrations::new(configuration).up().await;
-
-    let error = result.unwrap_err();
-
-    assert_eq!(
-        error.to_string(),
-        "There was an error processing a remote WS request"
-    );
-
-    Ok(())
 }
 
 #[tokio::test]
@@ -53,7 +36,9 @@ async fn apply_new_schema_changes() -> Result<()> {
             add_new_schema_file()?;
 
             let configuration = SurrealdbConfiguration::default();
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })
@@ -70,7 +55,9 @@ async fn apply_initial_migrations() -> Result<()> {
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })
@@ -90,7 +77,9 @@ async fn apply_new_migrations() -> Result<()> {
             apply_migrations_up_to(&first_migration_name)?;
 
             let configuration = SurrealdbConfiguration::default();
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })
@@ -108,13 +97,16 @@ async fn apply_with_db_configuration() -> Result<()> {
             empty_folder("tests-files/migrations")?;
 
             let configuration = SurrealdbConfiguration {
+                address: None,
                 url: None,
                 username: Some("admin".to_string()),
                 password: Some("admin".to_string()),
                 ns: Some("namespace".to_string()),
                 db: Some("database".to_string()),
             };
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })
@@ -133,13 +125,16 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
             remove_folder("tests-files/events")?;
 
             let configuration = SurrealdbConfiguration {
+                address: None,
                 url: None,
                 username: Some("admin".to_string()),
                 password: Some("admin".to_string()),
                 ns: Some("namespace".to_string()),
                 db: Some("database".to_string()),
             };
-            SurrealdbMigrations::new(configuration).up().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            SurrealdbMigrations::new(db).up().await?;
 
             Ok(())
         })

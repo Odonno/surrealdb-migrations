@@ -1,7 +1,7 @@
 use anyhow::{ensure, Context, Result};
 use chrono::{DateTime, Local};
 use serial_test::serial;
-use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+use surrealdb_migrations::SurrealdbMigrations;
 
 use crate::helpers::*;
 
@@ -15,7 +15,9 @@ async fn list_empty_migrations() -> Result<()> {
             apply_migrations()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let migrations_applied = SurrealdbMigrations::new(configuration).list().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let migrations_applied = SurrealdbMigrations::new(db).list().await?;
 
             ensure!(migrations_applied.len() == 0);
 
@@ -37,7 +39,9 @@ async fn list_blog_migrations() -> Result<()> {
             apply_migrations()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let migrations_applied = SurrealdbMigrations::new(configuration).list().await?;
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let migrations_applied = SurrealdbMigrations::new(db).list().await?;
 
             ensure!(migrations_applied.len() == 3);
 

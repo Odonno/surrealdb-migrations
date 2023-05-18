@@ -23,7 +23,7 @@ pub fn reset_config() -> Result<()> {
     schema = "less"
 
 [db]
-    url = "localhost:8000"
+    address = "ws://localhost:8000"
     username = "root"
     password = "root"
     ns = "test"

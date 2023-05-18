@@ -82,6 +82,7 @@ async fn main() -> Result<()> {
         Action::Apply {
             up,
             down,
+            address,
             url,
             ns,
             db,
@@ -100,21 +101,24 @@ async fn main() -> Result<()> {
                 (None, None) => apply::ApplyOperation::Up,
             };
             let db_configuration = SurrealdbConfiguration {
+                address,
                 url,
                 ns,
                 db,
                 username,
                 password,
             };
+            let db = surrealdb::create_surrealdb_client(&db_configuration).await?;
             let args = ApplyArgs {
                 operation,
-                db_configuration: &db_configuration,
+                db: &db,
                 display_logs: true,
                 dry_run,
             };
             apply::main(args).await
         }
         Action::List {
+            address,
             url,
             ns,
             db,
@@ -123,6 +127,7 @@ async fn main() -> Result<()> {
             no_color,
         } => {
             let db_configuration = SurrealdbConfiguration {
+                address,
                 url,
                 ns,
                 db,

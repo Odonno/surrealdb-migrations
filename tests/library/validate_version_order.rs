@@ -1,7 +1,7 @@
 use anyhow::{ensure, Result};
 use regex::Regex;
 use serial_test::serial;
-use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+use surrealdb_migrations::SurrealdbMigrations;
 
 use crate::helpers::*;
 
@@ -14,7 +14,9 @@ async fn ok_if_no_migration_file() -> Result<()> {
             scaffold_empty_template()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let runner = SurrealdbMigrations::new(configuration);
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let runner = SurrealdbMigrations::new(db);
 
             runner.validate_version_order().await?;
 
@@ -33,7 +35,9 @@ async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let runner = SurrealdbMigrations::new(configuration);
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let runner = SurrealdbMigrations::new(db);
 
             runner.up().await?;
 
@@ -54,7 +58,9 @@ async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Res
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let runner = SurrealdbMigrations::new(configuration);
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let runner = SurrealdbMigrations::new(db);
 
             let first_migration_name = get_first_migration_name()?;
             runner.up_to(&first_migration_name).await?;
@@ -76,7 +82,9 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
             scaffold_blog_template()?;
 
             let configuration = SurrealdbConfiguration::default();
-            let runner = SurrealdbMigrations::new(configuration);
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let runner = SurrealdbMigrations::new(db);
 
             let first_migration_file = get_first_migration_file()?;
             std::fs::remove_file(first_migration_file)?;
