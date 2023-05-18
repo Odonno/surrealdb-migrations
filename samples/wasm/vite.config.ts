@@ -3,5 +3,10 @@ import { defineConfig } from 'vite';
 import { ViteRsw } from 'vite-plugin-rsw';
 
 export default defineConfig({
-	plugins: [sveltekit(), ViteRsw()]
+	plugins: [sveltekit(), ViteRsw()],
+	server: {
+		fs: {
+			allow: ['..']
+		}
+	}
 });
