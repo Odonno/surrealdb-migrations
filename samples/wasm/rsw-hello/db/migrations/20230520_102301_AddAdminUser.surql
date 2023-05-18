@@ -1,0 +1,1 @@
+CREATE user:admin SET username = 'admin', email = 'admin@admin.fr', password = 'admin';
