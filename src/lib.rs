@@ -25,18 +25,31 @@
 //! # Get started
 //!
 //! ```rust,no_run
-//! use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+//! # use anyhow::Result;
+//! use surrealdb_migrations::SurrealdbMigrations;
+//! use surrealdb::engine::any::connect;
+//! use surrealdb::opt::auth::Root;
 //!
-//! #[tokio::main]
-//! async fn main() {
-//!     // Create a SurrealdbConfiguration instance with default values
-//!     let db_configuration = SurrealdbConfiguration::default();
+//! # #[tokio::main]
+//! async fn main() -> Result<()> {
+//!     let db = connect("ws://localhost:8000").await?;
+//!
+//!     // Signin as a namespace, database, or root user
+//!     db.signin(Root {
+//!         username: "root",
+//!         password: "root",
+//!     }).await?;
+//!
+//!     // Select a specific namespace / database
+//!     db.use_ns("namespace").use_db("database").await?;
 //!
 //!     // Apply all migrations
-//!     SurrealdbMigrations::new(db_configuration)
+//!     SurrealdbMigrations::new(db)
 //!         .up()
 //!         .await
 //!         .expect("Failed to apply migrations");
+//!
+//!     Ok(())
 //! }
 //! ```
 
@@ -49,41 +62,20 @@ mod models;
 mod surrealdb;
 mod validate_version_order;
 
+use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::Result;
 use apply::ApplyArgs;
-pub use input::SurrealdbConfiguration;
 use models::ScriptMigration;
-
-impl SurrealdbConfiguration {
-    /// Create an instance of SurrealdbConfiguration with default values.
-    ///
-    /// ## Examples
-    ///
-    /// ```
-    /// use surrealdb_migrations::SurrealdbConfiguration;
-    ///
-    /// let db_configuration = SurrealdbConfiguration::default();
-    /// ```
-    pub fn default() -> SurrealdbConfiguration {
-        SurrealdbConfiguration {
-            url: None,
-            ns: None,
-            db: None,
-            username: None,
-            password: None,
-        }
-    }
-}
 
 /// The main entry point for the library, used to apply migrations.
 pub struct SurrealdbMigrations {
-    db_configuration: SurrealdbConfiguration,
+    db: Surreal<Any>,
 }
 
 impl SurrealdbMigrations {
     /// Create a new instance of SurrealdbMigrations.
-    pub fn new(db_configuration: SurrealdbConfiguration) -> SurrealdbMigrations {
-        SurrealdbMigrations { db_configuration }
+    pub fn new(db: Surreal<Any>) -> SurrealdbMigrations {
+        SurrealdbMigrations { db }
     }
 
     /// Validate the version order of the migrations so that you cannot run migrations if there are
@@ -93,12 +85,24 @@ impl SurrealdbMigrations {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
     ///
     /// # #[tokio::main]
     /// # async fn main() -> Result<()> {
-    /// let db_configuration = SurrealdbConfiguration::default();
-    /// let runner = SurrealdbMigrations::new(db_configuration);
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// let runner = SurrealdbMigrations::new(db);
     ///
     /// runner.validate_version_order().await?;
     /// runner.up().await?;
@@ -107,7 +111,7 @@ impl SurrealdbMigrations {
     /// # }
     /// ```
     pub async fn validate_version_order(&self) -> Result<()> {
-        validate_version_order::main(&self.db_configuration).await
+        validate_version_order::main(&self.db).await
     }
 
     /// Apply schema definitions and apply all migrations.
@@ -115,21 +119,36 @@ impl SurrealdbMigrations {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    /// # use anyhow::Result;
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
     ///
-    /// # tokio_test::block_on(async {
-    /// let db_configuration = SurrealdbConfiguration::default();
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
     ///
-    /// SurrealdbMigrations::new(db_configuration)
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// SurrealdbMigrations::new(db)
     ///     .up()
     ///     .await
     ///     .expect("Failed to apply migrations");
-    /// # });
+    ///
+    /// # Ok(())
+    /// # }
     /// ```
     pub async fn up(&self) -> Result<()> {
         let args: ApplyArgs = ApplyArgs {
             operation: apply::ApplyOperation::Up,
-            db_configuration: &self.db_configuration,
+            db: &self.db,
             display_logs: false,
             dry_run: false,
         };
@@ -145,21 +164,36 @@ impl SurrealdbMigrations {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    /// # use anyhow::Result;
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
     ///
-    /// # tokio_test::block_on(async {
-    /// let db_configuration = SurrealdbConfiguration::default();
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
     ///
-    /// SurrealdbMigrations::new(db_configuration)
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// SurrealdbMigrations::new(db)
     ///     .up_to("20230101_120002_AddPost")
     ///     .await
     ///     .expect("Failed to apply migrations");
-    /// # });
+    ///
+    /// # Ok(())
+    /// # }
     /// ```
     pub async fn up_to(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
             operation: apply::ApplyOperation::UpTo(name.to_string()),
-            db_configuration: &self.db_configuration,
+            db: &self.db,
             display_logs: false,
             dry_run: false,
         };
@@ -175,21 +209,36 @@ impl SurrealdbMigrations {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    /// # use anyhow::Result;
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
     ///
-    /// # tokio_test::block_on(async {
-    /// let db_configuration = SurrealdbConfiguration::default();
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
     ///
-    /// SurrealdbMigrations::new(db_configuration)
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// SurrealdbMigrations::new(db)
     ///     .down("0") // Will revert all migrations
     ///     .await
     ///     .expect("Failed to revert migrations");
-    /// # });
+    ///
+    /// # Ok(())
+    /// # }
     /// ```
     pub async fn down(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
             operation: apply::ApplyOperation::Down(name.to_string()),
-            db_configuration: &self.db_configuration,
+            db: &self.db,
             display_logs: false,
             dry_run: false,
         };
@@ -201,23 +250,32 @@ impl SurrealdbMigrations {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// use surrealdb_migrations::{SurrealdbConfiguration, SurrealdbMigrations};
+    /// # use anyhow::Result;
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
     ///
-    /// # tokio_test::block_on(async {
-    /// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let db_configuration = SurrealdbConfiguration::default();
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
     ///
-    /// let migrations_applied = SurrealdbMigrations::new(db_configuration)
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// let migrations_applied = SurrealdbMigrations::new(db)
     ///     .list()
     ///     .await?;
+    ///
     /// # Ok(())
     /// # }
-    /// # main().await.unwrap();
-    /// # });
     /// ```
     pub async fn list(&self) -> Result<Vec<ScriptMigration>> {
-        let client = surrealdb::create_surrealdb_client(&self.db_configuration).await?;
-
-        surrealdb::list_script_migration_ordered_by_execution_date(&client).await
+        surrealdb::list_script_migration_ordered_by_execution_date(&self.db).await
     }
 }

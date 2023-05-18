@@ -1,4 +1,4 @@
-use ::surrealdb::{engine::remote::ws::Client, Surreal};
+use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::{Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
 use std::{
@@ -10,14 +10,13 @@ use crate::{
     config,
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
     definitions,
-    input::SurrealdbConfiguration,
     models::ScriptMigration,
     surrealdb::{self, TransactionAction},
 };
 
 pub struct ApplyArgs<'a> {
     pub operation: ApplyOperation,
-    pub db_configuration: &'a SurrealdbConfiguration,
+    pub db: &'a Surreal<Any>,
     pub display_logs: bool,
     pub dry_run: bool,
 }
@@ -31,7 +30,7 @@ pub enum ApplyOperation {
 pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
     let ApplyArgs {
         operation,
-        db_configuration,
+        db,
         display_logs,
         dry_run,
     } = args;
@@ -41,7 +40,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         false => display_logs,
     };
 
-    let client = surrealdb::create_surrealdb_client(&db_configuration).await?;
+    let client = db;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
@@ -174,7 +173,7 @@ fn concat_files_content(files: LsResult) -> String {
 }
 
 async fn apply_schema_definitions(
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
     schema_definitions: &String,
     dry_run: bool,
 ) -> Result<()> {
@@ -183,7 +182,7 @@ async fn apply_schema_definitions(
 }
 
 async fn apply_event_definitions(
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
     event_definitions: &String,
     dry_run: bool,
 ) -> Result<()> {
@@ -541,7 +540,7 @@ fn filter_migration_file_to_execute(
 async fn apply_migrations(
     migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
     display_logs: bool,
-    client: Surreal<Client>,
+    client: &Surreal<Any>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
@@ -592,7 +591,7 @@ CREATE script_migration SET script_name = '{}';",
 async fn revert_migrations(
     migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
     display_logs: bool,
-    client: Surreal<Client>,
+    client: &Surreal<Any>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {

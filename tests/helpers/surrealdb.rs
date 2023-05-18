@@ -5,11 +5,12 @@ use std::{
     thread, time,
 };
 use surrealdb::{
-    engine::remote::ws::{Client, Ws},
+    engine::any::{connect, Any},
     opt::auth::Root,
     Surreal,
 };
-use surrealdb_migrations::SurrealdbConfiguration;
+
+use crate::helpers::SurrealdbConfiguration;
 
 pub fn run_with_surreal_instance<F>(function: F) -> Result<()>
 where
@@ -135,8 +136,9 @@ pub async fn check_surrealdb_empty() -> Result<()> {
 
 pub async fn create_surrealdb_client(
     db_configuration: &SurrealdbConfiguration,
-) -> Result<Surreal<Client>> {
+) -> Result<Surreal<Any>> {
     let SurrealdbConfiguration {
+        address,
         url,
         username,
         password,
@@ -144,7 +146,7 @@ pub async fn create_surrealdb_client(
         db,
     } = db_configuration;
 
-    let client = create_surrealdb_connection(url.clone()).await?;
+    let client = create_surrealdb_connection(url.clone(), address.clone()).await?;
     sign_in(username.clone(), password.clone(), &client).await?;
     set_namespace_and_database(ns.clone(), db.clone(), &client).await?;
 
@@ -153,16 +155,18 @@ pub async fn create_surrealdb_client(
 
 async fn create_surrealdb_connection(
     url: Option<String>,
-) -> Result<Surreal<Client>, surrealdb::Error> {
+    address: Option<String>,
+) -> Result<Surreal<Any>, surrealdb::Error> {
     let url = url.unwrap_or("localhost:8000".to_owned());
+    let address = address.unwrap_or(format!("ws://{}", url));
 
-    Surreal::new::<Ws>(url.to_owned()).await
+    connect(address).await
 }
 
 async fn sign_in(
     username: Option<String>,
     password: Option<String>,
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
 ) -> Result<(), surrealdb::Error> {
     let username = username.unwrap_or("root".to_owned());
     let password = password.unwrap_or("root".to_owned());
@@ -178,7 +182,7 @@ async fn sign_in(
 async fn set_namespace_and_database(
     ns: Option<String>,
     db: Option<String>,
-    client: &Surreal<Client>,
+    client: &Surreal<Any>,
 ) -> Result<(), surrealdb::Error> {
     let ns = ns.unwrap_or("test".to_owned());
     let db = db.unwrap_or("test".to_owned());
