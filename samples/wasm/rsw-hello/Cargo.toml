@@ -3,6 +3,7 @@ name = "rsw-hello"
 version = "0.1.0"
 authors = ["Odonno <bottiau.david@laposte.net>"]
 edition = "2018"
+resolver = "2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -11,7 +12,10 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
+surrealdb = { version = "1.0.0-beta.9", features = ["kv-indxdb"] }
+surrealdb-migrations = { path = "../../.." }
 wasm-bindgen = "0.2.63"
+wasm-bindgen-futures = "0.4"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires

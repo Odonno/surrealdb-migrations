@@ -1,0 +1,1 @@
+CREATE post SET title = 'Hello world!', content = 'This is my first post!', author = user:admin;
