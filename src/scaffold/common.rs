@@ -170,7 +170,7 @@ fn rename_migrations_files_to_match_current_date(
 
 fn rename_down_migrations_files_to_match_current_date(
     now: DateTime<Local>,
-    migrations_dir_path: &PathBuf,
+    migrations_dir_path: &Path,
 ) -> Result<()> {
     let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
 
