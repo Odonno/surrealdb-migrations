@@ -15,7 +15,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            let runner = SurrealdbMigrations::new(db);
+            let runner = SurrealdbMigrations::new(&db);
 
             runner.up().await?;
 
@@ -43,7 +43,7 @@ async fn apply_revert_to_first_migration() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            let runner = SurrealdbMigrations::new(db);
+            let runner = SurrealdbMigrations::new(&db);
 
             runner.up().await?;
 

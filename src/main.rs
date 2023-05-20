@@ -112,6 +112,7 @@ async fn main() -> Result<()> {
             let args = ApplyArgs {
                 operation,
                 db: &db,
+                dir: None,
                 display_logs: true,
                 dry_run,
             };

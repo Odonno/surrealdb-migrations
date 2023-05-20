@@ -5,7 +5,10 @@ use surrealdb::{
     Surreal,
 };
 
-use crate::{config, input::SurrealdbConfiguration, models::ScriptMigration};
+use crate::{
+    config, constants::SCRIPT_MIGRATION_TABLE_NAME, input::SurrealdbConfiguration,
+    models::ScriptMigration,
+};
 
 pub async fn create_surrealdb_client(
     db_configuration: &SurrealdbConfiguration,
@@ -87,7 +90,7 @@ pub async fn list_script_migration_ordered_by_execution_date(
 }
 
 async fn list_script_migration(client: &Surreal<Any>) -> Result<Vec<ScriptMigration>> {
-    let result = client.select("script_migration").await?;
+    let result = client.select(SCRIPT_MIGRATION_TABLE_NAME).await?;
     Ok(result)
 }
 
