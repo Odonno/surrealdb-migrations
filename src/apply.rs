@@ -389,7 +389,7 @@ fn get_migration_files_to_execute<'a>(
     migrations_files: &'a LsResult,
     down_migrations_files: &'a Option<LsResult>,
     operation: &ApplyOperation,
-    migrations_applied: &'a Vec<ScriptMigration>,
+    migrations_applied: &'a [ScriptMigration],
 ) -> Vec<&'a HashMap<DirEntryAttr, DirEntryValue>> {
     let mut filtered_migrations_files = migrations_files
         .items
@@ -454,7 +454,7 @@ fn get_sorted_migrations_files<'a>(
 fn filter_migration_file_to_execute(
     migration_file: &HashMap<DirEntryAttr, DirEntryValue>,
     operation: &ApplyOperation,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
     is_from_down_folder: bool,
 ) -> Result<bool> {
     let is_file = migration_file

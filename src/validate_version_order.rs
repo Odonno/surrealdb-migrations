@@ -93,7 +93,7 @@ fn get_sorted_migrations_files(
 
 fn is_migration_file_already_applied(
     migration_file: &&std::collections::HashMap<DirEntryAttr, DirEntryValue>,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
 ) -> Result<bool> {
     let is_file = migration_file
         .get(&DirEntryAttr::IsFile)
