@@ -43,7 +43,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
     let client = db;
 
     let migrations_applied =
-        surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
+        surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
     let mut config = HashSet::new();
     config.insert(DirEntryAttr::Name);
@@ -60,7 +60,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
 
     let schemas_files = fs_extra::dir::ls(schemas_dir_path, &config)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
-    apply_schema_definitions(&client, &schema_definitions, dry_run).await?;
+    apply_schema_definitions(client, &schema_definitions, dry_run).await?;
 
     if display_logs {
         println!("Schema files successfully executed!");
@@ -69,7 +69,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
     let event_definitions = if events_dir_path.try_exists()? {
         let events_files = fs_extra::dir::ls(events_dir_path, &config)?;
         let event_definitions = extract_event_definitions(events_files);
-        apply_event_definitions(&client, &event_definitions, dry_run).await?;
+        apply_event_definitions(client, &event_definitions, dry_run).await?;
 
         if display_logs {
             println!("Event files successfully executed!");
@@ -199,7 +199,7 @@ fn get_transaction_action(dry_run: bool) -> TransactionAction {
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create_all(&dir_path, false)?;
+        fs_extra::dir::create_all(dir_path, false)?;
     }
 
     Ok(())
@@ -267,7 +267,7 @@ fn create_definition_files(
             )?;
 
             // calculate new definition based on all definitions files
-            let diff_definition_files = fs_extra::dir::ls(definitions_path, &config)?;
+            let diff_definition_files = fs_extra::dir::ls(definitions_path, config)?;
 
             let definition_diffs = diff_definition_files
                 .items
@@ -276,7 +276,7 @@ fn create_definition_files(
                 .take_while(|file| {
                     take_while_not_applied(file, last_migration_applied).unwrap_or(false)
                 })
-                .map(|file| map_to_file_content(file))
+                .map(map_to_file_content)
                 .collect::<Vec<_>>();
 
             let mut last_definition = initial_definition;
@@ -317,7 +317,7 @@ fn create_definition_files(
                 "migrations/definitions/{}.json",
                 last_migration_applied.script_name
             );
-            let definition_filepath = match folder_path.to_owned() {
+            let definition_filepath = match folder_path {
                 Some(folder_path) => Path::new(&folder_path).join(definition_filepath),
                 None => Path::new(&definition_filepath).to_path_buf(),
             };
@@ -395,7 +395,7 @@ fn get_migration_files_to_execute<'a>(
         .items
         .iter()
         .filter(|migration_file| {
-            filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, false)
+            filter_migration_file_to_execute(migration_file, operation, migrations_applied, false)
                 .unwrap_or(false)
         })
         .collect::<Vec<_>>();
@@ -407,8 +407,8 @@ fn get_migration_files_to_execute<'a>(
             .filter(|migration_file| {
                 filter_migration_file_to_execute(
                     migration_file,
-                    &operation,
-                    &migrations_applied,
+                    operation,
+                    migrations_applied,
                     true,
                 )
                 .unwrap_or(false)
@@ -419,7 +419,7 @@ fn get_migration_files_to_execute<'a>(
 
     filtered_migrations_files.extend(filtered_down_migrations_files);
 
-    get_sorted_migrations_files(filtered_migrations_files, &operation)
+    get_sorted_migrations_files(filtered_migrations_files, operation)
 }
 
 fn get_sorted_migrations_files<'a>(
@@ -482,8 +482,8 @@ fn filter_migration_file_to_execute(
     let is_down_file = match is_from_down_folder {
         true => true,
         false => {
-            let is_down_file = full_name.ends_with(".down.surql");
-            is_down_file
+            
+            full_name.ends_with(".down.surql")
         }
     };
 
@@ -534,7 +534,7 @@ fn filter_migration_file_to_execute(
         _ => {}
     }
 
-    return Ok(true);
+    Ok(true)
 }
 
 async fn apply_migrations(
@@ -571,7 +571,7 @@ CREATE script_migration SET script_name = '{}';",
         );
 
         let script_display_name = name
-            .split("_")
+            .split('_')
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()
@@ -582,7 +582,7 @@ CREATE script_migration SET script_name = '{}';",
         }
 
         let transaction_action = get_transaction_action(dry_run);
-        surrealdb::apply_in_transaction(&client, &query, transaction_action).await?;
+        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
     }
 
     Ok(())
@@ -622,7 +622,7 @@ DELETE script_migration WHERE script_name = '{}';",
         );
 
         let script_display_name = name
-            .split("_")
+            .split('_')
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()
@@ -633,7 +633,7 @@ DELETE script_migration WHERE script_name = '{}';",
         }
 
         let transaction_action = get_transaction_action(dry_run);
-        surrealdb::apply_in_transaction(&client, &query, transaction_action).await?;
+        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
     }
 
     Ok(())

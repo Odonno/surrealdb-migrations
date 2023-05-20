@@ -13,7 +13,7 @@ pub fn main(template: ScaffoldTemplate) -> Result<()> {
 
     copy_template_files_to_current_dir(template, folder_path.to_owned())?;
 
-    apply_after_scaffold(folder_path.to_owned())?;
+    apply_after_scaffold(folder_path)?;
 
     Ok(())
 }

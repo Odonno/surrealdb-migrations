@@ -10,7 +10,7 @@ use crate::{
 pub fn main() -> Result<()> {
     let folder_path = config::retrieve_folder_path();
 
-    let migrations_path = match folder_path.to_owned() {
+    let migrations_path = match folder_path {
         Some(folder_path) => Path::new(&folder_path).join(MIGRATIONS_DIR_NAME),
         None => Path::new(MIGRATIONS_DIR_NAME).to_path_buf(),
     };
@@ -70,7 +70,7 @@ pub fn main() -> Result<()> {
     }?;
 
     let last_migration_display_name = last_migration_filename
-        .split("_")
+        .split('_')
         .skip(2)
         .map(|s| s.to_string())
         .collect::<Vec<_>>()

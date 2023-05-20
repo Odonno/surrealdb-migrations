@@ -23,5 +23,5 @@ pub fn retrieve_table_schema_design() -> Option<TableSchemaDesign> {
         }
     }
 
-    return None;
+    None
 }

@@ -11,7 +11,7 @@ use crate::{config, constants::MIGRATIONS_DIR_NAME, models::ScriptMigration, sur
 
 pub async fn main(client: &Surreal<Any>) -> Result<()> {
     let migrations_applied =
-        surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
+        surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
     let mut config = HashSet::new();
     config.insert(DirEntryAttr::Name);
@@ -37,7 +37,7 @@ pub async fn main(client: &Surreal<Any>) -> Result<()> {
             migrations_not_applied
                 .iter()
                 .filter(|migration_file| {
-                    is_migration_file_before_last_applied(migration_file, &last_migration_applied)
+                    is_migration_file_before_last_applied(migration_file, last_migration_applied)
                         .unwrap_or(false)
                 })
                 .collect::<Vec<_>>()
@@ -45,7 +45,7 @@ pub async fn main(client: &Surreal<Any>) -> Result<()> {
             Vec::new()
         };
 
-    if migrations_not_applied_before_last_applied.len() > 0 {
+    if !migrations_not_applied_before_last_applied.is_empty() {
         let migration_names = migrations_not_applied_before_last_applied
             .iter()
             .map(|migration_file| get_migration_file_name(migration_file).unwrap_or("".to_string()))
@@ -125,7 +125,7 @@ fn is_migration_file_already_applied(
         return Ok(false);
     }
 
-    return Ok(true);
+    Ok(true)
 }
 
 fn is_migration_file_before_last_applied(

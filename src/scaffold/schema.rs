@@ -19,7 +19,7 @@ pub fn main(schema: String, db_type: ScaffoldSchemaDbType, preserve_casing: bool
 
     scaffold_from_schema(schema, db_type, preserve_casing, folder_path.to_owned())?;
 
-    apply_after_scaffold(folder_path.to_owned())?;
+    apply_after_scaffold(folder_path)?;
 
     Ok(())
 }
@@ -286,7 +286,7 @@ fn convert_ast_to_surrealdb_schema(
                         let option_name = &column_option.name;
                         let index_name = match option_name {
                             Some(name) => name.value.to_string(),
-                            None => format!("{}_{}_index", table_name, field_name.to_string()),
+                            None => format!("{}_{}_index", table_name, field_name),
                         };
 
                         match column_option.option {
@@ -407,7 +407,7 @@ fn detect_field_type(column: &sqlparser::ast::ColumnDef) -> Option<SurrealdbFiel
         sqlparser::ast::DataType::Custom(sqlparser::ast::ObjectName(identifiers), _) => {
             if let Some(first_identifier) = identifiers.first() {
                 // 💡 MSSQL type for boolean
-                if first_identifier.value.to_string() == "BIT" {
+                if first_identifier.value == "BIT" {
                     Some(SurrealdbFieldType::Boolean)
                 } else {
                     None

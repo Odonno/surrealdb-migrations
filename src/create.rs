@@ -85,7 +85,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
                 ensures_folder_exists(&down_folder_path)?;
 
                 let down_file_path = down_folder_path.join(&filename);
-                fs_extra::file::write_all(&down_file_path, &content)?;
+                fs_extra::file::write_all(down_file_path, &content)?;
             }
 
             println!("File {} created successfully", filename);
@@ -151,8 +151,8 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
 }
 
 fn get_table_schema_design_str(schemafull: bool) -> &'static str {
-    const SCHEMAFULL: &'static str = "SCHEMAFULL";
-    const SCHEMALESS: &'static str = "SCHEMALESS";
+    const SCHEMAFULL: &str = "SCHEMAFULL";
+    const SCHEMALESS: &str = "SCHEMALESS";
 
     if schemafull {
         return SCHEMAFULL;
@@ -182,7 +182,7 @@ fn generate_field_definitions(fields: &Option<Vec<String>>, name: String) -> Str
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create_all(&dir_path, false)?;
+        fs_extra::dir::create_all(dir_path, false)?;
     }
 
     Ok(())

@@ -127,7 +127,7 @@ pub async fn check_surrealdb_empty() -> Result<()> {
     let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
-    if table_definitions.len() > 0 {
+    if !table_definitions.is_empty() {
         return Err(anyhow!("SurrealDB instance is not empty"));
     }
 
