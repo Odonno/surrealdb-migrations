@@ -79,7 +79,7 @@ fn scaffold_from_schema(
 
     let schema = convert_ast_to_surrealdb_schema(ast, preserve_casing)?;
 
-    if schema.tables.len() <= 0 {
+    if schema.tables.is_empty() {
         return Err(anyhow!("No table found in schema file."));
     }
 
