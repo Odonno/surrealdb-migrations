@@ -481,10 +481,7 @@ fn filter_migration_file_to_execute(
 
     let is_down_file = match is_from_down_folder {
         true => true,
-        false => {
-            
-            full_name.ends_with(".down.surql")
-        }
+        false => full_name.ends_with(".down.surql"),
     };
 
     let migration_direction = match &operation {
