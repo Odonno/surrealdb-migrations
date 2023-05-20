@@ -27,7 +27,7 @@ pub enum ApplyOperation {
     Down(String),
 }
 
-pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
+pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
     let ApplyArgs {
         operation,
         db,
