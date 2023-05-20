@@ -5,7 +5,7 @@ use std::{collections::HashMap, ops::Deref};
 use crate::{
     cli::{ScaffoldSchemaDbType, ScaffoldTemplate},
     config,
-    constants::SCHEMAS_DIR_NAME,
+    constants::{SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME},
 };
 
 use super::common::{
@@ -83,9 +83,10 @@ fn scaffold_from_schema(
         return Err(anyhow!("No table found in schema file."));
     }
 
-    if schema.tables.contains_key("script_migration") {
+    if schema.tables.contains_key(SCRIPT_MIGRATION_TABLE_NAME) {
         return Err(anyhow!(
-            "The table 'script_migration' is reserved for internal use."
+            "The table '{}' is reserved for internal use.",
+            SCRIPT_MIGRATION_TABLE_NAME
         ));
     }
 
