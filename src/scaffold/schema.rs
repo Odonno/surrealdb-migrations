@@ -263,11 +263,8 @@ fn convert_ast_to_surrealdb_schema(
 
                     // Detect unique constraints
                     for column_option in &column.options {
-                        match column_option.option {
-                            sqlparser::ast::ColumnOption::NotNull => {
-                                is_not_null = true;
-                            }
-                            _ => {}
+                        if column_option.option == sqlparser::ast::ColumnOption::NotNull {
+                            is_not_null = true;
                         }
                     }
 
