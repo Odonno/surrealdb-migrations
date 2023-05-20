@@ -6,7 +6,7 @@ use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 use crate::{input::SurrealdbConfiguration, surrealdb};
 
 pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> Result<()> {
-    let client = surrealdb::create_surrealdb_client(&db_configuration).await?;
+    let client = surrealdb::create_surrealdb_client(db_configuration).await?;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
@@ -21,7 +21,7 @@ pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> 
             .map(|m| {
                 let display_name = m
                     .script_name
-                    .split("_")
+                    .split('_')
                     .skip(2)
                     .map(|s| s.to_string())
                     .collect::<Vec<_>>()

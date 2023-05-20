@@ -27,10 +27,7 @@ pub fn can_use_filesystem() -> bool {
         .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
 
-    match script_migration_file_try_exists {
-        Some(is_script_migration_file_exists) => is_script_migration_file_exists,
-        None => false,
-    }
+    script_migration_file_try_exists.unwrap_or(false)
 }
 
 pub struct SurqlFile {
@@ -84,10 +81,7 @@ pub fn extract_backward_migrations_files(embedded_dir: Option<&Dir<'static>>) ->
 
     let root_backward_migrations_files = root_migrations_files
         .into_iter()
-        .filter(|file| {
-            let is_down_file = file.name.ends_with(".down.surql");
-            is_down_file
-        })
+        .filter(|file| file.name.ends_with(".down.surql"))
         .collect::<Vec<_>>();
 
     let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
@@ -134,7 +128,7 @@ fn extract_surql_files_from_embedded_dir(
                 (_, Some(name), Some(full_name)) => Some(SurqlFile {
                     name,
                     full_name,
-                    content: Box::new(move || get_embedded_file_content(&f)),
+                    content: Box::new(move || get_embedded_file_content(f)),
                 }),
                 _ => None,
             }
@@ -147,7 +141,7 @@ fn extract_surql_files_from_embedded_dir(
 fn get_embedded_file_name(f: &include_dir::File) -> Option<String> {
     let name = f.path().file_stem();
     let name = match name {
-        Some(name) if name.to_str().and_then(|n| Some(n.ends_with(".down"))) == Some(true) => {
+        Some(name) if name.to_str().map(|n| n.ends_with(".down")) == Some(true) => {
             Path::new(name).file_stem()
         }
         Some(name) => Some(name),
@@ -155,7 +149,7 @@ fn get_embedded_file_name(f: &include_dir::File) -> Option<String> {
     };
 
     name.and_then(|name| name.to_str())
-        .and_then(|name| Some(name.to_string()))
+        .map(|name| name.to_string())
 }
 
 fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
@@ -163,7 +157,7 @@ fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
         .path()
         .file_name()
         .and_then(|full_name| full_name.to_str())
-        .and_then(|full_name| Some(full_name.to_string()));
+        .map(|full_name| full_name.to_string());
     full_name
 }
 
@@ -175,8 +169,7 @@ fn get_embedded_file_is_file(full_name: &Option<String>) -> bool {
 }
 
 fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
-    f.contents_utf8()
-        .and_then(|content| Some(content.to_string()))
+    f.contents_utf8().map(|content| content.to_string())
 }
 
 fn extract_surql_files_from_filesystem(dir_path: PathBuf) -> Result<Vec<SurqlFile>> {
@@ -227,26 +220,20 @@ fn extract_boolean_dir_entry_value(
     f: &HashMap<DirEntryAttr, DirEntryValue>,
     entry_attribute: DirEntryAttr,
 ) -> Option<&bool> {
-    match f.get(&entry_attribute) {
-        Some(value) => match value {
-            DirEntryValue::Boolean(value) => Some(value),
-            _ => None,
-        },
-        _ => None,
+    if let Some(DirEntryValue::Boolean(value)) = f.get(&entry_attribute) {
+        return Some(value);
     }
+    None
 }
 
 fn extract_string_dir_entry_value(
     f: &HashMap<DirEntryAttr, DirEntryValue>,
     entry_attribute: DirEntryAttr,
 ) -> Option<&String> {
-    match f.get(&entry_attribute) {
-        Some(value) => match value {
-            DirEntryValue::String(value) => Some(value),
-            _ => None,
-        },
-        _ => None,
+    if let Some(DirEntryValue::String(value)) = f.get(&entry_attribute) {
+        return Some(value);
     }
+    None
 }
 
 fn is_down_file(file: &SurqlFile) -> bool {

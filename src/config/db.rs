@@ -1,5 +1,6 @@
 use super::common::retrieve_config_value;
 
+#[allow(dead_code)]
 pub struct DbConfig {
     pub address: Option<String>,
     pub url: Option<String>,
@@ -9,6 +10,7 @@ pub struct DbConfig {
     pub db: Option<String>,
 }
 
+#[allow(dead_code)]
 pub fn retrieve_db_config() -> DbConfig {
     DbConfig {
         address: retrieve_config_value("db", "address"),

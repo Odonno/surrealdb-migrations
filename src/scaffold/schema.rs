@@ -20,7 +20,7 @@ pub fn main(schema: String, db_type: ScaffoldSchemaDbType, preserve_casing: bool
 
     scaffold_from_schema(schema, db_type, preserve_casing, folder_path.to_owned())?;
 
-    apply_after_scaffold(folder_path.to_owned())?;
+    apply_after_scaffold(folder_path)?;
 
     Ok(())
 }
@@ -80,7 +80,7 @@ fn scaffold_from_schema(
 
     let schema = convert_ast_to_surrealdb_schema(ast, preserve_casing)?;
 
-    if schema.tables.len() <= 0 {
+    if schema.tables.is_empty() {
         return Err(anyhow!("No table found in schema file."));
     }
 
@@ -207,59 +207,57 @@ fn convert_ast_to_surrealdb_schema(
 
                     // Detect record type from foreign key (if any)
                     for constraint in &constraints {
-                        match constraint {
-                            sqlparser::ast::TableConstraint::ForeignKey {
-                                columns,
-                                foreign_table,
-                                referred_columns,
-                                ..
-                            } => {
-                                if columns.len() != 1 {
-                                    continue;
-                                }
-
-                                if referred_columns.len() != 1 {
-                                    continue;
-                                }
-
-                                let column_identifier = columns.first().unwrap().value.to_string();
-                                let column_identifier = match preserve_casing {
-                                    true => column_identifier,
-                                    false => column_identifier.to_case(Case::Snake),
-                                };
-
-                                if field_name != column_identifier {
-                                    continue;
-                                }
-
-                                let referred_column =
-                                    referred_columns.first().unwrap().value.to_string();
-
-                                if referred_column.to_lowercase() != "id" {
-                                    continue;
-                                }
-
-                                let foreign_table = foreign_table.0.first();
-                                if foreign_table.is_none() {
-                                    continue;
-                                }
-
-                                let foreign_table = foreign_table.unwrap().value.to_string();
-                                let foreign_table = match preserve_casing {
-                                    true => foreign_table,
-                                    false => foreign_table.to_case(Case::Snake),
-                                };
-
-                                field_type = match field_type {
-                                    Some(SurrealdbFieldType::Record(tables)) => {
-                                        Some(SurrealdbFieldType::Record(
-                                            tables.into_iter().chain(vec![foreign_table]).collect(),
-                                        ))
-                                    }
-                                    _ => Some(SurrealdbFieldType::Record(vec![foreign_table])),
-                                };
+                        if let sqlparser::ast::TableConstraint::ForeignKey {
+                            columns,
+                            foreign_table,
+                            referred_columns,
+                            ..
+                        } = constraint
+                        {
+                            if columns.len() != 1 {
+                                continue;
                             }
-                            _ => {}
+
+                            if referred_columns.len() != 1 {
+                                continue;
+                            }
+
+                            let column_identifier = columns.first().unwrap().value.to_string();
+                            let column_identifier = match preserve_casing {
+                                true => column_identifier,
+                                false => column_identifier.to_case(Case::Snake),
+                            };
+
+                            if field_name != column_identifier {
+                                continue;
+                            }
+
+                            let referred_column =
+                                referred_columns.first().unwrap().value.to_string();
+
+                            if referred_column.to_lowercase() != "id" {
+                                continue;
+                            }
+
+                            let foreign_table = foreign_table.0.first();
+                            if foreign_table.is_none() {
+                                continue;
+                            }
+
+                            let foreign_table = foreign_table.unwrap().value.to_string();
+                            let foreign_table = match preserve_casing {
+                                true => foreign_table,
+                                false => foreign_table.to_case(Case::Snake),
+                            };
+
+                            field_type = match field_type {
+                                Some(SurrealdbFieldType::Record(tables)) => {
+                                    Some(SurrealdbFieldType::Record(
+                                        tables.into_iter().chain(vec![foreign_table]).collect(),
+                                    ))
+                                }
+                                _ => Some(SurrealdbFieldType::Record(vec![foreign_table])),
+                            };
                         }
                     }
 
@@ -267,11 +265,8 @@ fn convert_ast_to_surrealdb_schema(
 
                     // Detect unique constraints
                     for column_option in &column.options {
-                        match column_option.option {
-                            sqlparser::ast::ColumnOption::NotNull => {
-                                is_not_null = true;
-                            }
-                            _ => {}
+                        if column_option.option == sqlparser::ast::ColumnOption::NotNull {
+                            is_not_null = true;
                         }
                     }
 
@@ -288,24 +283,23 @@ fn convert_ast_to_surrealdb_schema(
                         let option_name = &column_option.name;
                         let index_name = match option_name {
                             Some(name) => name.value.to_string(),
-                            None => format!("{}_{}_index", table_name, field_name.to_string()),
+                            None => format!("{}_{}_index", table_name, field_name),
                         };
 
-                        match column_option.option {
-                            sqlparser::ast::ColumnOption::Unique { is_primary } => {
-                                if !is_primary {
-                                    let line_definition: SurrealdbSchemaLineDefinition =
-                                        SurrealdbSchemaLineDefinition::Index(
-                                            SurrealdbSchemaIndexDefinition {
-                                                name: index_name,
-                                                field_names: vec![field_name.to_string()],
-                                                unique: true,
-                                            },
-                                        );
-                                    line_definitions.push(line_definition);
-                                }
+                        if let sqlparser::ast::ColumnOption::Unique { is_primary } =
+                            column_option.option
+                        {
+                            if !is_primary {
+                                let line_definition: SurrealdbSchemaLineDefinition =
+                                    SurrealdbSchemaLineDefinition::Index(
+                                        SurrealdbSchemaIndexDefinition {
+                                            name: index_name,
+                                            field_names: vec![field_name.to_string()],
+                                            unique: true,
+                                        },
+                                    );
+                                line_definitions.push(line_definition);
                             }
-                            _ => {}
                         }
                     }
                 }
@@ -409,7 +403,7 @@ fn detect_field_type(column: &sqlparser::ast::ColumnDef) -> Option<SurrealdbFiel
         sqlparser::ast::DataType::Custom(sqlparser::ast::ObjectName(identifiers), _) => {
             if let Some(first_identifier) = identifiers.first() {
                 // 💡 MSSQL type for boolean
-                if first_identifier.value.to_string() == "BIT" {
+                if first_identifier.value == "BIT" {
                     Some(SurrealdbFieldType::Boolean)
                 } else {
                     None

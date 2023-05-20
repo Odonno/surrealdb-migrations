@@ -62,7 +62,7 @@ pub fn get_first_migration_file() -> Result<PathBuf> {
     migration_files.sort_by(|a, b| {
         a.file_name()
             .unwrap_or_default()
-            .cmp(&b.file_name().unwrap_or_default())
+            .cmp(b.file_name().unwrap_or_default())
     });
 
     let first_migration_file = migration_files
