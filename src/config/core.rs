@@ -1,5 +1,6 @@
 use super::common::retrieve_config_value;
 
+#[allow(dead_code)]
 pub enum TableSchemaDesign {
     Schemafull,
     Schemaless,
@@ -9,6 +10,7 @@ pub fn retrieve_folder_path() -> Option<String> {
     retrieve_config_value("core", "path")
 }
 
+#[allow(dead_code)]
 pub fn retrieve_table_schema_design() -> Option<TableSchemaDesign> {
     let schema_str = retrieve_config_value("core", "schema");
 

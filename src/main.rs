@@ -79,6 +79,7 @@ async fn main() -> Result<()> {
             },
         },
         Action::Remove {} => remove::main(),
+        #[allow(deprecated)]
         Action::Apply {
             up,
             down,
@@ -117,6 +118,7 @@ async fn main() -> Result<()> {
             };
             apply::main(args).await
         }
+        #[allow(deprecated)]
         Action::List {
             address,
             url,

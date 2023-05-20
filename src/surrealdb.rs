@@ -7,6 +7,7 @@ use surrealdb::{
 
 use crate::{config, input::SurrealdbConfiguration, models::ScriptMigration};
 
+#[allow(deprecated, dead_code)]
 pub async fn create_surrealdb_client(
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
@@ -65,6 +66,7 @@ async fn sign_in(
         .await
 }
 
+#[allow(dead_code)]
 async fn set_namespace_and_database(
     ns: Option<String>,
     db: Option<String>,
