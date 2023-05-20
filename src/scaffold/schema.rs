@@ -205,59 +205,57 @@ fn convert_ast_to_surrealdb_schema(
 
                     // Detect record type from foreign key (if any)
                     for constraint in &constraints {
-                        match constraint {
-                            sqlparser::ast::TableConstraint::ForeignKey {
-                                columns,
-                                foreign_table,
-                                referred_columns,
-                                ..
-                            } => {
-                                if columns.len() != 1 {
-                                    continue;
-                                }
-
-                                if referred_columns.len() != 1 {
-                                    continue;
-                                }
-
-                                let column_identifier = columns.first().unwrap().value.to_string();
-                                let column_identifier = match preserve_casing {
-                                    true => column_identifier,
-                                    false => column_identifier.to_case(Case::Snake),
-                                };
-
-                                if field_name != column_identifier {
-                                    continue;
-                                }
-
-                                let referred_column =
-                                    referred_columns.first().unwrap().value.to_string();
-
-                                if referred_column.to_lowercase() != "id" {
-                                    continue;
-                                }
-
-                                let foreign_table = foreign_table.0.first();
-                                if foreign_table.is_none() {
-                                    continue;
-                                }
-
-                                let foreign_table = foreign_table.unwrap().value.to_string();
-                                let foreign_table = match preserve_casing {
-                                    true => foreign_table,
-                                    false => foreign_table.to_case(Case::Snake),
-                                };
-
-                                field_type = match field_type {
-                                    Some(SurrealdbFieldType::Record(tables)) => {
-                                        Some(SurrealdbFieldType::Record(
-                                            tables.into_iter().chain(vec![foreign_table]).collect(),
-                                        ))
-                                    }
-                                    _ => Some(SurrealdbFieldType::Record(vec![foreign_table])),
-                                };
+                        if let sqlparser::ast::TableConstraint::ForeignKey {
+                            columns,
+                            foreign_table,
+                            referred_columns,
+                            ..
+                        } = constraint
+                        {
+                            if columns.len() != 1 {
+                                continue;
                             }
-                            _ => {}
+
+                            if referred_columns.len() != 1 {
+                                continue;
+                            }
+
+                            let column_identifier = columns.first().unwrap().value.to_string();
+                            let column_identifier = match preserve_casing {
+                                true => column_identifier,
+                                false => column_identifier.to_case(Case::Snake),
+                            };
+
+                            if field_name != column_identifier {
+                                continue;
+                            }
+
+                            let referred_column =
+                                referred_columns.first().unwrap().value.to_string();
+
+                            if referred_column.to_lowercase() != "id" {
+                                continue;
+                            }
+
+                            let foreign_table = foreign_table.0.first();
+                            if foreign_table.is_none() {
+                                continue;
+                            }
+
+                            let foreign_table = foreign_table.unwrap().value.to_string();
+                            let foreign_table = match preserve_casing {
+                                true => foreign_table,
+                                false => foreign_table.to_case(Case::Snake),
+                            };
+
+                            field_type = match field_type {
+                                Some(SurrealdbFieldType::Record(tables)) => {
+                                    Some(SurrealdbFieldType::Record(
+                                        tables.into_iter().chain(vec![foreign_table]).collect(),
+                                    ))
+                                }
+                                _ => Some(SurrealdbFieldType::Record(vec![foreign_table])),
+                            };
                         }
                     }
 
