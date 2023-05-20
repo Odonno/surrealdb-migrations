@@ -284,21 +284,20 @@ fn convert_ast_to_surrealdb_schema(
                             None => format!("{}_{}_index", table_name, field_name),
                         };
 
-                        match column_option.option {
-                            sqlparser::ast::ColumnOption::Unique { is_primary } => {
-                                if !is_primary {
-                                    let line_definition: SurrealdbSchemaLineDefinition =
-                                        SurrealdbSchemaLineDefinition::Index(
-                                            SurrealdbSchemaIndexDefinition {
-                                                name: index_name,
-                                                field_names: vec![field_name.to_string()],
-                                                unique: true,
-                                            },
-                                        );
-                                    line_definitions.push(line_definition);
-                                }
+                        if let sqlparser::ast::ColumnOption::Unique { is_primary } =
+                            column_option.option
+                        {
+                            if !is_primary {
+                                let line_definition: SurrealdbSchemaLineDefinition =
+                                    SurrealdbSchemaLineDefinition::Index(
+                                        SurrealdbSchemaIndexDefinition {
+                                            name: index_name,
+                                            field_names: vec![field_name.to_string()],
+                                            unique: true,
+                                        },
+                                    );
+                                line_definitions.push(line_definition);
                             }
-                            _ => {}
                         }
                     }
                 }
