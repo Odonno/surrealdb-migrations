@@ -22,6 +22,12 @@ jobs:
       - name: Run check
         run: cargo check --all
 
+      - name: Download SurrealDB
+        run: curl -sSf https://install.surrealdb.com | sh
+
+      - name: Run tests
+        run: cargo test
+
       - name: Run format
         run: |
           cargo check --all
@@ -29,15 +35,6 @@ jobs:
 
       - name: Run lint
         run: cargo clippy -- -Dwarnings
-
-      - name: Build
-        run: cargo build
-
-      - name: Download SurrealDB
-        run: curl -sSf https://install.surrealdb.com | sh
-
-      - name: Run tests
-        run: cargo test
 
   coverage:
     needs: ci
