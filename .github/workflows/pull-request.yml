@@ -16,7 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup cargo toolchain
+      - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust dependencies
@@ -33,12 +33,13 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup cargo toolchain
+      - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Rust dependencies
