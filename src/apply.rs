@@ -10,7 +10,10 @@ use std::{
 
 use crate::{
     config,
-    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{
+        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
+        SCRIPT_MIGRATION_TABLE_NAME,
+    },
     definitions,
     models::ScriptMigration,
     surrealdb::{self, TransactionAction},
@@ -685,6 +688,18 @@ fn get_transaction_action(dry_run: bool) -> TransactionAction {
     }
 }
 
+fn can_use_filesystem() -> bool {
+    let folder_path = config::retrieve_folder_path();
+    let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
+        .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
+    let script_migration_file_try_exists = script_migration_path.try_exists().ok();
+
+    match script_migration_file_try_exists {
+        Some(is_script_migration_file_exists) => is_script_migration_file_exists,
+        None => false,
+    }
+}
+
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
         fs_extra::dir::create_all(&dir_path, false)?;
@@ -984,8 +999,8 @@ async fn apply_migrations(
 
         let query = format!(
             "{}
-CREATE script_migration SET script_name = '{}';",
-            inner_query, migration_file.name
+CREATE {} SET script_name = '{}';",
+            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
         let script_display_name = migration_file
@@ -1018,8 +1033,8 @@ async fn revert_migrations(
 
         let query = format!(
             "{}
-DELETE script_migration WHERE script_name = '{}';",
-            inner_query, migration_file.name
+DELETE {} WHERE script_name = '{}';",
+            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
         let script_display_name = migration_file
@@ -1039,14 +1054,4 @@ DELETE script_migration WHERE script_name = '{}';",
     }
 
     Ok(())
-}
-
-#[cfg(target_arch = "wasm32")]
-fn can_use_filesystem() -> bool {
-    false
-}
-
-#[cfg(not(target_arch = "wasm32"))]
-fn can_use_filesystem() -> bool {
-    true
 }
