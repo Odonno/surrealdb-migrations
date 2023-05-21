@@ -41,7 +41,7 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
     Ok(())
 }
 
-fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) -> Result<()> {
+fn fails_if_folder_already_exists(dir_path: &Path, dir_name: &str) -> Result<()> {
     match dir_path.exists() {
         true => Err(anyhow!("'{}' folder already exists.", dir_name)),
         false => Ok(()),

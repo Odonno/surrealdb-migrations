@@ -24,10 +24,7 @@ pub fn can_use_filesystem() -> bool {
         .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
 
-    match script_migration_file_try_exists {
-        Some(is_script_migration_file_exists) => is_script_migration_file_exists,
-        None => false,
-    }
+    script_migration_file_try_exists.unwrap_or(false)
 }
 
 #[derive(Debug)]
@@ -80,7 +77,7 @@ fn extract_surql_files_from_embedded_dir(dir_path: PathBuf, dir: &Dir) -> Result
 fn get_embedded_file_name(f: &include_dir::File) -> Option<String> {
     let name = f.path().file_stem();
     let name = match name {
-        Some(name) if name.to_str().and_then(|n| Some(n.ends_with(".down"))) == Some(true) => {
+        Some(name) if name.to_str().map(|n| n.ends_with(".down")) == Some(true) => {
             Path::new(name).file_stem()
         }
         Some(name) => Some(name),
@@ -88,7 +85,7 @@ fn get_embedded_file_name(f: &include_dir::File) -> Option<String> {
     };
 
     name.and_then(|name| name.to_str())
-        .and_then(|name| Some(name.to_string()))
+        .map(|name| name.to_string())
 }
 
 fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
@@ -96,7 +93,7 @@ fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
         .path()
         .file_name()
         .and_then(|full_name| full_name.to_str())
-        .and_then(|full_name| Some(full_name.to_string()));
+        .map(|full_name| full_name.to_string());
     full_name
 }
 
@@ -108,8 +105,7 @@ fn get_embedded_file_is_file(full_name: &Option<String>) -> bool {
 }
 
 fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
-    f.contents_utf8()
-        .and_then(|content| Some(content.to_string()))
+    f.contents_utf8().map(|content| content.to_string())
 }
 
 fn extract_surql_files_from_filesystem(dir_path: PathBuf) -> Result<Vec<SurqlFile>> {
@@ -162,10 +158,7 @@ fn extract_boolean_dir_entry_value(
     entry_attribute: DirEntryAttr,
 ) -> Option<&bool> {
     match f.get(&entry_attribute) {
-        Some(value) => match value {
-            DirEntryValue::Boolean(value) => Some(value),
-            _ => None,
-        },
+        Some(DirEntryValue::Boolean(value)) => Some(value),
         _ => None,
     }
 }
@@ -175,10 +168,7 @@ fn extract_string_dir_entry_value(
     entry_attribute: DirEntryAttr,
 ) -> Option<&String> {
     match f.get(&entry_attribute) {
-        Some(value) => match value {
-            DirEntryValue::String(value) => Some(value),
-            _ => None,
-        },
+        Some(DirEntryValue::String(value)) => Some(value),
         _ => None,
     }
 }

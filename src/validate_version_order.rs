@@ -15,7 +15,7 @@ pub struct ValidateVersionArgs<'a> {
     pub dir: Option<&'a Dir<'a>>,
 }
 
-pub async fn main<'a>(args: ValidateVersionArgs<'a>) -> Result<()> {
+pub async fn main(args: ValidateVersionArgs<'_>) -> Result<()> {
     let ValidateVersionArgs { db: client, dir } = args;
 
     let migrations_applied =
@@ -75,7 +75,7 @@ fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFil
 
 fn is_migration_file_already_applied(
     migration_file: &SurqlFile,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
 ) -> Result<bool> {
     let has_already_been_applied = migrations_applied
         .iter()
