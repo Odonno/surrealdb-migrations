@@ -22,7 +22,7 @@ use crate::{
 pub struct ApplyArgs<'a> {
     pub operation: ApplyOperation,
     pub db: &'a Surreal<Any>,
-    pub dir: Option<&'a Dir<'a>>,
+    pub dir: Option<&'a Dir<'static>>,
     pub display_logs: bool,
     pub dry_run: bool,
 }
@@ -173,7 +173,7 @@ fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
 fn concat_files_content(files: Vec<SurqlFile>) -> String {
     files
         .iter()
-        .map(|file| file.content.to_string())
+        .map(|file| file.get_content().unwrap_or(String::new()))
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -494,7 +494,7 @@ async fn apply_migrations(
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
-        let inner_query = migration_file.content;
+        let inner_query = migration_file.get_content().unwrap_or(String::new());
 
         let query = format!(
             "{}
@@ -528,7 +528,7 @@ async fn revert_migrations(
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
-        let inner_query = migration_file.content;
+        let inner_query = migration_file.get_content().unwrap_or(String::new());
 
         let query = format!(
             "{}

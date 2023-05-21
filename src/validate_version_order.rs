@@ -12,7 +12,7 @@ use crate::{
 
 pub struct ValidateVersionArgs<'a> {
     pub db: &'a Surreal<Any>,
-    pub dir: Option<&'a Dir<'a>>,
+    pub dir: Option<&'a Dir<'static>>,
 }
 
 pub async fn main<'a>(args: ValidateVersionArgs<'a>) -> Result<()> {

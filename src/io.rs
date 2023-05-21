@@ -30,16 +30,21 @@ pub fn can_use_filesystem() -> bool {
     }
 }
 
-#[derive(Debug)]
 pub struct SurqlFile {
     pub name: String,
     pub full_name: String,
-    pub content: String,
+    content: Box<dyn Fn() -> Option<String> + Send + Sync>,
+}
+
+impl SurqlFile {
+    pub fn get_content(&self) -> Option<String> {
+        (self.content)()
+    }
 }
 
 pub fn extract_surql_files(
     dir_path: PathBuf,
-    embedded_dir: Option<&Dir>,
+    embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     match embedded_dir {
         Some(dir) => extract_surql_files_from_embedded_dir(dir_path, dir),
@@ -47,7 +52,10 @@ pub fn extract_surql_files(
     }
 }
 
-fn extract_surql_files_from_embedded_dir(dir_path: PathBuf, dir: &Dir) -> Result<Vec<SurqlFile>> {
+fn extract_surql_files_from_embedded_dir(
+    dir_path: PathBuf,
+    dir: &Dir<'static>,
+) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
     let dir = dir
@@ -60,14 +68,13 @@ fn extract_surql_files_from_embedded_dir(dir_path: PathBuf, dir: &Dir) -> Result
             let name = get_embedded_file_name(f);
             let full_name = get_embedded_file_full_name(f);
             let is_file = get_embedded_file_is_file(&full_name);
-            let content = get_embedded_file_content(f);
 
-            match (is_file, name, full_name, content) {
+            match (is_file, name, full_name) {
                 (false, ..) => None,
-                (_, Some(name), Some(full_name), Some(content)) => Some(SurqlFile {
+                (_, Some(name), Some(full_name)) => Some(SurqlFile {
                     name,
                     full_name,
-                    content,
+                    content: Box::new(move || get_embedded_file_content(&f)),
                 }),
                 _ => None,
             }
@@ -136,19 +143,18 @@ fn extract_surql_files_from_filesystem(dir_path: PathBuf) -> Result<Vec<SurqlFil
             let full_name = extract_string_dir_entry_value(f, DirEntryAttr::FullName);
             let path = extract_string_dir_entry_value(f, DirEntryAttr::Path);
 
-            let content = match path {
-                Some(path) => fs_extra::file::read_to_string(path).ok(),
-                None => None,
-            };
-
-            match (is_file, name, full_name, content) {
+            match (is_file, name, full_name, path) {
                 (None, ..) => None,
                 (Some(false), ..) => None,
-                (_, Some(name), Some(full_name), Some(content)) => Some(SurqlFile {
-                    name: name.to_string(),
-                    full_name: full_name.to_string(),
-                    content,
-                }),
+                (_, Some(name), Some(full_name), Some(path)) => {
+                    let path = path.clone();
+
+                    Some(SurqlFile {
+                        name: name.to_string(),
+                        full_name: full_name.to_string(),
+                        content: Box::new(move || fs_extra::file::read_to_string(&path).ok()),
+                    })
+                }
                 _ => None,
             }
         })

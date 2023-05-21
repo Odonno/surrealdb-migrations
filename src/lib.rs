@@ -73,7 +73,7 @@ use validate_version_order::ValidateVersionArgs;
 /// The main entry point for the library, used to apply migrations.
 pub struct SurrealdbMigrations<'a> {
     db: &'a Surreal<Any>,
-    dir: Option<&'a Dir<'a>>,
+    dir: Option<&'a Dir<'static>>,
 }
 
 impl SurrealdbMigrations<'_> {
@@ -125,7 +125,7 @@ impl SurrealdbMigrations<'_> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load_files<'a>(&'a self, dir: &'a Dir<'a>) -> SurrealdbMigrations<'a> {
+    pub fn load_files<'a>(&'a self, dir: &'a Dir<'static>) -> SurrealdbMigrations<'a> {
         SurrealdbMigrations {
             db: self.db,
             dir: Some(dir),
