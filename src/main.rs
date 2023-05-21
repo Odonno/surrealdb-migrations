@@ -12,6 +12,7 @@ mod constants;
 mod create;
 mod definitions;
 mod input;
+mod io;
 mod list;
 mod models;
 mod remove;
@@ -113,6 +114,7 @@ async fn main() -> Result<()> {
             let args = ApplyArgs {
                 operation,
                 db: &db,
+                dir: None,
                 display_logs: true,
                 dry_run,
             };

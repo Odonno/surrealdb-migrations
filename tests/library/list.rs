@@ -17,7 +17,7 @@ async fn list_empty_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            let migrations_applied = SurrealdbMigrations::new(db).list().await?;
+            let migrations_applied = SurrealdbMigrations::new(&db).list().await?;
 
             ensure!(migrations_applied.len() == 0);
 
@@ -41,7 +41,7 @@ async fn list_blog_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            let migrations_applied = SurrealdbMigrations::new(db).list().await?;
+            let migrations_applied = SurrealdbMigrations::new(&db).list().await?;
 
             ensure!(migrations_applied.len() == 3);
 

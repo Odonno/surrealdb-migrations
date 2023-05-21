@@ -16,7 +16,7 @@ async fn apply_initial_schema_changes() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })
@@ -38,7 +38,7 @@ async fn apply_new_schema_changes() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })
@@ -57,7 +57,7 @@ async fn apply_initial_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })
@@ -79,7 +79,7 @@ async fn apply_new_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })
@@ -106,7 +106,7 @@ async fn apply_with_db_configuration() -> Result<()> {
             };
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })
@@ -134,7 +134,7 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
             };
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(db).up().await?;
+            SurrealdbMigrations::new(&db).up().await?;
 
             Ok(())
         })

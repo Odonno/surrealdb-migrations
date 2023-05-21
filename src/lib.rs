@@ -44,7 +44,7 @@
 //!     db.use_ns("namespace").use_db("database").await?;
 //!
 //!     // Apply all migrations
-//!     SurrealdbMigrations::new(db)
+//!     SurrealdbMigrations::new(&db)
 //!         .up()
 //!         .await
 //!         .expect("Failed to apply migrations");
@@ -58,6 +58,7 @@ mod config;
 mod constants;
 mod definitions;
 mod input;
+mod io;
 mod models;
 mod surrealdb;
 mod validate_version_order;
@@ -65,17 +66,70 @@ mod validate_version_order;
 use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::Result;
 use apply::ApplyArgs;
+use include_dir::Dir;
 use models::ScriptMigration;
+use validate_version_order::ValidateVersionArgs;
 
 /// The main entry point for the library, used to apply migrations.
-pub struct SurrealdbMigrations {
-    db: Surreal<Any>,
+pub struct SurrealdbMigrations<'a> {
+    db: &'a Surreal<Any>,
+    dir: Option<&'a Dir<'a>>,
 }
 
-impl SurrealdbMigrations {
-    /// Create a new instance of SurrealdbMigrations.
-    pub fn new(db: Surreal<Any>) -> SurrealdbMigrations {
-        SurrealdbMigrations { db }
+impl SurrealdbMigrations<'_> {
+    /// Create a new instance of `SurrealdbMigrations`.
+    ///
+    /// ## Arguments
+    ///
+    /// * `db` - The SurrealDB instance used to apply migrations, etc...
+    pub fn new<'a>(db: &'a Surreal<Any>) -> SurrealdbMigrations<'a> {
+        SurrealdbMigrations { db, dir: None }
+    }
+
+    /// Load migration project files from an embedded directory.
+    ///
+    /// ## Arguments
+    ///
+    /// * `dir` - The directory containing the migration project files.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use anyhow::Result;
+    /// use include_dir::{include_dir, Dir};
+    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// // Load migration project files from an embedded directory
+    /// const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+    ///
+    /// let runner = SurrealdbMigrations::new(&db)
+    ///     .load_files(&DB_DIR) // Will look for embedded files instead of the filesystem
+    ///     .up()
+    ///     .await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn load_files<'a>(&'a self, dir: &'a Dir<'a>) -> SurrealdbMigrations<'a> {
+        SurrealdbMigrations {
+            db: self.db,
+            dir: Some(dir),
+        }
     }
 
     /// Validate the version order of the migrations so that you cannot run migrations if there are
@@ -102,7 +156,7 @@ impl SurrealdbMigrations {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// let runner = SurrealdbMigrations::new(db);
+    /// let runner = SurrealdbMigrations::new(&db);
     ///
     /// runner.validate_version_order().await?;
     /// runner.up().await?;
@@ -111,7 +165,11 @@ impl SurrealdbMigrations {
     /// # }
     /// ```
     pub async fn validate_version_order(&self) -> Result<()> {
-        validate_version_order::main(&self.db).await
+        let args = ValidateVersionArgs {
+            db: self.db,
+            dir: self.dir,
+        };
+        validate_version_order::main(args).await
     }
 
     /// Apply schema definitions and apply all migrations.
@@ -137,7 +195,7 @@ impl SurrealdbMigrations {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(db)
+    /// SurrealdbMigrations::new(&db)
     ///     .up()
     ///     .await
     ///     .expect("Failed to apply migrations");
@@ -148,7 +206,8 @@ impl SurrealdbMigrations {
     pub async fn up(&self) -> Result<()> {
         let args: ApplyArgs = ApplyArgs {
             operation: apply::ApplyOperation::Up,
-            db: &self.db,
+            db: self.db,
+            dir: self.dir,
             display_logs: false,
             dry_run: false,
         };
@@ -182,7 +241,7 @@ impl SurrealdbMigrations {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(db)
+    /// SurrealdbMigrations::new(&db)
     ///     .up_to("20230101_120002_AddPost")
     ///     .await
     ///     .expect("Failed to apply migrations");
@@ -193,7 +252,8 @@ impl SurrealdbMigrations {
     pub async fn up_to(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
             operation: apply::ApplyOperation::UpTo(name.to_string()),
-            db: &self.db,
+            db: self.db,
+            dir: self.dir,
             display_logs: false,
             dry_run: false,
         };
@@ -227,7 +287,7 @@ impl SurrealdbMigrations {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(db)
+    /// SurrealdbMigrations::new(&db)
     ///     .down("0") // Will revert all migrations
     ///     .await
     ///     .expect("Failed to revert migrations");
@@ -238,7 +298,8 @@ impl SurrealdbMigrations {
     pub async fn down(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
             operation: apply::ApplyOperation::Down(name.to_string()),
-            db: &self.db,
+            db: self.db,
+            dir: self.dir,
             display_logs: false,
             dry_run: false,
         };
@@ -268,7 +329,7 @@ impl SurrealdbMigrations {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// let migrations_applied = SurrealdbMigrations::new(db)
+    /// let migrations_applied = SurrealdbMigrations::new(&db)
     ///     .list()
     ///     .await?;
     ///
@@ -276,6 +337,6 @@ impl SurrealdbMigrations {
     /// # }
     /// ```
     pub async fn list(&self) -> Result<Vec<ScriptMigration>> {
-        surrealdb::list_script_migration_ordered_by_execution_date(&self.db).await
+        surrealdb::list_script_migration_ordered_by_execution_date(self.db).await
     }
 }

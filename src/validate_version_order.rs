@@ -1,29 +1,35 @@
-use std::{
-    collections::{HashMap, HashSet},
-    path::{Path, PathBuf},
+use ::surrealdb::{engine::any::Any, Surreal};
+use anyhow::{anyhow, Result};
+use include_dir::Dir;
+use std::path::Path;
+
+use crate::{
+    constants::MIGRATIONS_DIR_NAME,
+    io::{self, SurqlFile},
+    models::ScriptMigration,
+    surrealdb,
 };
 
-use ::surrealdb::{engine::any::Any, Surreal};
-use anyhow::{anyhow, Context, Result};
-use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
+pub struct ValidateVersionArgs<'a> {
+    pub db: &'a Surreal<Any>,
+    pub dir: Option<&'a Dir<'a>>,
+}
 
-use crate::{config, constants::MIGRATIONS_DIR_NAME, models::ScriptMigration, surrealdb};
+pub async fn main<'a>(args: ValidateVersionArgs<'a>) -> Result<()> {
+    let ValidateVersionArgs { db: client, dir } = args;
 
-pub async fn main(client: &Surreal<Any>) -> Result<()> {
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let mut config = HashSet::new();
-    config.insert(DirEntryAttr::Name);
-    config.insert(DirEntryAttr::Path);
-    config.insert(DirEntryAttr::IsFile);
+    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
+    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
+    };
 
-    let folder_path = config::retrieve_folder_path();
-    let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
+    // TODO : Filter .down.surql files
 
-    let migrations_files = fs_extra::dir::ls(migrations_dir_path, &config)?;
-
-    let migrations_not_applied = get_sorted_migrations_files(&migrations_files)
+    let migrations_not_applied = get_sorted_migrations_files(migrations_files)
         .into_iter()
         .filter(|migration_file| {
             is_migration_file_already_applied(migration_file, &migrations_applied).unwrap_or(false)
@@ -35,7 +41,7 @@ pub async fn main(client: &Surreal<Any>) -> Result<()> {
     let migrations_not_applied_before_last_applied =
         if let Some(last_migration_applied) = last_migration_applied {
             migrations_not_applied
-                .iter()
+                .into_iter()
                 .filter(|migration_file| {
                     is_migration_file_before_last_applied(migration_file, last_migration_applied)
                         .unwrap_or(false)
@@ -48,7 +54,7 @@ pub async fn main(client: &Surreal<Any>) -> Result<()> {
     if !migrations_not_applied_before_last_applied.is_empty() {
         let migration_names = migrations_not_applied_before_last_applied
             .iter()
-            .map(|migration_file| get_migration_file_name(migration_file).unwrap_or("".to_string()))
+            .map(|migration_file| migration_file.name.to_string())
             .collect::<Vec<_>>();
 
         Err(anyhow!(
@@ -60,66 +66,20 @@ pub async fn main(client: &Surreal<Any>) -> Result<()> {
     }
 }
 
-fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
-    match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(dir_name),
-        None => Path::new(dir_name).to_path_buf(),
-    }
-}
-
-fn get_sorted_migrations_files(
-    migrations_files: &LsResult,
-) -> Vec<&HashMap<DirEntryAttr, DirEntryValue>> {
-    let mut sorted_migrations_files = migrations_files.items.iter().collect::<Vec<_>>();
-    sorted_migrations_files.sort_by(|a, b| {
-        let a = a.get(&DirEntryAttr::Name);
-        let b = b.get(&DirEntryAttr::Name);
-
-        let a = match a {
-            Some(DirEntryValue::String(a)) => Some(a),
-            _ => None,
-        };
-
-        let b = match b {
-            Some(DirEntryValue::String(b)) => Some(b),
-            _ => None,
-        };
-
-        a.cmp(&b)
-    });
+fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {
+    let mut sorted_migrations_files = migrations_files;
+    sorted_migrations_files.sort_by(|a, b| a.name.cmp(&b.name));
 
     sorted_migrations_files
 }
 
 fn is_migration_file_already_applied(
-    migration_file: &&std::collections::HashMap<DirEntryAttr, DirEntryValue>,
-    migrations_applied: &[ScriptMigration],
+    migration_file: &SurqlFile,
+    migrations_applied: &Vec<ScriptMigration>,
 ) -> Result<bool> {
-    let is_file = migration_file
-        .get(&DirEntryAttr::IsFile)
-        .context("Cannot detect if the migration file is a file or a folder")?;
-    let is_file = match is_file {
-        DirEntryValue::Boolean(is_file) => Some(is_file),
-        _ => None,
-    };
-    let is_file = is_file.context("Cannot detect if the migration file is a file or a folder")?;
-
-    if !is_file {
-        return Ok(false);
-    }
-
-    let name = migration_file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name of the migration file")?;
-    let name = match name {
-        DirEntryValue::String(name) => Some(name),
-        _ => None,
-    };
-    let name = name.context("Cannot get name of the migration file")?;
-
     let has_already_been_applied = migrations_applied
         .iter()
-        .any(|migration_applied| &migration_applied.script_name == name);
+        .any(|migration_applied| migration_applied.script_name == migration_file.name);
 
     if has_already_been_applied {
         return Ok(false);
@@ -129,45 +89,8 @@ fn is_migration_file_already_applied(
 }
 
 fn is_migration_file_before_last_applied(
-    migration_file: &&HashMap<DirEntryAttr, DirEntryValue>,
+    migration_file: &SurqlFile,
     last_migration_applied: &ScriptMigration,
 ) -> Result<bool> {
-    let is_file = migration_file
-        .get(&DirEntryAttr::IsFile)
-        .context("Cannot detect if the migration file is a file or a folder")?;
-    let is_file = match is_file {
-        DirEntryValue::Boolean(is_file) => Some(is_file),
-        _ => None,
-    };
-    let is_file = is_file.context("Cannot detect if the migration file is a file or a folder")?;
-
-    if !is_file {
-        return Ok(false);
-    }
-
-    let name = migration_file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name of the migration file")?;
-    let name = match name {
-        DirEntryValue::String(name) => Some(name),
-        _ => None,
-    };
-    let name = name.context("Cannot get name of the migration file")?;
-
-    Ok(name < &last_migration_applied.script_name)
-}
-
-fn get_migration_file_name(
-    migration_file: &&HashMap<DirEntryAttr, DirEntryValue>,
-) -> Result<String> {
-    let name = migration_file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name of the migration file")?;
-    let name = match name {
-        DirEntryValue::String(name) => Some(name),
-        _ => None,
-    };
-    let name = name.context("Cannot get name of the migration file")?;
-
-    Ok(name.to_string())
+    Ok(migration_file.name < last_migration_applied.script_name)
 }

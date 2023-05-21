@@ -9,12 +9,13 @@ use std::{
 use crate::{
     cli::ScaffoldTemplate,
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    io,
 };
 
 pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
-    let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
-    let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
-    let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
+    let schemas_dir_path = io::concat_path(&folder_path, SCHEMAS_DIR_NAME);
+    let events_dir_path = io::concat_path(&folder_path, EVENTS_DIR_NAME);
+    let migrations_dir_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     fails_if_folder_already_exists(&schemas_dir_path, SCHEMAS_DIR_NAME)?;
     fails_if_folder_already_exists(&events_dir_path, EVENTS_DIR_NAME)?;
@@ -24,9 +25,9 @@ pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
 }
 
 pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
-    let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
-    let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
-    let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
+    let schemas_dir_path = io::concat_path(&folder_path, SCHEMAS_DIR_NAME);
+    let events_dir_path = io::concat_path(&folder_path, EVENTS_DIR_NAME);
+    let migrations_dir_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     ensures_folder_exists(&schemas_dir_path)?;
     ensures_folder_exists(&events_dir_path)?;
@@ -40,14 +41,7 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
-    match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(dir_name),
-        None => Path::new(dir_name).to_path_buf(),
-    }
-}
-
-fn fails_if_folder_already_exists(dir_path: &Path, dir_name: &str) -> Result<()> {
+fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) -> Result<()> {
     match dir_path.exists() {
         true => Err(anyhow!("'{}' folder already exists.", dir_name)),
         false => Ok(()),

@@ -1,6 +1,7 @@
 use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::{Context, Result};
-use fs_extra::dir::{DirEntryAttr, DirEntryValue, LsResult};
+use fs_extra::dir::{DirEntryAttr, DirEntryValue};
+use include_dir::Dir;
 use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
@@ -8,8 +9,12 @@ use std::{
 
 use crate::{
     config,
-    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{
+        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
+        SCRIPT_MIGRATION_TABLE_NAME,
+    },
     definitions,
+    io::{self, SurqlFile},
     models::ScriptMigration,
     surrealdb::{self, TransactionAction},
 };
@@ -17,6 +22,7 @@ use crate::{
 pub struct ApplyArgs<'a> {
     pub operation: ApplyOperation,
     pub db: &'a Surreal<Any>,
+    pub dir: Option<&'a Dir<'a>>,
     pub display_logs: bool,
     pub dry_run: bool,
 }
@@ -30,7 +36,8 @@ pub enum ApplyOperation {
 pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
     let ApplyArgs {
         operation,
-        db,
+        db: client,
+        dir,
         display_logs,
         dry_run,
     } = args;
@@ -39,8 +46,6 @@ pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
         true => false,
         false => display_logs,
     };
-
-    let client = db;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
@@ -53,12 +58,8 @@ pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
 
     let folder_path = config::retrieve_folder_path();
 
-    let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
-    let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
-    let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
-    let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
+    let schemas_files = io::extract_surql_files(Path::new(SCHEMAS_DIR_NAME).to_path_buf(), dir)?;
 
-    let schemas_files = fs_extra::dir::ls(schemas_dir_path, &config)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
     apply_schema_definitions(client, &schema_definitions, dry_run).await?;
 
@@ -66,8 +67,13 @@ pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
         println!("Schema files successfully executed!");
     }
 
-    let event_definitions = if events_dir_path.try_exists()? {
-        let events_files = fs_extra::dir::ls(events_dir_path, &config)?;
+    let events_dir = Path::new(EVENTS_DIR_NAME).to_path_buf();
+    let events_files = match io::extract_surql_files(events_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
+    };
+
+    let event_definitions = if events_files.len() > 0 {
         let event_definitions = extract_event_definitions(events_files);
         apply_event_definitions(client, &event_definitions, dry_run).await?;
 
@@ -80,43 +86,51 @@ pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
         String::new()
     };
 
-    const DEFINITIONS_FOLDER: &str = "migrations/definitions";
-    let definitions_path = concat_path(&folder_path, DEFINITIONS_FOLDER);
+    if io::can_use_filesystem() {
+        const DEFINITIONS_FOLDER: &str = "migrations/definitions";
+        let definitions_path = io::concat_path(&folder_path, DEFINITIONS_FOLDER);
 
-    const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
-    let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
+        const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
+        let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
 
-    ensures_folder_exists(&definitions_path)?;
+        ensures_folder_exists(&definitions_path)?;
 
-    let should_create_definition_files = match &operation {
-        ApplyOperation::Up => true,
-        ApplyOperation::UpTo(_) => true,
-        ApplyOperation::Down(_) => false,
-    };
+        let should_create_definition_files = match &operation {
+            ApplyOperation::Up => true,
+            ApplyOperation::UpTo(_) => true,
+            ApplyOperation::Down(_) => false,
+        };
 
-    if should_create_definition_files {
-        let last_migration_applied = migrations_applied.last();
+        if should_create_definition_files {
+            let last_migration_applied = migrations_applied.last();
 
-        create_definition_files(
-            last_migration_applied,
-            initial_definition_path,
-            definitions_path,
-            &config,
-            schema_definitions,
-            event_definitions,
-            folder_path,
-        )?;
+            create_definition_files(
+                last_migration_applied,
+                initial_definition_path,
+                definitions_path,
+                &config,
+                schema_definitions,
+                event_definitions,
+                &folder_path,
+            )?;
+        }
     }
 
-    let migrations_files = fs_extra::dir::ls(migrations_dir_path, &config)?;
-    let down_migrations_files = match down_migrations_dir_path.exists() {
-        true => Some(fs_extra::dir::ls(down_migrations_dir_path, &config)?),
-        false => None,
+    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
+    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
+    };
+
+    let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
+    let down_migrations_files = match io::extract_surql_files(down_migrations_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
     };
 
     let migration_files_to_execute = get_migration_files_to_execute(
-        &migrations_files,
-        &down_migrations_files,
+        migrations_files,
+        down_migrations_files,
         &operation,
         &migrations_applied,
     );
@@ -148,26 +162,18 @@ enum MigrationDirection {
     Backward,
 }
 
-fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
-    match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(dir_name),
-        None => Path::new(dir_name).to_path_buf(),
-    }
-}
-
-fn extract_schema_definitions(schemas_files: LsResult) -> String {
+fn extract_schema_definitions(schemas_files: Vec<SurqlFile>) -> String {
     concat_files_content(schemas_files)
 }
 
-fn extract_event_definitions(events_files: LsResult) -> String {
+fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
     concat_files_content(events_files)
 }
 
-fn concat_files_content(files: LsResult) -> String {
+fn concat_files_content(files: Vec<SurqlFile>) -> String {
     files
-        .items
         .iter()
-        .map(|file| map_to_file_content(file).unwrap_or("".to_string())) // TODO : fail when one file fails
+        .map(|file| file.content.to_string())
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -257,7 +263,7 @@ fn create_definition_files(
     config: &HashSet<DirEntryAttr>,
     schema_definitions: String,
     event_definitions: String,
-    folder_path: Option<String>,
+    folder_path: &Option<String>,
 ) -> Result<()> {
     match last_migration_applied {
         Some(last_migration_applied) => {
@@ -386,102 +392,58 @@ fn create_definition_files(
 }
 
 fn get_migration_files_to_execute<'a>(
-    migrations_files: &'a LsResult,
-    down_migrations_files: &'a Option<LsResult>,
+    migrations_files: Vec<SurqlFile>,
+    down_migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
-    migrations_applied: &'a [ScriptMigration],
-) -> Vec<&'a HashMap<DirEntryAttr, DirEntryValue>> {
+    migrations_applied: &'a Vec<ScriptMigration>,
+) -> Vec<SurqlFile> {
     let mut filtered_migrations_files = migrations_files
-        .items
-        .iter()
+        .into_iter()
         .filter(|migration_file| {
             filter_migration_file_to_execute(migration_file, operation, migrations_applied, false)
                 .unwrap_or(false)
         })
         .collect::<Vec<_>>();
 
-    let filtered_down_migrations_files = match down_migrations_files {
-        Some(down_migrations_files) => down_migrations_files
-            .items
-            .iter()
-            .filter(|migration_file| {
-                filter_migration_file_to_execute(
-                    migration_file,
-                    operation,
-                    migrations_applied,
-                    true,
-                )
+    let filtered_down_migrations_files = down_migrations_files
+        .into_iter()
+        .filter(|migration_file| {
+            filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, true)
                 .unwrap_or(false)
-            })
-            .collect::<Vec<_>>(),
-        None => vec![],
-    };
+        })
+        .collect::<Vec<_>>();
 
     filtered_migrations_files.extend(filtered_down_migrations_files);
 
     get_sorted_migrations_files(filtered_migrations_files, operation)
 }
 
-fn get_sorted_migrations_files<'a>(
-    migrations_files: Vec<&'a HashMap<DirEntryAttr, DirEntryValue>>,
+fn get_sorted_migrations_files(
+    migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
-) -> Vec<&'a HashMap<DirEntryAttr, DirEntryValue>> {
-    let mut sorted_migrations_files = migrations_files.clone();
-    sorted_migrations_files.sort_by(|a, b| {
-        let a = a.get(&DirEntryAttr::Name);
-        let b = b.get(&DirEntryAttr::Name);
-
-        let a = match a {
-            Some(DirEntryValue::String(a)) => Some(a),
-            _ => None,
-        };
-
-        let b = match b {
-            Some(DirEntryValue::String(b)) => Some(b),
-            _ => None,
-        };
-
-        match operation {
-            ApplyOperation::Up => a.cmp(&b),
-            ApplyOperation::UpTo(_) => a.cmp(&b),
-            ApplyOperation::Down(_) => b.cmp(&a),
-        }
+) -> Vec<SurqlFile> {
+    let mut sorted_migrations_files = migrations_files;
+    sorted_migrations_files.sort_by(|a, b| match operation {
+        ApplyOperation::Up => a.name.cmp(&b.name),
+        ApplyOperation::UpTo(_) => a.name.cmp(&b.name),
+        ApplyOperation::Down(_) => b.name.cmp(&a.name),
     });
 
     sorted_migrations_files
 }
 
 fn filter_migration_file_to_execute(
-    migration_file: &HashMap<DirEntryAttr, DirEntryValue>,
+    migration_file: &SurqlFile,
     operation: &ApplyOperation,
     migrations_applied: &[ScriptMigration],
     is_from_down_folder: bool,
 ) -> Result<bool> {
-    let is_file = migration_file
-        .get(&DirEntryAttr::IsFile)
-        .context("Cannot detect if the migration file is a file or a folder")?;
-    let is_file = match is_file {
-        DirEntryValue::Boolean(is_file) => Some(is_file),
-        _ => None,
-    };
-    let is_file = is_file.context("Cannot detect if the migration file is a file or a folder")?;
-
-    if !is_file {
-        return Ok(false);
-    }
-
-    let full_name = migration_file
-        .get(&DirEntryAttr::FullName)
-        .context("Cannot get full name of the migration file")?;
-    let full_name = match full_name {
-        DirEntryValue::String(full_name) => Some(full_name),
-        _ => None,
-    };
-    let full_name = full_name.context("Cannot get full name of the migration file")?;
-
     let is_down_file = match is_from_down_folder {
         true => true,
-        false => full_name.ends_with(".down.surql"),
+        false => {
+            let is_down_file = migration_file.full_name.ends_with(".down.surql");
+            is_down_file
+        }
     };
 
     let migration_direction = match &operation {
@@ -496,25 +458,16 @@ fn filter_migration_file_to_execute(
         _ => {}
     }
 
-    let name = migration_file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name of the migration file")?;
-    let name = match name {
-        DirEntryValue::String(name) => Some(name),
-        _ => None,
-    };
-    let name = name.context("Cannot get name of the migration file")?;
-
     match &operation {
         ApplyOperation::UpTo(target_migration) => {
-            let is_beyond_target = name > target_migration;
+            let is_beyond_target = migration_file.name > target_migration.to_string();
             if is_beyond_target {
                 return Ok(false);
             }
         }
         ApplyOperation::Up => {}
         ApplyOperation::Down(target_migration) => {
-            let is_target_or_below = name <= target_migration;
+            let is_target_or_below = migration_file.name <= target_migration.to_string();
             if is_target_or_below {
                 return Ok(false);
             }
@@ -523,7 +476,7 @@ fn filter_migration_file_to_execute(
 
     let has_already_been_applied = migrations_applied
         .iter()
-        .any(|migration_applied| &migration_applied.script_name == name);
+        .any(|migration_applied| migration_applied.script_name == migration_file.name);
 
     match (&migration_direction, has_already_been_applied) {
         (MigrationDirection::Forward, true) => return Ok(false),
@@ -535,40 +488,23 @@ fn filter_migration_file_to_execute(
 }
 
 async fn apply_migrations(
-    migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
+    migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
     client: &Surreal<Any>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
-        let name = migration_file
-            .get(&DirEntryAttr::Name)
-            .context("Cannot get name of the migration file")?;
-        let name: Option<&String> = match name {
-            DirEntryValue::String(name) => Some(name),
-            _ => None,
-        };
-        let name = name.context("Cannot get name of the migration file")?;
-
-        let path = migration_file
-            .get(&DirEntryAttr::Path)
-            .context("Cannot get path of the migration file")?;
-        let path = match path {
-            DirEntryValue::String(path) => Some(path),
-            _ => None,
-        };
-        let path = path.context("Cannot get path of the migration file")?;
-
-        let inner_query = fs_extra::file::read_to_string(path)?;
+        let inner_query = migration_file.content;
 
         let query = format!(
             "{}
-CREATE script_migration SET script_name = '{}';",
-            inner_query, name
+CREATE {} SET script_name = '{}';",
+            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
-        let script_display_name = name
-            .split('_')
+        let script_display_name = migration_file
+            .name
+            .split("_")
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()
@@ -586,40 +522,23 @@ CREATE script_migration SET script_name = '{}';",
 }
 
 async fn revert_migrations(
-    migration_files_to_execute: Vec<&HashMap<DirEntryAttr, DirEntryValue>>,
+    migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
     client: &Surreal<Any>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
-        let name = migration_file
-            .get(&DirEntryAttr::Name)
-            .context("Cannot get name of the migration file")?;
-        let name: Option<&String> = match name {
-            DirEntryValue::String(name) => Some(name),
-            _ => None,
-        };
-        let name = name.context("Cannot get name of the migration file")?;
-
-        let path = migration_file
-            .get(&DirEntryAttr::Path)
-            .context("Cannot get path of the migration file")?;
-        let path = match path {
-            DirEntryValue::String(path) => Some(path),
-            _ => None,
-        };
-        let path = path.context("Cannot get path of the migration file")?;
-
-        let inner_query = fs_extra::file::read_to_string(path)?;
+        let inner_query = migration_file.content;
 
         let query = format!(
             "{}
-DELETE script_migration WHERE script_name = '{}';",
-            inner_query, name
+DELETE {} WHERE script_name = '{}';",
+            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
-        let script_display_name = name
-            .split('_')
+        let script_display_name = migration_file
+            .name
+            .split("_")
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()

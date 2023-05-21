@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::{
     config::{self, retrieve_table_schema_design},
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    io,
 };
 
 pub struct CreateArgs {
@@ -50,7 +51,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
         CreateOperation::Migration(_) => MIGRATIONS_DIR_NAME,
     };
 
-    let folder_path = concat_path(&folder_path, dir_name);
+    let folder_path = io::concat_path(&folder_path, dir_name);
 
     let filename = get_filename(&operation, &name);
 
@@ -93,13 +94,6 @@ pub fn main(args: CreateArgs) -> Result<()> {
     }
 
     Ok(())
-}
-
-fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
-    match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(dir_name),
-        None => Path::new(dir_name).to_path_buf(),
-    }
 }
 
 fn get_filename(operation: &CreateOperation, name: &String) -> String {

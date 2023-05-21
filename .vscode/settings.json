@@ -1,5 +1,14 @@
 {
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "rust-analyzer.linkedProjects": [
+    "./Cargo.toml",
+    "./samples/wasm/rsw-hello/Cargo.toml"
+  ],
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#06342B",
+    "titleBar.activeBackground": "#08493C",
+    "titleBar.activeForeground": "#EFFDFB"
   }
 }
