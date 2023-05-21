@@ -6,10 +6,11 @@ use crate::{
     cli::{ScaffoldSchemaDbType, ScaffoldTemplate},
     config,
     constants::{SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME},
+    io,
 };
 
 use super::common::{
-    apply_after_scaffold, apply_before_scaffold, concat_path, copy_template_files_to_current_dir,
+    apply_after_scaffold, apply_before_scaffold, copy_template_files_to_current_dir,
 };
 
 pub fn main(schema: String, db_type: ScaffoldSchemaDbType, preserve_casing: bool) -> Result<()> {
@@ -92,7 +93,7 @@ fn scaffold_from_schema(
 
     copy_template_files_to_current_dir(ScaffoldTemplate::Empty, folder_path.to_owned())?;
 
-    let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
+    let schemas_dir_path = io::concat_path(&folder_path, SCHEMAS_DIR_NAME);
 
     for (table_name, line_definitions) in schema.tables {
         let filename = format!("{}.surql", table_name);

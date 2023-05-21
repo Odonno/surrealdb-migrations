@@ -58,6 +58,7 @@ mod config;
 mod constants;
 mod definitions;
 mod input;
+mod io;
 mod models;
 mod surrealdb;
 mod validate_version_order;

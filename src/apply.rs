@@ -5,7 +5,6 @@ use include_dir::Dir;
 use std::{
     collections::{HashMap, HashSet},
     path::{Path, PathBuf},
-    vec,
 };
 
 use crate::{
@@ -15,6 +14,7 @@ use crate::{
         SCRIPT_MIGRATION_TABLE_NAME,
     },
     definitions,
+    io::{self, SurqlFile},
     models::ScriptMigration,
     surrealdb::{self, TransactionAction},
 };
@@ -31,14 +31,6 @@ pub enum ApplyOperation {
     Up,
     UpTo(String),
     Down(String),
-}
-
-#[derive(Debug)]
-struct MigrationFile {
-    name: String,
-    is_file: bool,
-    full_name: String,
-    content: String,
 }
 
 pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
@@ -66,123 +58,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
 
     let folder_path = config::retrieve_folder_path();
 
-    let schemas_files = match dir {
-        Some(dir) => {
-            let schemas_dir = dir
-                .get_dir(SCHEMAS_DIR_NAME)
-                .context("Schemas directory not found")?;
-
-            schemas_dir
-                .files()
-                .filter_map(|f| {
-                    let name = f.path().file_stem();
-                    let name = match name {
-                        Some(name)
-                            if name.to_str().and_then(|n| Some(n.ends_with(".down")))
-                                == Some(true) =>
-                        {
-                            Path::new(name).file_stem()
-                        }
-                        Some(name) => Some(name),
-                        None => None,
-                    };
-                    let name = name
-                        .and_then(|name| name.to_str())
-                        .and_then(|name| Some(name.to_string()));
-                    let full_name = f
-                        .path()
-                        .file_name()
-                        .and_then(|full_name| full_name.to_str())
-                        .and_then(|full_name| Some(full_name.to_string()));
-                    let is_file = match &full_name {
-                        Some(full_name) => full_name.ends_with(".surql"),
-                        None => false,
-                    };
-                    let content = f
-                        .contents_utf8()
-                        .and_then(|content| Some(content.to_string()));
-
-                    match (name, full_name, content) {
-                        (Some(name), Some(full_name), Some(content)) => Some(MigrationFile {
-                            name,
-                            is_file,
-                            full_name,
-                            content,
-                        }),
-                        _ => None,
-                    }
-                })
-                .collect::<Vec<_>>()
-        }
-        None => {
-            let folder_path = config::retrieve_folder_path();
-            let schemas_dir_path = concat_path(&folder_path, SCHEMAS_DIR_NAME);
-
-            let files = fs_extra::dir::ls(schemas_dir_path, &config)
-                .context("Error listing schemas directory")?
-                .items;
-
-            let files = files.iter().collect::<Vec<_>>();
-
-            files
-                .iter()
-                .filter_map(|f| {
-                    let is_file = f.get(&DirEntryAttr::IsFile);
-                    let is_file = match is_file {
-                        Some(is_file) => match is_file {
-                            DirEntryValue::Boolean(is_file) => Some(is_file),
-                            _ => None,
-                        },
-                        _ => None,
-                    };
-
-                    let name = f.get(&DirEntryAttr::Name);
-                    let name = match name {
-                        Some(name) => match name {
-                            DirEntryValue::String(name) => Some(name),
-                            _ => None,
-                        },
-                        _ => None,
-                    };
-
-                    let full_name = f.get(&DirEntryAttr::FullName);
-                    let full_name = match full_name {
-                        Some(full_name) => match full_name {
-                            DirEntryValue::String(full_name) => Some(full_name),
-                            _ => None,
-                        },
-                        _ => None,
-                    };
-
-                    let path: Option<&DirEntryValue> = f.get(&DirEntryAttr::Path);
-                    let path = match path {
-                        Some(path) => match path {
-                            DirEntryValue::String(path) => Some(path),
-                            _ => None,
-                        },
-                        _ => None,
-                    };
-
-                    let content = match path {
-                        Some(path) => fs_extra::file::read_to_string(path).ok(),
-                        None => None,
-                    };
-
-                    match (name, is_file, full_name, content) {
-                        (Some(name), Some(is_file), Some(full_name), Some(content)) => {
-                            Some(MigrationFile {
-                                name: name.to_string(),
-                                is_file: is_file.clone(),
-                                full_name: full_name.to_string(),
-                                content,
-                            })
-                        }
-                        _ => None,
-                    }
-                })
-                .collect::<Vec<_>>()
-        }
-    };
+    let schemas_files = io::extract_surql_files(Path::new(SCHEMAS_DIR_NAME).to_path_buf(), dir)?;
 
     let schema_definitions = extract_schema_definitions(schemas_files);
     apply_schema_definitions(&client, &schema_definitions, dry_run).await?;
@@ -191,127 +67,10 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         println!("Schema files successfully executed!");
     }
 
-    let events_files = match dir {
-        Some(dir) => {
-            let events_dir = dir.get_dir(EVENTS_DIR_NAME);
-
-            match events_dir {
-                Some(events_dir) => events_dir
-                    .files()
-                    .filter_map(|f| {
-                        let name = f.path().file_stem();
-                        let name = match name {
-                            Some(name)
-                                if name.to_str().and_then(|n| Some(n.ends_with(".down")))
-                                    == Some(true) =>
-                            {
-                                Path::new(name).file_stem()
-                            }
-                            Some(name) => Some(name),
-                            None => None,
-                        };
-                        let name = name
-                            .and_then(|name| name.to_str())
-                            .and_then(|name| Some(name.to_string()));
-                        let full_name = f
-                            .path()
-                            .file_name()
-                            .and_then(|full_name| full_name.to_str())
-                            .and_then(|full_name| Some(full_name.to_string()));
-                        let is_file = match &full_name {
-                            Some(full_name) => full_name.ends_with(".surql"),
-                            None => false,
-                        };
-                        let content = f
-                            .contents_utf8()
-                            .and_then(|content| Some(content.to_string()));
-
-                        match (name, full_name, content) {
-                            (Some(name), Some(full_name), Some(content)) => Some(MigrationFile {
-                                name,
-                                is_file,
-                                full_name,
-                                content,
-                            }),
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-                None => vec![],
-            }
-        }
-        None => {
-            let folder_path = config::retrieve_folder_path();
-            let events_dir_path = concat_path(&folder_path, EVENTS_DIR_NAME);
-
-            if events_dir_path.try_exists()? {
-                let files = fs_extra::dir::ls(events_dir_path, &config)
-                    .context("Error listing events directory")?
-                    .items;
-
-                let files = files.iter().collect::<Vec<_>>();
-
-                files
-                    .iter()
-                    .filter_map(|f| {
-                        let is_file = f.get(&DirEntryAttr::IsFile);
-                        let is_file = match is_file {
-                            Some(is_file) => match is_file {
-                                DirEntryValue::Boolean(is_file) => Some(is_file),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let name = f.get(&DirEntryAttr::Name);
-                        let name = match name {
-                            Some(name) => match name {
-                                DirEntryValue::String(name) => Some(name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let full_name = f.get(&DirEntryAttr::FullName);
-                        let full_name = match full_name {
-                            Some(full_name) => match full_name {
-                                DirEntryValue::String(full_name) => Some(full_name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let path: Option<&DirEntryValue> = f.get(&DirEntryAttr::Path);
-                        let path = match path {
-                            Some(path) => match path {
-                                DirEntryValue::String(path) => Some(path),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let content = match path {
-                            Some(path) => fs_extra::file::read_to_string(path).ok(),
-                            None => None,
-                        };
-
-                        match (name, is_file, full_name, content) {
-                            (Some(name), Some(is_file), Some(full_name), Some(content)) => {
-                                Some(MigrationFile {
-                                    name: name.to_string(),
-                                    is_file: is_file.clone(),
-                                    full_name: full_name.to_string(),
-                                    content,
-                                })
-                            }
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            } else {
-                vec![]
-            }
-        }
+    let events_dir = Path::new(EVENTS_DIR_NAME).to_path_buf();
+    let events_files = match io::extract_surql_files(events_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
     };
 
     let event_definitions = if events_files.len() > 0 {
@@ -327,9 +86,9 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         String::new()
     };
 
-    if can_use_filesystem() {
+    if io::can_use_filesystem() {
         const DEFINITIONS_FOLDER: &str = "migrations/definitions";
-        let definitions_path = concat_path(&folder_path, DEFINITIONS_FOLDER);
+        let definitions_path = io::concat_path(&folder_path, DEFINITIONS_FOLDER);
 
         const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
         let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
@@ -357,253 +116,16 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         }
     }
 
-    let migrations_files = match dir {
-        Some(dir) => {
-            let migrations_dir = dir.get_dir(MIGRATIONS_DIR_NAME);
-
-            match migrations_dir {
-                Some(migrations_dir) => migrations_dir
-                    .files()
-                    .filter_map(|f| {
-                        let name = f.path().file_stem();
-                        let name = match name {
-                            Some(name)
-                                if name.to_str().and_then(|n| Some(n.ends_with(".down")))
-                                    == Some(true) =>
-                            {
-                                Path::new(name).file_stem()
-                            }
-                            Some(name) => Some(name),
-                            None => None,
-                        };
-                        let name = name
-                            .and_then(|name| name.to_str())
-                            .and_then(|name| Some(name.to_string()));
-                        let full_name = f
-                            .path()
-                            .file_name()
-                            .and_then(|full_name| full_name.to_str())
-                            .and_then(|full_name| Some(full_name.to_string()));
-                        let is_file = match &full_name {
-                            Some(full_name) => full_name.ends_with(".surql"),
-                            None => false,
-                        };
-                        let content = f
-                            .contents_utf8()
-                            .and_then(|content| Some(content.to_string()));
-
-                        match (name, full_name, content) {
-                            (Some(name), Some(full_name), Some(content)) => Some(MigrationFile {
-                                name,
-                                is_file,
-                                full_name,
-                                content,
-                            }),
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-                None => vec![],
-            }
-        }
-        None => {
-            let folder_path = config::retrieve_folder_path();
-            let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
-
-            if migrations_dir_path.try_exists()? {
-                let files = fs_extra::dir::ls(migrations_dir_path, &config)
-                    .context("Error listing migrations directory")?
-                    .items;
-
-                let files = files.iter().collect::<Vec<_>>();
-
-                files
-                    .iter()
-                    .filter_map(|f| {
-                        let is_file = f.get(&DirEntryAttr::IsFile);
-                        let is_file = match is_file {
-                            Some(is_file) => match is_file {
-                                DirEntryValue::Boolean(is_file) => Some(is_file),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let name = f.get(&DirEntryAttr::Name);
-                        let name = match name {
-                            Some(name) => match name {
-                                DirEntryValue::String(name) => Some(name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let full_name = f.get(&DirEntryAttr::FullName);
-                        let full_name = match full_name {
-                            Some(full_name) => match full_name {
-                                DirEntryValue::String(full_name) => Some(full_name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let path: Option<&DirEntryValue> = f.get(&DirEntryAttr::Path);
-                        let path = match path {
-                            Some(path) => match path {
-                                DirEntryValue::String(path) => Some(path),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let content = match path {
-                            Some(path) => fs_extra::file::read_to_string(path).ok(),
-                            None => None,
-                        };
-
-                        match (name, is_file, full_name, content) {
-                            (Some(name), Some(is_file), Some(full_name), Some(content)) => {
-                                Some(MigrationFile {
-                                    name: name.to_string(),
-                                    is_file: is_file.clone(),
-                                    full_name: full_name.to_string(),
-                                    content,
-                                })
-                            }
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            } else {
-                vec![]
-            }
-        }
+    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
+    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
     };
 
-    let down_migrations_files = match dir {
-        Some(dir) => {
-            let down_migrations_dir_path =
-                Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
-            let down_migrations_dir = dir.get_dir(down_migrations_dir_path);
-
-            match down_migrations_dir {
-                Some(down_migrations_dir) => down_migrations_dir
-                    .files()
-                    .filter_map(|f| {
-                        let name = f.path().file_stem();
-                        let name = match name {
-                            Some(name)
-                                if name.to_str().and_then(|n| Some(n.ends_with(".down")))
-                                    == Some(true) =>
-                            {
-                                Path::new(name).file_stem()
-                            }
-                            Some(name) => Some(name),
-                            None => None,
-                        };
-                        let name = name
-                            .and_then(|name| name.to_str())
-                            .and_then(|name| Some(name.to_string()));
-                        let full_name = f
-                            .path()
-                            .file_name()
-                            .and_then(|full_name| full_name.to_str())
-                            .and_then(|full_name| Some(full_name.to_string()));
-                        let is_file = match &full_name {
-                            Some(full_name) => full_name.ends_with(".surql"),
-                            None => false,
-                        };
-                        let content = f
-                            .contents_utf8()
-                            .and_then(|content| Some(content.to_string()));
-
-                        match (name, full_name, content) {
-                            (Some(name), Some(full_name), Some(content)) => Some(MigrationFile {
-                                name,
-                                is_file,
-                                full_name,
-                                content,
-                            }),
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>(),
-                None => vec![],
-            }
-        }
-        None => {
-            let folder_path = config::retrieve_folder_path();
-            let migrations_dir_path = concat_path(&folder_path, MIGRATIONS_DIR_NAME);
-            let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
-
-            if down_migrations_dir_path.try_exists()? {
-                let files = fs_extra::dir::ls(down_migrations_dir_path, &config)
-                    .context("Error listing down migrations directory")?
-                    .items;
-
-                let files = files.iter().collect::<Vec<_>>();
-
-                files
-                    .iter()
-                    .filter_map(|f| {
-                        let is_file = f.get(&DirEntryAttr::IsFile);
-                        let is_file = match is_file {
-                            Some(is_file) => match is_file {
-                                DirEntryValue::Boolean(is_file) => Some(is_file),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let name = f.get(&DirEntryAttr::Name);
-                        let name = match name {
-                            Some(name) => match name {
-                                DirEntryValue::String(name) => Some(name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let full_name = f.get(&DirEntryAttr::FullName);
-                        let full_name = match full_name {
-                            Some(full_name) => match full_name {
-                                DirEntryValue::String(full_name) => Some(full_name),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let path: Option<&DirEntryValue> = f.get(&DirEntryAttr::Path);
-                        let path = match path {
-                            Some(path) => match path {
-                                DirEntryValue::String(path) => Some(path),
-                                _ => None,
-                            },
-                            _ => None,
-                        };
-
-                        let content = match path {
-                            Some(path) => fs_extra::file::read_to_string(path).ok(),
-                            None => None,
-                        };
-
-                        match (name, is_file, full_name, content) {
-                            (Some(name), Some(is_file), Some(full_name), Some(content)) => {
-                                Some(MigrationFile {
-                                    name: name.to_string(),
-                                    is_file: is_file.clone(),
-                                    full_name: full_name.to_string(),
-                                    content,
-                                })
-                            }
-                            _ => None,
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            } else {
-                vec![]
-            }
-        }
+    let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
+    let down_migrations_files = match io::extract_surql_files(down_migrations_dir, dir).ok() {
+        Some(files) => files,
+        None => vec![],
     };
 
     let migration_files_to_execute = get_migration_files_to_execute(
@@ -640,22 +162,15 @@ enum MigrationDirection {
     Backward,
 }
 
-fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
-    match folder_path.to_owned() {
-        Some(folder_path) => Path::new(&folder_path).join(dir_name),
-        None => Path::new(dir_name).to_path_buf(),
-    }
-}
-
-fn extract_schema_definitions(schemas_files: Vec<MigrationFile>) -> String {
+fn extract_schema_definitions(schemas_files: Vec<SurqlFile>) -> String {
     concat_files_content(schemas_files)
 }
 
-fn extract_event_definitions(events_files: Vec<MigrationFile>) -> String {
+fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
     concat_files_content(events_files)
 }
 
-fn concat_files_content(files: Vec<MigrationFile>) -> String {
+fn concat_files_content(files: Vec<SurqlFile>) -> String {
     files
         .iter()
         .map(|file| file.content.to_string())
@@ -685,18 +200,6 @@ fn get_transaction_action(dry_run: bool) -> TransactionAction {
     match dry_run {
         true => TransactionAction::Rollback,
         false => TransactionAction::Commit,
-    }
-}
-
-fn can_use_filesystem() -> bool {
-    let folder_path = config::retrieve_folder_path();
-    let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
-        .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
-    let script_migration_file_try_exists = script_migration_path.try_exists().ok();
-
-    match script_migration_file_try_exists {
-        Some(is_script_migration_file_exists) => is_script_migration_file_exists,
-        None => false,
     }
 }
 
@@ -889,11 +392,11 @@ fn create_definition_files(
 }
 
 fn get_migration_files_to_execute<'a>(
-    migrations_files: Vec<MigrationFile>,
-    down_migrations_files: Vec<MigrationFile>,
+    migrations_files: Vec<SurqlFile>,
+    down_migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
     migrations_applied: &'a Vec<ScriptMigration>,
-) -> Vec<MigrationFile> {
+) -> Vec<SurqlFile> {
     let mut filtered_migrations_files = migrations_files
         .into_iter()
         .filter(|migration_file| {
@@ -916,9 +419,9 @@ fn get_migration_files_to_execute<'a>(
 }
 
 fn get_sorted_migrations_files(
-    migrations_files: Vec<MigrationFile>,
+    migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
-) -> Vec<MigrationFile> {
+) -> Vec<SurqlFile> {
     let mut sorted_migrations_files = migrations_files;
     sorted_migrations_files.sort_by(|a, b| match operation {
         ApplyOperation::Up => a.name.cmp(&b.name),
@@ -930,15 +433,11 @@ fn get_sorted_migrations_files(
 }
 
 fn filter_migration_file_to_execute(
-    migration_file: &MigrationFile,
+    migration_file: &SurqlFile,
     operation: &ApplyOperation,
     migrations_applied: &Vec<ScriptMigration>,
     is_from_down_folder: bool,
 ) -> Result<bool> {
-    if !migration_file.is_file {
-        return Ok(false);
-    }
-
     let is_down_file = match is_from_down_folder {
         true => true,
         false => {
@@ -989,7 +488,7 @@ fn filter_migration_file_to_execute(
 }
 
 async fn apply_migrations(
-    migration_files_to_execute: Vec<MigrationFile>,
+    migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
     client: &Surreal<Any>,
     dry_run: bool,
@@ -1023,7 +522,7 @@ CREATE {} SET script_name = '{}';",
 }
 
 async fn revert_migrations(
-    migration_files_to_execute: Vec<MigrationFile>,
+    migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
     client: &Surreal<Any>,
     dry_run: bool,
