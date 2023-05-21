@@ -40,6 +40,12 @@ jobs:
           ARCHIVE_TYPES: ${{ matrix.archive }}
           EXTRA_FILES: "readme.md LICENSE"
 
+  publish:
+    needs: release
+    if: github.ref == 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Publish crate
         uses: katyo/publish-crates@v2
         with:
