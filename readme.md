@@ -116,7 +116,7 @@ surrealdb-migrations apply
 Or directly inside your Rust project using the following code:
 
 ```rust
-use surrealdb_migrations::SurrealdbMigrations;
+use surrealdb_migrations::MigrationRunner;
 use surrealdb::engine::any::connect;
 use surrealdb::opt::auth::Root;
 
@@ -134,7 +134,7 @@ async fn main() -> Result<()> {
     db.use_ns("namespace").use_db("database").await?;
 
     // Apply all migrations
-    SurrealdbMigrations::new(&db)
+    MigrationRunner::new(&db)
         .up()
         .await
         .expect("Failed to apply migrations");

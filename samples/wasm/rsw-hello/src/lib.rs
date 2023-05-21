@@ -1,7 +1,7 @@
 use include_dir::{include_dir, Dir};
 use serde::{Deserialize, Serialize};
 use surrealdb::{engine::any::connect, sql::Thing};
-use surrealdb_migrations::SurrealdbMigrations;
+use surrealdb_migrations::MigrationRunner;
 use utils::set_panic_hook;
 use wasm_bindgen::prelude::*;
 
@@ -31,7 +31,7 @@ pub async fn setup() {
         .await
         .expect("Failed to use namespace");
 
-    SurrealdbMigrations::new(&db)
+    MigrationRunner::new(&db)
         .load_files(&DB_DIR)
         .up()
         .await

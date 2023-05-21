@@ -1,7 +1,7 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
 use serial_test::serial;
-use surrealdb_migrations::SurrealdbMigrations;
+use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
@@ -17,7 +17,7 @@ async fn load_files_from_empty_template() -> Result<()> {
 
             const EMPTY_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/empty");
 
-            SurrealdbMigrations::new(&db).load_files(&EMPTY_TEMPLATE);
+            MigrationRunner::new(&db).load_files(&EMPTY_TEMPLATE);
 
             Ok(())
         })
@@ -37,7 +37,7 @@ async fn load_files_from_blog_template() -> Result<()> {
 
             const BLOG_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
 
-            SurrealdbMigrations::new(&db).load_files(&BLOG_TEMPLATE);
+            MigrationRunner::new(&db).load_files(&BLOG_TEMPLATE);
 
             Ok(())
         })
@@ -58,7 +58,7 @@ async fn load_files_from_ecommerce_template() -> Result<()> {
             const ECOMMERCE_TEMPLATE: Dir<'_> =
                 include_dir!("$CARGO_MANIFEST_DIR/templates/ecommerce");
 
-            SurrealdbMigrations::new(&db).load_files(&ECOMMERCE_TEMPLATE);
+            MigrationRunner::new(&db).load_files(&ECOMMERCE_TEMPLATE);
 
             Ok(())
         })
@@ -78,7 +78,7 @@ async fn validate_version_order_from_embedded_files() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(&db)
+            MigrationRunner::new(&db)
                 .load_files(&BLOG_TEMPLATE)
                 .validate_version_order()
                 .await?;
@@ -101,7 +101,7 @@ async fn apply_migrations_from_embedded_files() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            SurrealdbMigrations::new(&db)
+            MigrationRunner::new(&db)
                 .load_files(&BLOG_TEMPLATE)
                 .up()
                 .await?;
