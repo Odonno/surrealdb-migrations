@@ -32,6 +32,7 @@ pub struct CreateEventArgs {
 
 pub struct CreateMigrationArgs {
     pub down: bool,
+    pub content: Option<String>,
 }
 
 pub fn main(args: CreateArgs) -> Result<()> {
@@ -77,7 +78,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
             fs_extra::file::write_all(&file_path, &content)?;
 
             let should_create_down_file = match operation {
-                CreateOperation::Migration(CreateMigrationArgs { down }) => down,
+                CreateOperation::Migration(CreateMigrationArgs { down, .. }) => down,
                 _ => false,
             };
 
@@ -140,7 +141,7 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
                 name, table_schema_design_str, field_definitions
             )
         }
-        CreateOperation::Migration(_) => String::from(""),
+        CreateOperation::Migration(args) => args.content.to_owned().unwrap_or(String::new()),
     }
 }
 
