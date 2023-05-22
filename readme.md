@@ -33,6 +33,26 @@ A migration file represents a change in SurrealDB data. It can be a change in th
 
 ## Get started
 
+```mermaid
+ stateDiagram-v2
+    scaffold : Scaffold a project
+    changeSchema : Change schema/event
+    createMigration: Create migration (data changes)
+    apply : Apply to your database
+
+    state fork_state <<fork>>
+        [*] --> scaffold
+        scaffold --> fork_state
+        fork_state --> changeSchema
+        fork_state --> createMigration
+
+    state join_state <<join>>
+        changeSchema --> join_state
+        createMigration --> join_state
+        join_state --> apply
+        apply --> fork_state
+```
+
 ### 1. Scaffold
 
 You can start a migration project by scaffolding a new project using the following command line:
