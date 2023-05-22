@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use std::{fs, path::Path};
 
+use super::create_cmd;
+
 pub fn clear_tests_files() -> Result<()> {
     remove_folder("tests-files")?;
 
@@ -40,6 +42,22 @@ DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();";
 
         fs::write(category_schema_file, CATEGORY_CONTENT)?;
     }
+
+    Ok(())
+}
+
+pub fn add_new_migration_file() -> Result<()> {
+    let content = "CREATE category SET name = 'Technology';
+CREATE category SET name = 'Marketing';
+CREATE category SET name = 'Books';";
+
+    let mut cmd = create_cmd()?;
+    cmd.arg("create")
+        .arg("migration")
+        .arg("AddCategories")
+        .arg("--content")
+        .arg(content);
+    cmd.assert().try_success()?;
 
     Ok(())
 }
