@@ -37,18 +37,18 @@ fn create_migration_file_with_down_file() -> Result<()> {
 
     cmd.assert().success();
 
-    let migrations_folder = std::fs::read_dir("tests-files/migrations")?;
-    let migration_files = migrations_folder.filter(|entry| match entry {
-        Ok(entry) => entry.file_type().unwrap().is_file(),
-        Err(_) => false,
-    });
+    let migration_files =
+        std::fs::read_dir("tests-files/migrations")?.filter(|entry| match entry.as_ref() {
+            Ok(entry) => entry.path().is_file(),
+            Err(_) => false,
+        });
     assert_eq!(migration_files.count(), 1);
 
-    let down_migrations_folder = std::fs::read_dir("tests-files/migrations/down")?;
-    let down_migration_files = down_migrations_folder.filter(|entry| match entry {
-        Ok(entry) => entry.file_type().unwrap().is_file(),
-        Err(_) => false,
-    });
+    let down_migration_files =
+        std::fs::read_dir("tests-files/migrations/down")?.filter(|entry| match entry.as_ref() {
+            Ok(entry) => entry.path().is_file(),
+            Err(_) => false,
+        });
     assert_eq!(down_migration_files.count(), 1);
 
     Ok(())

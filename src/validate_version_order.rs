@@ -10,13 +10,13 @@ use crate::{
     surrealdb,
 };
 
-pub struct ValidateVersionArgs<'a> {
+pub struct ValidateVersionOrderArgs<'a> {
     pub db: &'a Surreal<Any>,
     pub dir: Option<&'a Dir<'static>>,
 }
 
-pub async fn main<'a>(args: ValidateVersionArgs<'a>) -> Result<()> {
-    let ValidateVersionArgs { db: client, dir } = args;
+pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
+    let ValidateVersionOrderArgs { db: client, dir } = args;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
@@ -26,8 +26,13 @@ pub async fn main<'a>(args: ValidateVersionArgs<'a>) -> Result<()> {
         Some(files) => files,
         None => vec![],
     };
-
-    // TODO : Filter .down.surql files
+    let migrations_files = migrations_files
+        .into_iter()
+        .filter(|migration_file| {
+            let is_down_file = migration_file.full_name.ends_with(".down.surql");
+            !is_down_file
+        })
+        .collect::<Vec<_>>();
 
     let migrations_not_applied = get_sorted_migrations_files(migrations_files)
         .into_iter()

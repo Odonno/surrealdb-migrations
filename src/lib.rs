@@ -68,7 +68,7 @@ use anyhow::Result;
 use apply::ApplyArgs;
 use include_dir::Dir;
 use models::ScriptMigration;
-use validate_version_order::ValidateVersionArgs;
+use validate_version_order::ValidateVersionOrderArgs;
 
 /// The main entry point for the library, used to apply migrations.
 pub struct MigrationRunner<'a> {
@@ -171,7 +171,7 @@ impl MigrationRunner<'_> {
     /// # }
     /// ```
     pub async fn validate_version_order(&self) -> Result<()> {
-        let args = ValidateVersionArgs {
+        let args = ValidateVersionOrderArgs {
             db: self.db,
             dir: self.dir,
         };

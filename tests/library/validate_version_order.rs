@@ -112,3 +112,27 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
     })
     .await
 }
+
+#[tokio::test]
+#[serial]
+async fn ok_if_migrations_applied_but_no_new_migration_with_inlined_down_files() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_blog_template()?;
+            inline_down_migration_files()?;
+
+            let configuration = SurrealdbConfiguration::default();
+            let db = create_surrealdb_client(&configuration).await?;
+
+            let runner = MigrationRunner::new(&db);
+
+            runner.up().await?;
+
+            runner.validate_version_order().await?;
+
+            Ok(())
+        })
+    })
+    .await
+}
