@@ -9,10 +9,7 @@ use std::{
 
 use crate::{
     config,
-    constants::{
-        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
-        SCRIPT_MIGRATION_TABLE_NAME,
-    },
+    constants::SCRIPT_MIGRATION_TABLE_NAME,
     definitions,
     io::{self, SurqlFile},
     models::ScriptMigration,
@@ -58,7 +55,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
 
     let folder_path = config::retrieve_folder_path();
 
-    let schemas_files = io::extract_surql_files(Path::new(SCHEMAS_DIR_NAME).to_path_buf(), dir)?;
+    let schemas_files = io::extract_schemas_files(dir)?;
 
     let schema_definitions = extract_schema_definitions(schemas_files);
     apply_schema_definitions(&client, &schema_definitions, dry_run).await?;
@@ -67,8 +64,7 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         println!("Schema files successfully executed!");
     }
 
-    let events_dir = Path::new(EVENTS_DIR_NAME).to_path_buf();
-    let events_files = match io::extract_surql_files(events_dir, dir).ok() {
+    let events_files = match io::extract_events_files(dir).ok() {
         Some(files) => files,
         None => vec![],
     };
@@ -116,21 +112,12 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         }
     }
 
-    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
-
-    let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
-    let down_migrations_files = match io::extract_surql_files(down_migrations_dir, dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let forward_migrations_files = io::extract_forward_migrations_files(dir);
+    let backward_migrations_files = io::extract_backward_migrations_files(dir);
 
     let migration_files_to_execute = get_migration_files_to_execute(
-        migrations_files,
-        down_migrations_files,
+        forward_migrations_files,
+        backward_migrations_files,
         &operation,
         &migrations_applied,
     );
@@ -392,12 +379,12 @@ fn create_definition_files(
 }
 
 fn get_migration_files_to_execute<'a>(
-    migrations_files: Vec<SurqlFile>,
-    down_migrations_files: Vec<SurqlFile>,
+    forward_migrations_files: Vec<SurqlFile>,
+    backward_migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
     migrations_applied: &'a Vec<ScriptMigration>,
 ) -> Vec<SurqlFile> {
-    let mut filtered_migrations_files = migrations_files
+    let filtered_forward_migrations_files = forward_migrations_files
         .into_iter()
         .filter(|migration_file| {
             filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, false)
@@ -405,7 +392,7 @@ fn get_migration_files_to_execute<'a>(
         })
         .collect::<Vec<_>>();
 
-    let filtered_down_migrations_files = down_migrations_files
+    let filtered_backward_migrations_files = backward_migrations_files
         .into_iter()
         .filter(|migration_file| {
             filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, true)
@@ -413,7 +400,8 @@ fn get_migration_files_to_execute<'a>(
         })
         .collect::<Vec<_>>();
 
-    filtered_migrations_files.extend(filtered_down_migrations_files);
+    let mut filtered_migrations_files = filtered_forward_migrations_files;
+    filtered_migrations_files.extend(filtered_backward_migrations_files);
 
     get_sorted_migrations_files(filtered_migrations_files, &operation)
 }
@@ -436,23 +424,15 @@ fn filter_migration_file_to_execute(
     migration_file: &SurqlFile,
     operation: &ApplyOperation,
     migrations_applied: &Vec<ScriptMigration>,
-    is_from_down_folder: bool,
+    is_backward_migration: bool,
 ) -> Result<bool> {
-    let is_down_file = match is_from_down_folder {
-        true => true,
-        false => {
-            let is_down_file = migration_file.full_name.ends_with(".down.surql");
-            is_down_file
-        }
-    };
-
     let migration_direction = match &operation {
         ApplyOperation::Up => MigrationDirection::Forward,
         ApplyOperation::UpTo(_) => MigrationDirection::Forward,
         ApplyOperation::Down(_) => MigrationDirection::Backward,
     };
 
-    match (&migration_direction, is_down_file) {
+    match (&migration_direction, is_backward_migration) {
         (MigrationDirection::Forward, true) => return Ok(false),
         (MigrationDirection::Backward, false) => return Ok(false),
         _ => {}

@@ -8,18 +8,13 @@ use crate::{
 };
 
 pub fn main() -> Result<()> {
-    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let migrations_files = match io::extract_surql_files(migrations_dir, None).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
-    let migrations_files = get_sorted_migrations_files(migrations_files);
+    let forward_migrations_files = io::extract_forward_migrations_files(None);
 
-    if migrations_files.is_empty() {
+    if forward_migrations_files.is_empty() {
         return Err(anyhow!("No migration files left"));
     }
 
-    let last_migration = migrations_files
+    let last_migration = forward_migrations_files
         .last()
         .context("Cannot get last migration")?;
 
@@ -35,13 +30,6 @@ pub fn main() -> Result<()> {
     );
 
     Ok(())
-}
-
-fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {
-    let mut sorted_migrations_files = migrations_files;
-    sorted_migrations_files.sort_by(|a, b| a.name.cmp(&b.name));
-
-    sorted_migrations_files
 }
 
 fn remove_migration_file(last_migration: &SurqlFile) -> Result<()> {

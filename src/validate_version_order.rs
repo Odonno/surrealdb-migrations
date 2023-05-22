@@ -1,10 +1,8 @@
 use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::{anyhow, Result};
 use include_dir::Dir;
-use std::path::Path;
 
 use crate::{
-    constants::MIGRATIONS_DIR_NAME,
     io::{self, SurqlFile},
     models::ScriptMigration,
     surrealdb,
@@ -21,20 +19,9 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
 
-    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
-    let migrations_files = migrations_files
-        .into_iter()
-        .filter(|migration_file| {
-            let is_down_file = migration_file.full_name.ends_with(".down.surql");
-            !is_down_file
-        })
-        .collect::<Vec<_>>();
+    let forward_migrations_files = io::extract_forward_migrations_files(dir);
 
-    let migrations_not_applied = get_sorted_migrations_files(migrations_files)
+    let migrations_not_applied = forward_migrations_files
         .into_iter()
         .filter(|migration_file| {
             is_migration_file_already_applied(migration_file, &migrations_applied).unwrap_or(false)
@@ -69,13 +56,6 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
     } else {
         Ok(())
     }
-}
-
-fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {
-    let mut sorted_migrations_files = migrations_files;
-    sorted_migrations_files.sort_by(|a, b| a.name.cmp(&b.name));
-
-    sorted_migrations_files
 }
 
 fn is_migration_file_already_applied(
