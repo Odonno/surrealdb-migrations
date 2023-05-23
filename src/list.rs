@@ -3,13 +3,15 @@ use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 
-use crate::{input::SurrealdbConfiguration, surrealdb};
+use crate::{
+    input::SurrealdbConfiguration,
+    surrealdb::{create_surrealdb_client, list_script_migration_ordered_by_execution_date},
+};
 
 pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> Result<()> {
-    let client = surrealdb::create_surrealdb_client(db_configuration).await?;
+    let client = create_surrealdb_client(db_configuration).await?;
 
-    let migrations_applied =
-        surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
+    let migrations_applied = list_script_migration_ordered_by_execution_date(&client).await?;
 
     if migrations_applied.is_empty() {
         println!("No migrations applied yet!");
