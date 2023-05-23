@@ -23,7 +23,7 @@ jobs:
         run: cargo check --all
 
       - name: Download SurrealDB
-        run: curl -sSf https://install.surrealdb.com | sh
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
 
       - name: Run tests
         run: cargo test
@@ -49,6 +49,9 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+
+      - name: Download SurrealDB
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
 
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
