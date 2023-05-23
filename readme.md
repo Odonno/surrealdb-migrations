@@ -296,6 +296,14 @@ And if you need to undo all your migrations, use this command:
 surrealdb-migrations apply --down 0
 ```
 
+## Samples
+
+This project contains sample apps that demontrates how to use the `surrealdb-migrations` given certain contexts. Here is a list of existing samples:
+
+| Name                 | Description                                                                                                                                                                                                                                                   | Languages/Frameworks  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| [wasm](samples/wasm) | This project shows how to use the `surrealdb-migrations` crate with embedded migrations files in a WASM context.<br /> The app entry point is powered by SvelteKit and the `vite-plugin-rsw` plugin.<br /> The SurrealDB data is stored locally in IndexedDb. | SvelteKit/Rust (WASM) |
+
 ## Credits
 
 Inspired by awesome projects:
