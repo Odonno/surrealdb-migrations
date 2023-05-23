@@ -171,9 +171,11 @@ Repeat the process from step 2. Change schema and/or create data change migratio
 
 To help you get started quickly, there is a list of predefined templates you can use:
 
-- `empty` - The smallest migration project you can create, a clean schema with an already defined `script_migration` table to store the applied migrations
-- `blog` - A blog domain model, with users having the ability to publish/unpublish posts and comments
-- `ecommerce` - An ecommerce domain model, with customers having the ability to purchase products
+| Template                         | Description                                                                                                                                           |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [empty](templates/empty)         | The smallest migration project you can create.<br /> A clean schema with an already defined `script_migration` table to store the applied migrations. |
+| [blog](templates/blog)           | A blog domain model, with users having the ability to publish/unpublish posts and comments.                                                           |
+| [ecommerce](templates/ecommerce) | An ecommerce domain model, with customers having the ability to purchase products.                                                                    |
 
 You can scaffold a project using any of these templates using the following command line:
 
