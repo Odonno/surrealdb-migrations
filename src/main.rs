@@ -36,9 +36,10 @@ async fn main() -> Result<()> {
             command,
             name,
             down,
+            content,
         } => match name {
             Some(name) => {
-                let operation = CreateOperation::Migration(CreateMigrationArgs { down });
+                let operation = CreateOperation::Migration(CreateMigrationArgs { down, content });
                 let args = CreateArgs { name, operation };
                 create::main(args)
             }
@@ -71,8 +72,13 @@ async fn main() -> Result<()> {
                     let args = CreateArgs { name, operation };
                     create::main(args)
                 }
-                Some(CreateAction::Migration { name, down }) => {
-                    let operation = CreateOperation::Migration(CreateMigrationArgs { down });
+                Some(CreateAction::Migration {
+                    name,
+                    down,
+                    content,
+                }) => {
+                    let operation =
+                        CreateOperation::Migration(CreateMigrationArgs { down, content });
                     let args = CreateArgs { name, operation };
                     create::main(args)
                 }

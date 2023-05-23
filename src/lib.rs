@@ -26,7 +26,7 @@
 //!
 //! ```rust,no_run
 //! # use anyhow::Result;
-//! use surrealdb_migrations::SurrealdbMigrations;
+//! use surrealdb_migrations::MigrationRunner;
 //! use surrealdb::engine::any::connect;
 //! use surrealdb::opt::auth::Root;
 //!
@@ -44,7 +44,7 @@
 //!     db.use_ns("namespace").use_db("database").await?;
 //!
 //!     // Apply all migrations
-//!     SurrealdbMigrations::new(&db)
+//!     MigrationRunner::new(&db)
 //!         .up()
 //!         .await
 //!         .expect("Failed to apply migrations");
@@ -68,22 +68,28 @@ use anyhow::Result;
 use apply::ApplyArgs;
 use include_dir::Dir;
 use models::ScriptMigration;
-use validate_version_order::ValidateVersionArgs;
+use validate_version_order::ValidateVersionOrderArgs;
 
 /// The main entry point for the library, used to apply migrations.
-pub struct SurrealdbMigrations<'a> {
+pub struct MigrationRunner<'a> {
     db: &'a Surreal<Any>,
-    dir: Option<&'a Dir<'a>>,
+    dir: Option<&'a Dir<'static>>,
 }
 
-impl SurrealdbMigrations<'_> {
-    /// Create a new instance of `SurrealdbMigrations`.
+#[deprecated(
+    since = "0.9.6",
+    note = "SurrealdbMigrations is a confusing name. You should use MigrationRunner instead."
+)]
+pub type SurrealdbMigrations<'a> = MigrationRunner<'a>;
+
+impl MigrationRunner<'_> {
+    /// Create a new instance of `MigrationRunner`.
     ///
     /// ## Arguments
     ///
     /// * `db` - The SurrealDB instance used to apply migrations, etc...
-    pub fn new(db: &Surreal<Any>) -> SurrealdbMigrations<'_> {
-        SurrealdbMigrations { db, dir: None }
+    pub fn new<'a>(db: &'a Surreal<Any>) -> MigrationRunner<'a> {
+        MigrationRunner { db, dir: None }
     }
 
     /// Load migration project files from an embedded directory.
@@ -97,7 +103,7 @@ impl SurrealdbMigrations<'_> {
     /// ```rust,no_run
     /// # use anyhow::Result;
     /// use include_dir::{include_dir, Dir};
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -117,7 +123,7 @@ impl SurrealdbMigrations<'_> {
     /// // Load migration project files from an embedded directory
     /// const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
     ///
-    /// let runner = SurrealdbMigrations::new(&db)
+    /// let runner = MigrationRunner::new(&db)
     ///     .load_files(&DB_DIR) // Will look for embedded files instead of the filesystem
     ///     .up()
     ///     .await?;
@@ -125,8 +131,8 @@ impl SurrealdbMigrations<'_> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load_files<'a>(&'a self, dir: &'a Dir<'a>) -> SurrealdbMigrations<'a> {
-        SurrealdbMigrations {
+    pub fn load_files<'a>(&'a self, dir: &'a Dir<'static>) -> MigrationRunner<'a> {
+        MigrationRunner {
             db: self.db,
             dir: Some(dir),
         }
@@ -139,7 +145,7 @@ impl SurrealdbMigrations<'_> {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -156,7 +162,7 @@ impl SurrealdbMigrations<'_> {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// let runner = SurrealdbMigrations::new(&db);
+    /// let runner = MigrationRunner::new(&db);
     ///
     /// runner.validate_version_order().await?;
     /// runner.up().await?;
@@ -165,7 +171,7 @@ impl SurrealdbMigrations<'_> {
     /// # }
     /// ```
     pub async fn validate_version_order(&self) -> Result<()> {
-        let args = ValidateVersionArgs {
+        let args = ValidateVersionOrderArgs {
             db: self.db,
             dir: self.dir,
         };
@@ -178,7 +184,7 @@ impl SurrealdbMigrations<'_> {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -195,7 +201,7 @@ impl SurrealdbMigrations<'_> {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(&db)
+    /// MigrationRunner::new(&db)
     ///     .up()
     ///     .await
     ///     .expect("Failed to apply migrations");
@@ -224,7 +230,7 @@ impl SurrealdbMigrations<'_> {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -241,7 +247,7 @@ impl SurrealdbMigrations<'_> {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(&db)
+    /// MigrationRunner::new(&db)
     ///     .up_to("20230101_120002_AddPost")
     ///     .await
     ///     .expect("Failed to apply migrations");
@@ -270,7 +276,7 @@ impl SurrealdbMigrations<'_> {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -287,7 +293,7 @@ impl SurrealdbMigrations<'_> {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// SurrealdbMigrations::new(&db)
+    /// MigrationRunner::new(&db)
     ///     .down("0") // Will revert all migrations
     ///     .await
     ///     .expect("Failed to revert migrations");
@@ -312,7 +318,7 @@ impl SurrealdbMigrations<'_> {
     ///
     /// ```rust,no_run
     /// # use anyhow::Result;
-    /// use surrealdb_migrations::SurrealdbMigrations;
+    /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
     ///
@@ -329,7 +335,7 @@ impl SurrealdbMigrations<'_> {
     /// // Select a specific namespace / database
     /// db.use_ns("namespace").use_db("database").await?;
     ///
-    /// let migrations_applied = SurrealdbMigrations::new(&db)
+    /// let migrations_applied = MigrationRunner::new(&db)
     ///     .list()
     ///     .await?;
     ///

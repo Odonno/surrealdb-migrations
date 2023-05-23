@@ -53,11 +53,8 @@ fn apply_new_schema_changes() -> Result<()> {
     run_with_surreal_instance(|| {
         clear_tests_files()?;
         scaffold_blog_template()?;
-
         empty_folder("tests-files/migrations")?;
-
         apply_migrations()?;
-
         add_new_schema_file()?;
 
         let mut cmd = create_cmd()?;

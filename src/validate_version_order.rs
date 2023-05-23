@@ -1,35 +1,27 @@
 use ::surrealdb::{engine::any::Any, Surreal};
 use anyhow::{anyhow, Result};
 use include_dir::Dir;
-use std::path::Path;
 
 use crate::{
-    constants::MIGRATIONS_DIR_NAME,
     io::{self, SurqlFile},
     models::ScriptMigration,
     surrealdb,
 };
 
-pub struct ValidateVersionArgs<'a> {
+pub struct ValidateVersionOrderArgs<'a> {
     pub db: &'a Surreal<Any>,
-    pub dir: Option<&'a Dir<'a>>,
+    pub dir: Option<&'a Dir<'static>>,
 }
 
-pub async fn main(args: ValidateVersionArgs<'_>) -> Result<()> {
-    let ValidateVersionArgs { db: client, dir } = args;
+pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
+    let ValidateVersionOrderArgs { db: client, dir } = args;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let migrations_files = match io::extract_surql_files(migrations_dir, dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let forward_migrations_files = io::extract_forward_migrations_files(dir);
 
-    // TODO : Filter .down.surql files
-
-    let migrations_not_applied = get_sorted_migrations_files(migrations_files)
+    let migrations_not_applied = forward_migrations_files
         .into_iter()
         .filter(|migration_file| {
             is_migration_file_already_applied(migration_file, &migrations_applied).unwrap_or(false)
@@ -66,16 +58,9 @@ pub async fn main(args: ValidateVersionArgs<'_>) -> Result<()> {
     }
 }
 
-fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {
-    let mut sorted_migrations_files = migrations_files;
-    sorted_migrations_files.sort_by(|a, b| a.name.cmp(&b.name));
-
-    sorted_migrations_files
-}
-
 fn is_migration_file_already_applied(
     migration_file: &SurqlFile,
-    migrations_applied: &[ScriptMigration],
+    migrations_applied: &Vec<ScriptMigration>,
 ) -> Result<bool> {
     let has_already_been_applied = migrations_applied
         .iter()

@@ -1,6 +1,6 @@
 use anyhow::{ensure, Result};
 use serial_test::serial;
-use surrealdb_migrations::SurrealdbMigrations;
+use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
@@ -17,7 +17,7 @@ async fn apply_with_skipped_migrations() -> Result<()> {
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
-            let runner = SurrealdbMigrations::new(&db);
+            let runner = MigrationRunner::new(&db);
 
             runner.up_to(&first_migration_name).await?;
 

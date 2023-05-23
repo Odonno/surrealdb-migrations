@@ -23,7 +23,6 @@ pub struct SurrealdbConfiguration {
     pub password: Option<String>,
 }
 
-#[allow(deprecated, dead_code)]
 impl SurrealdbConfiguration {
     pub fn default() -> SurrealdbConfiguration {
         SurrealdbConfiguration {
