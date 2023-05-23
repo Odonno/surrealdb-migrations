@@ -2103,7 +2103,7 @@ checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 [[package]]
 name = "surrealdb"
 version = "1.0.0-beta.9+20230402"
-source = "git+https://github.com/surrealdb/surrealdb.git?branch=main#081487b084d5196bb6c68d08d425489a2ab7a94e"
+source = "git+https://github.com/surrealdb/surrealdb.git?branch=main#e962eae70cb0957fad08a435edb3ab3653921fb7"
 dependencies = [
  "addr",
  "any_ascii",
