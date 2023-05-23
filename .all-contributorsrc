@@ -1,0 +1,15 @@
+{
+  "projectName": "surrealdb-migrations",
+  "projectOwner": "Odonno",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitConvention": "gitmoji",
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "contributors": []
+}
