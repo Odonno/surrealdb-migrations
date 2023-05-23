@@ -21,6 +21,10 @@ cargo add surrealdb-migrations
 cargo install surrealdb-migrations
 ```
 
+- or inside a CI workflow, using a GitHub Action
+
+Check [surrealdb-migrations](https://github.com/marketplace/actions/surrealdb-migrations) GitHub Action in the marketplace
+
 ## The philosophy
 
 The SurrealDB Migrations project aims to simplify the creation of a SurrealDB database schema and the evolution of the database through migrations. A typical SurrealDB migration project is divided into 3 categories: schema, event and migration.
