@@ -69,7 +69,7 @@ pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
         None => vec![],
     };
 
-    let event_definitions = if events_files.len() > 0 {
+    let event_definitions = if !events_files.is_empty() {
         let event_definitions = extract_event_definitions(events_files);
         apply_event_definitions(client, &event_definitions, dry_run).await?;
 
@@ -378,11 +378,11 @@ fn create_definition_files(
     Ok(())
 }
 
-fn get_migration_files_to_execute<'a>(
+fn get_migration_files_to_execute(
     forward_migrations_files: Vec<SurqlFile>,
     backward_migrations_files: Vec<SurqlFile>,
     operation: &ApplyOperation,
-    migrations_applied: &'a Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
 ) -> Vec<SurqlFile> {
     let filtered_forward_migrations_files = forward_migrations_files
         .into_iter()
@@ -395,7 +395,7 @@ fn get_migration_files_to_execute<'a>(
     let filtered_backward_migrations_files = backward_migrations_files
         .into_iter()
         .filter(|migration_file| {
-            filter_migration_file_to_execute(migration_file, &operation, &migrations_applied, true)
+            filter_migration_file_to_execute(migration_file, operation, migrations_applied, true)
                 .unwrap_or(false)
         })
         .collect::<Vec<_>>();
@@ -423,7 +423,7 @@ fn get_sorted_migrations_files(
 fn filter_migration_file_to_execute(
     migration_file: &SurqlFile,
     operation: &ApplyOperation,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
     is_backward_migration: bool,
 ) -> Result<bool> {
     let migration_direction = match &operation {
@@ -440,14 +440,14 @@ fn filter_migration_file_to_execute(
 
     match &operation {
         ApplyOperation::UpTo(target_migration) => {
-            let is_beyond_target = migration_file.name > target_migration.to_string();
+            let is_beyond_target = migration_file.name > *target_migration;
             if is_beyond_target {
                 return Ok(false);
             }
         }
         ApplyOperation::Up => {}
         ApplyOperation::Down(target_migration) => {
-            let is_target_or_below = migration_file.name <= target_migration.to_string();
+            let is_target_or_below = migration_file.name <= *target_migration;
             if is_target_or_below {
                 return Ok(false);
             }
@@ -484,7 +484,7 @@ CREATE {} SET script_name = '{}';",
 
         let script_display_name = migration_file
             .name
-            .split("_")
+            .split('_')
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()
@@ -518,7 +518,7 @@ DELETE {} WHERE script_name = '{}';",
 
         let script_display_name = migration_file
             .name
-            .split("_")
+            .split('_')
             .skip(2)
             .map(|s| s.to_string())
             .collect::<Vec<_>>()

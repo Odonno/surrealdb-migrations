@@ -13,7 +13,7 @@ pub struct ValidateVersionOrderArgs<'a> {
     pub dir: Option<&'a Dir<'static>>,
 }
 
-pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
+pub async fn main(args: ValidateVersionOrderArgs<'_>) -> Result<()> {
     let ValidateVersionOrderArgs { db: client, dir } = args;
 
     let migrations_applied =
@@ -60,7 +60,7 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
 
 fn is_migration_file_already_applied(
     migration_file: &SurqlFile,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
 ) -> Result<bool> {
     let has_already_been_applied = migrations_applied
         .iter()

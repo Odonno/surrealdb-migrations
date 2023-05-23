@@ -88,7 +88,7 @@ impl MigrationRunner<'_> {
     /// ## Arguments
     ///
     /// * `db` - The SurrealDB instance used to apply migrations, etc...
-    pub fn new<'a>(db: &'a Surreal<Any>) -> MigrationRunner<'a> {
+    pub fn new(db: &Surreal<Any>) -> MigrationRunner<'_> {
         MigrationRunner { db, dir: None }
     }
 

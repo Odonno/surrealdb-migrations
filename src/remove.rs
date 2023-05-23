@@ -97,7 +97,7 @@ fn remove_inlined_down_migration_file_if_exists(last_migration: &SurqlFile) -> R
 fn get_migration_display_name(migration_file: &SurqlFile) -> String {
     migration_file
         .name
-        .split("_")
+        .split('_')
         .skip(2)
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
