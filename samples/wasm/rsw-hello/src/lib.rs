@@ -55,7 +55,7 @@ pub async fn get_blog_posts() -> js_sys::Array {
 
     posts
         .into_iter()
-        .map({ |post| JsValue::from_serde(&post).unwrap() })
+        .map(|post| serde_wasm_bindgen::to_value(&post).unwrap())
         .collect::<js_sys::Array>()
 }
 
