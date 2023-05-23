@@ -87,9 +87,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
             let runner = MigrationRunner::new(&db);
 
             let first_migration_file = get_first_migration_file()?;
-            if first_migration_file.exists() {
-                std::fs::remove_file(first_migration_file)?;
-            }
+            std::fs::remove_file(first_migration_file)?;
 
             runner.up().await?;
 
