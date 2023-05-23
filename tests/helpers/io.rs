@@ -12,7 +12,7 @@ pub fn clear_tests_files() -> Result<()> {
 pub fn empty_folder(folder: &str) -> Result<()> {
     let migrations_files_dir = Path::new(folder);
 
-    if migrations_files_dir.exists() {
+    if migrations_files_dir.is_dir() && migrations_files_dir.exists() {
         fs::remove_dir_all(migrations_files_dir)?;
         fs::create_dir(migrations_files_dir)?;
     }
@@ -23,7 +23,7 @@ pub fn empty_folder(folder: &str) -> Result<()> {
 pub fn remove_folder(folder: &str) -> Result<()> {
     let dir = Path::new(folder);
 
-    if dir.exists() {
+    if dir.is_dir() && dir.exists() {
         fs::remove_dir_all(dir)?;
     }
 
@@ -33,7 +33,7 @@ pub fn remove_folder(folder: &str) -> Result<()> {
 pub fn add_new_schema_file() -> Result<()> {
     let schemas_files_dir = Path::new("tests-files/schemas");
 
-    if schemas_files_dir.exists() {
+    if schemas_files_dir.is_dir() && schemas_files_dir.exists() {
         let category_schema_file = schemas_files_dir.join("category.surql");
         const CATEGORY_CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
 
