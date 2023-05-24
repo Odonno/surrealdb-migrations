@@ -14,6 +14,7 @@ use crate::{
     io::{self, SurqlFile},
     models::ScriptMigration,
     surrealdb::{self, TransactionAction},
+    validate_version_order::{self, ValidateVersionOrderArgs},
 };
 
 pub struct ApplyArgs<'a> {
@@ -22,6 +23,7 @@ pub struct ApplyArgs<'a> {
     pub dir: Option<&'a Dir<'static>>,
     pub display_logs: bool,
     pub dry_run: bool,
+    pub validate_version_order: bool,
 }
 
 pub enum ApplyOperation {
@@ -37,7 +39,13 @@ pub async fn main<'a>(args: ApplyArgs<'a>) -> Result<()> {
         dir,
         display_logs,
         dry_run,
+        validate_version_order,
     } = args;
+
+    if validate_version_order {
+        let validate_version_order_args = ValidateVersionOrderArgs { db: client, dir };
+        validate_version_order::main(validate_version_order_args).await?;
+    }
 
     let display_logs = match dry_run {
         true => false,

@@ -18,6 +18,7 @@ mod models;
 mod remove;
 mod scaffold;
 mod surrealdb;
+mod validate_version_order;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -96,6 +97,7 @@ async fn main() -> Result<()> {
             username,
             password,
             dry_run,
+            validate_version_order,
         } => {
             let operation = match (up, down) {
                 (Some(_), Some(_)) => {
@@ -122,6 +124,7 @@ async fn main() -> Result<()> {
                 dir: None,
                 display_logs: true,
                 dry_run,
+                validate_version_order,
             };
             apply::main(args).await
         }
