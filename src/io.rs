@@ -220,10 +220,10 @@ fn extract_boolean_dir_entry_value(
     f: &HashMap<DirEntryAttr, DirEntryValue>,
     entry_attribute: DirEntryAttr,
 ) -> Option<&bool> {
-    match f.get(&entry_attribute) {
-        Some(DirEntryValue::Boolean(value)) => Some(value),
-        _ => None,
+    if let Some(DirEntryValue::Boolean(value)) = f.get(&entry_attribute) {
+        return Some(value);
     }
+    None
 }
 
 fn extract_string_dir_entry_value(
