@@ -38,9 +38,7 @@ fn remove_migration_file(last_migration: &SurqlFile) -> Result<()> {
 
     let file_path = migrations_path.join(&last_migration.full_name);
 
-    if file_path.exists() {
-        std::fs::remove_file(file_path)?;
-    }
+    std::fs::remove_file(file_path)?;
 
     Ok(())
 }
