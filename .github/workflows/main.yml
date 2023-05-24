@@ -16,17 +16,11 @@ jobs:
       - name: Install stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.4.0
-
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
       - name: Run check
         run: cargo check --all
-
-      - name: Build WASM example
-        run: (cd samples/wasm/rsw-hello && wasm-pack build --target web)
 
       - name: Download SurrealDB
         run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
