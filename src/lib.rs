@@ -216,6 +216,7 @@ impl MigrationRunner<'_> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_version_order: false,
         };
         apply::main(args).await
     }
@@ -262,6 +263,7 @@ impl MigrationRunner<'_> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_version_order: false,
         };
         apply::main(args).await
     }
@@ -308,6 +310,7 @@ impl MigrationRunner<'_> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_version_order: false,
         };
         apply::main(args).await
     }

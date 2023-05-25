@@ -72,6 +72,10 @@ pub enum Action {
         password: Option<String>,
         #[clap(long)]
         dry_run: bool,
+        /// Validate the version order of the migrations so that you cannot run migrations if there are
+        /// gaps in the migrations history.
+        #[clap(long)]
+        validate_version_order: bool,
     },
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]

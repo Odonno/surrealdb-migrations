@@ -1,13 +1,12 @@
 [package]
 name = "surrealdb-migrations"
-version = "0.9.5"
+version = "0.9.6"
 description = "An awesome SurrealDB migration tool, with a user-friendly CLI and a versatile Rust library that enables seamless integration into any project."
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
 documentation = "https://docs.rs/surrealdb-migrations/"
 readme = "readme.md"
 license = "MIT"
-license-file = "LICENSE"
 keywords = ["surrealdb", "migrations", "cli"]
 categories = ["command-line-utilities"]
 edition = "2021"
