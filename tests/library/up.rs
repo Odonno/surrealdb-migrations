@@ -141,3 +141,23 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     })
     .await
 }
+
+#[tokio::test]
+#[serial]
+async fn apply_with_inlined_down_files() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_blog_template()?;
+            inline_down_migration_files()?;
+
+            let configuration = SurrealdbConfiguration::default();
+            let db = create_surrealdb_client(&configuration).await?;
+
+            MigrationRunner::new(&db).up().await?;
+
+            Ok(())
+        })
+    })
+    .await
+}

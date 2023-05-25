@@ -231,3 +231,30 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     })
     .await
 }
+
+#[test]
+#[serial]
+fn apply_with_inlined_down_files() -> Result<()> {
+    run_with_surreal_instance(|| {
+        clear_tests_files()?;
+        scaffold_blog_template()?;
+        inline_down_migration_files()?;
+
+        let mut cmd = create_cmd()?;
+
+        cmd.arg("apply");
+
+        cmd.assert().try_success().and_then(|assert| {
+            assert.try_stdout(
+                "Schema files successfully executed!
+Event files successfully executed!
+Executing migration AddAdminUser...
+Executing migration AddPost...
+Executing migration CommentPost...
+Migration files successfully executed!\n",
+            )
+        })?;
+
+        Ok(())
+    })
+}
