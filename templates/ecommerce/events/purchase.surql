@@ -3,8 +3,8 @@ DEFINE TABLE purchase SCHEMALESS
         FOR select, create FULL
         FOR update, delete NONE;
 
-DEFINE FIELD customer ON purchase TYPE record(customer);
-DEFINE FIELD product ON purchase TYPE record(product);
+DEFINE FIELD customer ON purchase TYPE record<customer>;
+DEFINE FIELD product ON purchase TYPE record<product>;
 DEFINE FIELD quantity ON purchase TYPE number;
 DEFINE FIELD total ON purchase TYPE number;
 

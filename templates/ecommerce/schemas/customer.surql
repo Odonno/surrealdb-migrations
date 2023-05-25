@@ -6,9 +6,8 @@ DEFINE TABLE customer SCHEMALESS
 
 DEFINE FIELD name ON customer TYPE string;
 DEFINE FIELD email ON customer TYPE string;
-DEFINE FIELD password ON customer TYPE string ASSERT $value != NONE;
-DEFINE FIELD addresses ON customer TYPE array;
-DEFINE FIELD addresses.* ON customer TYPE record(address);
+DEFINE FIELD password ON customer TYPE string;
+DEFINE FIELD addresses ON customer TYPE array<record<address>>;
 
 DEFINE INDEX unique_email ON customer COLUMNS email UNIQUE;
 

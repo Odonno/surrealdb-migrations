@@ -6,5 +6,5 @@ DEFINE TABLE comment SCHEMALESS
         FOR create WHERE permission:create_comment IN $auth.permissions
         FOR update, delete WHERE in = $auth.id;
 
-DEFINE FIELD content ON comment TYPE string ASSERT $value != NONE;
-DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();
+DEFINE FIELD content ON comment TYPE string;
+DEFINE FIELD created_at ON comment TYPE datetime DEFAULT time::now();
