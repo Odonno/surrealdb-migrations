@@ -315,6 +315,18 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.tekacs.com/"><img src="https://avatars.githubusercontent.com/u/63247?v=4?s=100" width="100px;" alt="Amar Sood"/><br /><sub><b>Amar Sood</b></sub></a><br /><a href="https://github.com/Odonno/surrealdb-migrations/commits?author=tekacs" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Roms1383"><img src="https://avatars.githubusercontent.com/u/21016014?v=4?s=100" width="100px;" alt="Rom's"/><br /><sub><b>Rom's</b></sub></a><br /><a href="https://github.com/Odonno/surrealdb-migrations/commits?author=Roms1383" title="Code">💻</a> <a href="#ideas-Roms1383" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-Roms1383" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pranaypratyush"><img src="https://avatars.githubusercontent.com/u/10587083?v=4?s=100" width="100px;" alt="Pranay Pratyush"/><br /><sub><b>Pranay Pratyush</b></sub></a><br /><a href="https://github.com/Odonno/surrealdb-migrations/issues?q=author%3Apranaypratyush" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ansarizafar"><img src="https://avatars.githubusercontent.com/u/5788284?v=4?s=100" width="100px;" alt="Zafar Ansari"/><br /><sub><b>Zafar Ansari</b></sub></a><br /><a href="#ideas-ansarizafar" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://turulix.de/"><img src="https://avatars.githubusercontent.com/u/28957605?v=4?s=100" width="100px;" alt="Tim"/><br /><sub><b>Tim</b></sub></a><br /><a href="#ideas-turulix" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/snarkipus"><img src="https://avatars.githubusercontent.com/u/3688989?v=4?s=100" width="100px;" alt="Matt Jackson"/><br /><sub><b>Matt Jackson</b></sub></a><br /><a href="https://github.com/Odonno/surrealdb-migrations/issues?q=author%3Asnarkipus" title="Bug reports">🐛</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->

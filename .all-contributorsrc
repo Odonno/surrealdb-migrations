@@ -11,5 +11,62 @@
   "commitConvention": "gitmoji",
   "contributorsPerLine": 7,
   "skipCi": true,
-  "contributors": []
+  "contributors": [
+    {
+      "login": "tekacs",
+      "name": "Amar Sood",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63247?v=4",
+      "profile": "http://www.tekacs.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Roms1383",
+      "name": "Rom's",
+      "avatar_url": "https://avatars.githubusercontent.com/u/21016014?v=4",
+      "profile": "https://github.com/Roms1383",
+      "contributions": [
+        "code",
+        "ideas",
+        "infra"
+      ]
+    },
+    {
+      "login": "pranaypratyush",
+      "name": "Pranay Pratyush",
+      "avatar_url": "https://avatars.githubusercontent.com/u/10587083?v=4",
+      "profile": "https://github.com/pranaypratyush",
+      "contributions": [
+        "bug"
+      ]
+    },
+    {
+      "login": "ansarizafar",
+      "name": "Zafar Ansari",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5788284?v=4",
+      "profile": "https://github.com/ansarizafar",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "turulix",
+      "name": "Tim",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28957605?v=4",
+      "profile": "https://turulix.de/",
+      "contributions": [
+        "ideas"
+      ]
+    },
+    {
+      "login": "snarkipus",
+      "name": "Matt Jackson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/3688989?v=4",
+      "profile": "https://github.com/snarkipus",
+      "contributions": [
+        "bug"
+      ]
+    }
+  ]
 }
