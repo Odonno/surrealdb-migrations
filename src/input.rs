@@ -1,4 +1,6 @@
 /// The configuration used to connect to a SurrealDB instance.
+
+#[allow(deprecated, dead_code)]
 pub struct SurrealdbConfiguration {
     /// Address of the surrealdb instance.
     /// Default value is `ws://localhost:8000`.
@@ -19,17 +21,4 @@ pub struct SurrealdbConfiguration {
     /// Password used to authenticate to the surrealdb instance.
     /// Default value is `root`.
     pub password: Option<String>,
-}
-
-impl SurrealdbConfiguration {
-    pub fn default() -> SurrealdbConfiguration {
-        SurrealdbConfiguration {
-            address: None,
-            url: None,
-            ns: None,
-            db: None,
-            username: None,
-            password: None,
-        }
-    }
 }

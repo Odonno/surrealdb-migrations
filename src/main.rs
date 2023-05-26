@@ -1,3 +1,5 @@
+use crate::surrealdb::create_surrealdb_client;
+
 use anyhow::{anyhow, Result};
 use apply::ApplyArgs;
 use clap::Parser;
@@ -87,6 +89,7 @@ async fn main() -> Result<()> {
             },
         },
         Action::Remove {} => remove::main(),
+        #[allow(deprecated)]
         Action::Apply {
             up,
             down,
@@ -117,7 +120,7 @@ async fn main() -> Result<()> {
                 username,
                 password,
             };
-            let db = surrealdb::create_surrealdb_client(&db_configuration).await?;
+            let db = create_surrealdb_client(&db_configuration).await?;
             let args = ApplyArgs {
                 operation,
                 db: &db,
@@ -128,6 +131,7 @@ async fn main() -> Result<()> {
             };
             apply::main(args).await
         }
+        #[allow(deprecated)]
         Action::List {
             address,
             url,

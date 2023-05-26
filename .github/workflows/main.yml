@@ -1,57 +1,64 @@
 name: Main Workflow
 
-on:
-  push:
-    branches:
-      - "main"
+on: push
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
+  ci:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Download SurrealDB
-        run: curl -sSf https://install.surrealdb.com | sh
-
-      - name: Run tests
-        run: cargo test --verbose
-
-      - name: Publish crate
-        uses: katyo/publish-crates@v2
-        with:
-          registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          ignore-unpublished-changes: true
-
-  coverage:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Download SurrealDB
-        run: curl -sSf https://install.surrealdb.com | sh
 
       - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run check
+        run: cargo check --all
+
+      - name: Download SurrealDB
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
+
+      - name: Run tests
+        run: cargo test
+
+      - name: Run format
+        run: |
+          cargo check --all
+          cargo fix
+
+      - name: Run lint
+        run: cargo clippy -- -Dwarnings
+
+  coverage:
+    needs: ci
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Download SurrealDB
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
 
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: "0.22.0"
-          args: "--engine llvm"
+          args: "--engine llvm --target-dir target/tarpaulin --skip-clean"
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3

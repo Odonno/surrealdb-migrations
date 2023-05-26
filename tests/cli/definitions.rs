@@ -90,18 +90,12 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
 
         definitions_files.sort_by(|a, b| {
             let a = match a.get(&DirEntryAttr::Name) {
-                Some(value) => match value {
-                    DirEntryValue::String(value) => Some(value),
-                    _ => None,
-                },
+                Some(DirEntryValue::String(value)) => Some(value),
                 _ => None,
             };
 
             let b = match b.get(&DirEntryAttr::Name) {
-                Some(value) => match value {
-                    DirEntryValue::String(value) => Some(value),
-                    _ => None,
-                },
+                Some(DirEntryValue::String(value)) => Some(value),
                 _ => None,
             };
 
@@ -116,10 +110,7 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
 
         let initial_definition_full_name =
             match initial_definition_file.get(&DirEntryAttr::FullName) {
-                Some(value) => match value {
-                    DirEntryValue::String(value) => Some(value),
-                    _ => None,
-                },
+                Some(DirEntryValue::String(value)) => Some(value),
                 _ => None,
             };
 
@@ -130,10 +121,7 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
             .context("No new definition file found")?;
 
         let new_definition_path = match new_definition_file.get(&DirEntryAttr::Path) {
-            Some(value) => match value {
-                DirEntryValue::String(value) => Some(value),
-                _ => None,
-            },
+            Some(DirEntryValue::String(value)) => Some(value),
             _ => None,
         };
 

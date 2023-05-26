@@ -41,7 +41,7 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
     Ok(())
 }
 
-fn fails_if_folder_already_exists(dir_path: &PathBuf, dir_name: &str) -> Result<()> {
+fn fails_if_folder_already_exists(dir_path: &Path, dir_name: &str) -> Result<()> {
     match dir_path.exists() {
         true => Err(anyhow!("'{}' folder already exists.", dir_name)),
         false => Ok(()),
@@ -59,7 +59,7 @@ pub fn copy_template_files_to_current_dir(
         .get_dir(template_dir_name)
         .context("Cannot get template dir")?;
 
-    let to = match folder_path.to_owned() {
+    let to = match folder_path {
         Some(folder_path) => folder_path,
         None => ".".to_owned(),
     };
@@ -109,7 +109,7 @@ pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
 
 fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     if !dir_path.exists() {
-        fs_extra::dir::create_all(&dir_path, false)?;
+        fs_extra::dir::create_all(dir_path, false)?;
     }
 
     Ok(())
@@ -121,12 +121,12 @@ fn rename_migrations_files_to_match_current_date(
 ) -> Result<()> {
     let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_")?;
 
-    let migrations_dir = std::fs::read_dir(&migrations_dir_path)?;
+    let migrations_dir = std::fs::read_dir(migrations_dir_path)?;
 
     let migration_filenames_to_rename = migrations_dir
         .filter_map(|entry| match entry {
             Ok(file) => {
-                let file_name = file.file_name().to_owned();
+                let file_name = file.file_name();
                 if regex.is_match(file_name.to_str().unwrap_or("")) {
                     Some(file_name)
                 } else {
@@ -164,7 +164,7 @@ fn rename_migrations_files_to_match_current_date(
 
 fn rename_down_migrations_files_to_match_current_date(
     now: DateTime<Local>,
-    migrations_dir_path: &PathBuf,
+    migrations_dir_path: &Path,
 ) -> Result<()> {
     let down_migrations_dir_path = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
 

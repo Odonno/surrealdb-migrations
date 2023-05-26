@@ -10,9 +10,11 @@ use crate::{
     models::ScriptMigration,
 };
 
+#[allow(dead_code)]
 pub async fn create_surrealdb_client(
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
+    #[allow(deprecated)]
     let SurrealdbConfiguration {
         address,
         url,

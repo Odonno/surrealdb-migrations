@@ -13,11 +13,11 @@ pub struct ValidateVersionOrderArgs<'a> {
     pub dir: Option<&'a Dir<'static>>,
 }
 
-pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
+pub async fn main(args: ValidateVersionOrderArgs<'_>) -> Result<()> {
     let ValidateVersionOrderArgs { db: client, dir } = args;
 
     let migrations_applied =
-        surrealdb::list_script_migration_ordered_by_execution_date(&client).await?;
+        surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
     let forward_migrations_files = io::extract_forward_migrations_files(dir);
 
@@ -35,7 +35,7 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
             migrations_not_applied
                 .into_iter()
                 .filter(|migration_file| {
-                    is_migration_file_before_last_applied(migration_file, &last_migration_applied)
+                    is_migration_file_before_last_applied(migration_file, last_migration_applied)
                         .unwrap_or(false)
                 })
                 .collect::<Vec<_>>()
@@ -43,7 +43,7 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
             Vec::new()
         };
 
-    if migrations_not_applied_before_last_applied.len() > 0 {
+    if !migrations_not_applied_before_last_applied.is_empty() {
         let migration_names = migrations_not_applied_before_last_applied
             .iter()
             .map(|migration_file| migration_file.name.to_string())
@@ -60,7 +60,7 @@ pub async fn main<'a>(args: ValidateVersionOrderArgs<'a>) -> Result<()> {
 
 fn is_migration_file_already_applied(
     migration_file: &SurqlFile,
-    migrations_applied: &Vec<ScriptMigration>,
+    migrations_applied: &[ScriptMigration],
 ) -> Result<bool> {
     let has_already_been_applied = migrations_applied
         .iter()
@@ -70,7 +70,7 @@ fn is_migration_file_already_applied(
         return Ok(false);
     }
 
-    return Ok(true);
+    Ok(true)
 }
 
 fn is_migration_file_before_last_applied(
