@@ -35,73 +35,80 @@ async fn main() -> Result<()> {
                 preserve_casing,
             } => scaffold::schema::main(schema, db_type, preserve_casing),
         },
-        Action::Create {
-            command,
-            name,
-            down,
-            content,
-        } => match name {
-            Some(name) => {
-                let operation = CreateOperation::Migration(CreateMigrationArgs { down, content });
-                let args = CreateArgs { name, operation };
-                create::main(args)
-            }
-            None => match command {
-                Some(CreateAction::Schema {
-                    name,
-                    fields,
-                    dry_run,
-                    schemafull,
-                }) => {
-                    let operation = CreateOperation::Schema(CreateSchemaArgs {
-                        fields,
-                        dry_run,
-                        schemafull,
-                    });
-                    let args = CreateArgs { name, operation };
-                    create::main(args)
-                }
-                Some(CreateAction::Event {
-                    name,
-                    fields,
-                    dry_run,
-                    schemafull,
-                }) => {
-                    let operation = CreateOperation::Event(CreateEventArgs {
-                        fields,
-                        dry_run,
-                        schemafull,
-                    });
-                    let args = CreateArgs { name, operation };
-                    create::main(args)
-                }
-                Some(CreateAction::Migration {
-                    name,
-                    down,
-                    content,
-                }) => {
+        Action::Create(create_args) => {
+            let cli::CreateArgs {
+                command,
+                name,
+                down,
+                content,
+            } = create_args;
+
+            match name {
+                Some(name) => {
                     let operation =
                         CreateOperation::Migration(CreateMigrationArgs { down, content });
                     let args = CreateArgs { name, operation };
                     create::main(args)
                 }
-                None => Err(anyhow!("No action specified for `create` command")),
-            },
-        },
+                None => match command {
+                    Some(CreateAction::Schema {
+                        name,
+                        fields,
+                        dry_run,
+                        schemafull,
+                    }) => {
+                        let operation = CreateOperation::Schema(CreateSchemaArgs {
+                            fields,
+                            dry_run,
+                            schemafull,
+                        });
+                        let args = CreateArgs { name, operation };
+                        create::main(args)
+                    }
+                    Some(CreateAction::Event {
+                        name,
+                        fields,
+                        dry_run,
+                        schemafull,
+                    }) => {
+                        let operation = CreateOperation::Event(CreateEventArgs {
+                            fields,
+                            dry_run,
+                            schemafull,
+                        });
+                        let args = CreateArgs { name, operation };
+                        create::main(args)
+                    }
+                    Some(CreateAction::Migration {
+                        name,
+                        down,
+                        content,
+                    }) => {
+                        let operation =
+                            CreateOperation::Migration(CreateMigrationArgs { down, content });
+                        let args = CreateArgs { name, operation };
+                        create::main(args)
+                    }
+                    None => Err(anyhow!("No action specified for `create` command")),
+                },
+            }
+        }
         Action::Remove {} => remove::main(),
         #[allow(deprecated)]
-        Action::Apply {
-            up,
-            down,
-            address,
-            url,
-            ns,
-            db,
-            username,
-            password,
-            dry_run,
-            validate_version_order,
-        } => {
+        Action::Apply(apply_args) => {
+            let cli::ApplyArgs {
+                up,
+                down,
+                address,
+                url,
+                ns,
+                db,
+                username,
+                password,
+                dry_run,
+                validate_version_order,
+            } = apply_args;
+
             let operation = match (up, down) {
                 (Some(_), Some(_)) => {
                     return Err(anyhow!(
@@ -132,15 +139,17 @@ async fn main() -> Result<()> {
             apply::main(args).await
         }
         #[allow(deprecated)]
-        Action::List {
-            address,
-            url,
-            ns,
-            db,
-            username,
-            password,
-            no_color,
-        } => {
+        Action::List(list_args) => {
+            let cli::ListArgs {
+                address,
+                url,
+                ns,
+                db,
+                username,
+                password,
+                no_color,
+            } = list_args;
+
             let db_configuration = SurrealdbConfiguration {
                 address,
                 url,
