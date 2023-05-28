@@ -34,6 +34,18 @@ pub fn apply_migrations_up_to(name: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn create_branch(branch_name: &str) -> Result<()> {
+    let mut cmd = create_cmd()?;
+    cmd.arg("branch")
+        .arg("new")
+        .arg(branch_name)
+        .arg("--address")
+        .arg("http://localhost:8000");
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
 pub fn create_cmd() -> Result<Command> {
     let cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     Ok(cmd)

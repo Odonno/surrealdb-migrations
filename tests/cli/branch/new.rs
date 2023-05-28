@@ -64,32 +64,19 @@ async fn fails_if_branch_already_exists() -> Result<()> {
             clear_tests_files()?;
             scaffold_blog_template()?;
             apply_migrations()?;
+            create_branch("test-branch")?;
 
-            {
-                let mut cmd = create_cmd()?;
+            let mut cmd = create_cmd()?;
 
-                cmd.arg("branch")
-                    .arg("new")
-                    .arg("test-branch")
-                    .arg("--address")
-                    .arg("http://localhost:8000");
+            cmd.arg("branch")
+                .arg("new")
+                .arg("test-branch")
+                .arg("--address")
+                .arg("http://localhost:8000");
 
-                cmd.assert().try_success()?;
-            }
-
-            {
-                let mut cmd = create_cmd()?;
-
-                cmd.arg("branch")
-                    .arg("new")
-                    .arg("test-branch")
-                    .arg("--address")
-                    .arg("http://localhost:8000");
-
-                cmd.assert()
-                    .try_failure()
-                    .and_then(|assert| assert.try_stderr("Error: Branch name already exists\n"))?;
-            }
+            cmd.assert()
+                .try_failure()
+                .and_then(|assert| assert.try_stderr("Error: Branch name already exists\n"))?;
 
             Ok(())
         })
