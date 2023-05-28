@@ -67,3 +67,46 @@ async fn fails_to_remove_if_branch_does_not_exist() -> Result<()> {
     })
     .await
 }
+
+#[tokio::test]
+#[serial]
+async fn prevent_branch_to_be_removed_if_used_by_another_branch() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_blog_template()?;
+            apply_migrations()?;
+            create_branch("branch-1")?;
+            create_branch_from_ns_db("branch-2", ("branches", "branch-1"))?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("branch").arg("remove").arg("branch-1");
+
+            cmd.assert().try_failure().and_then(|assert| {
+                assert.try_stderr("Error: Branch branch-1 is used by another branch\n")
+            })?;
+
+            // Check "branch" record still exist in surrealdb
+            let branch: Option<Branch> = get_surrealdb_record(
+                "features".to_string(),
+                "branching".to_string(),
+                "branch".to_string(),
+                "branch-1".to_string(),
+            )
+            .await?;
+
+            ensure!(branch.is_some(), "Branch record should still exist");
+
+            // Check database is still here in surrealdb
+            let is_empty =
+                is_surrealdb_empty(Some("branches".to_string()), Some("branch-1".to_string()))
+                    .await?;
+
+            ensure!(!is_empty, "SurrealDB database should not be empty");
+
+            Ok(())
+        })
+    })
+    .await
+}
