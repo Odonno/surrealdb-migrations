@@ -14,7 +14,7 @@ use super::{
 };
 
 pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
+    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
     let branch: Option<Branch> = branching_feature_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
@@ -24,7 +24,7 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
             let folder_path = config::retrieve_folder_path();
             let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
-            let branch_client = create_branch_client(&branch.name, &db_configuration).await?;
+            let branch_client = create_branch_client(&branch.name, db_configuration).await?;
             branch_client.export(&dump_file_path).await?;
 
             let result =
@@ -33,7 +33,7 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
             match result {
                 Ok(_) => {
                     remove_dump_file(&dump_file_path)?;
-                    println!("Branch {} successfully merged", branch.name.to_string());
+                    println!("Branch {} successfully merged", branch.name);
 
                     Ok(())
                 }
@@ -58,13 +58,13 @@ async fn apply_changes_to_main_branch(
     main_branch_client.import(dump_file_path).await?;
 
     // Remove database created for this branch
-    let branch_client = create_branch_client(&branch.name, &db_configuration).await?;
+    let branch_client = create_branch_client(&branch.name, db_configuration).await?;
     branch_client
-        .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name.to_string()))
+        .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name))
         .await?;
 
     // Remove branch from branches table
-    let branch_data_client = create_branching_feature_client(&db_configuration).await?;
+    let branch_data_client = create_branching_feature_client(db_configuration).await?;
     let _record: Option<Branch> = branch_data_client
         .delete((BRANCH_TABLE, branch.name.to_string()))
         .await?;

@@ -5,5 +5,6 @@
   "rust-analyzer.linkedProjects": [
     "./Cargo.toml",
     "./samples/wasm/rsw-hello/Cargo.toml"
-  ]
+  ],
+  "rust-analyzer.checkOnSave.command": "clippy"
 }

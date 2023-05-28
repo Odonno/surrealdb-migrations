@@ -35,17 +35,15 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
     }
 
     // Remove database created for this branch
-    let client = create_branch_client(&name, &db_configuration).await?;
-    client
-        .query(format!("REMOVE DATABASE ⟨{}⟩", name.to_string()))
-        .await?;
+    let client = create_branch_client(&name, db_configuration).await?;
+    client.query(format!("REMOVE DATABASE ⟨{}⟩", name)).await?;
 
     // Remove branch from branches table
     let _record: Option<Branch> = branching_feature_client
         .delete((BRANCH_TABLE, name.to_string()))
         .await?;
 
-    println!("Branch {} successfully removed", name.to_string());
+    println!("Branch {} successfully removed", name);
 
     Ok(())
 }
