@@ -25,8 +25,8 @@ pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> 
             .iter()
             .map(|b| {
                 let since = match DateTime::parse_from_rfc3339(&b.created_at) {
-                    Ok(executed_at) => {
-                        let since = now.signed_duration_since(executed_at);
+                    Ok(created_at) => {
+                        let since = now.signed_duration_since(created_at);
                         since.format_human().to_string()
                     }
                     Err(_) => "N/A".to_string(),

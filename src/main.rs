@@ -163,82 +163,86 @@ async fn main() -> Result<()> {
         }
         #[allow(deprecated)]
         Action::Branch(branch_args) => {
-            let cli::BranchArgs { command } = branch_args;
+            let cli::BranchArgs { command, name } = branch_args;
 
-            match command {
-                Some(BranchAction::New {
-                    name,
-                    address,
-                    ns,
-                    db,
-                    username,
-                    password,
-                }) => {
-                    let db_configuration = SurrealdbConfiguration {
+            match name {
+                Some(name) => branch::status::main(name).await,
+                None => match command {
+                    Some(BranchAction::New {
+                        name,
                         address,
-                        url: None,
                         ns,
                         db,
                         username,
                         password,
-                    };
-                    branch::new::main(name, &db_configuration).await
-                }
-                Some(BranchAction::Remove {
-                    name,
-                    address,
-                    ns,
-                    db,
-                    username,
-                    password,
-                }) => {
-                    let db_configuration = SurrealdbConfiguration {
+                    }) => {
+                        let db_configuration = SurrealdbConfiguration {
+                            address,
+                            url: None,
+                            ns,
+                            db,
+                            username,
+                            password,
+                        };
+                        branch::new::main(name, &db_configuration).await
+                    }
+                    Some(BranchAction::Remove {
+                        name,
                         address,
-                        url: None,
                         ns,
                         db,
                         username,
                         password,
-                    };
-                    branch::remove::main(name, &db_configuration).await
-                }
-                Some(BranchAction::Merge {
-                    name,
-                    address,
-                    ns,
-                    db,
-                    username,
-                    password,
-                }) => {
-                    let db_configuration = SurrealdbConfiguration {
+                    }) => {
+                        let db_configuration = SurrealdbConfiguration {
+                            address,
+                            url: None,
+                            ns,
+                            db,
+                            username,
+                            password,
+                        };
+                        branch::remove::main(name, &db_configuration).await
+                    }
+                    Some(BranchAction::Merge {
+                        name,
                         address,
-                        url: None,
                         ns,
                         db,
                         username,
                         password,
-                    };
-                    branch::merge::main(name, &db_configuration).await
-                }
-                Some(BranchAction::List {
-                    address,
-                    ns,
-                    db,
-                    username,
-                    password,
-                    no_color,
-                }) => {
-                    let db_configuration = SurrealdbConfiguration {
+                    }) => {
+                        let db_configuration = SurrealdbConfiguration {
+                            address,
+                            url: None,
+                            ns,
+                            db,
+                            username,
+                            password,
+                        };
+                        branch::merge::main(name, &db_configuration).await
+                    }
+                    Some(BranchAction::Status { name }) => branch::status::main(name).await,
+                    Some(BranchAction::List {
                         address,
-                        url: None,
                         ns,
                         db,
                         username,
                         password,
-                    };
-                    branch::list::main(&db_configuration, no_color).await
-                }
-                None => Err(anyhow!("No action specified for `branch` command")),
+                        no_color,
+                    }) => {
+                        let db_configuration = SurrealdbConfiguration {
+                            address,
+                            url: None,
+                            ns,
+                            db,
+                            username,
+                            password,
+                        };
+                        branch::list::main(&db_configuration, no_color).await
+                    }
+                    None => Err(anyhow!("No action specified for `branch` command")),
+                },
             }
         }
     }
