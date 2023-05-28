@@ -202,6 +202,24 @@ async fn main() -> Result<()> {
                     };
                     branch::remove::main(name, &db_configuration).await
                 }
+                Some(BranchAction::Merge {
+                    name,
+                    address,
+                    ns,
+                    db,
+                    username,
+                    password,
+                }) => {
+                    let db_configuration = SurrealdbConfiguration {
+                        address,
+                        url: None,
+                        ns,
+                        db,
+                        username,
+                        password,
+                    };
+                    branch::merge::main(name, &db_configuration).await
+                }
                 Some(BranchAction::List {
                     address,
                     ns,

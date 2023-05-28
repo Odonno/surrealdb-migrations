@@ -132,6 +132,21 @@ pub async fn is_surrealdb_empty(ns: Option<String>, db: Option<String>) -> Resul
     Ok(table_definitions.is_empty())
 }
 
+pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
+    ns: String,
+    db: String,
+    table: String,
+) -> Result<Vec<T>> {
+    let mut db_configuration = SurrealdbConfiguration::default();
+    db_configuration.ns = Some(ns);
+    db_configuration.db = Some(db);
+
+    let client = create_surrealdb_client(&db_configuration).await?;
+    let records: Vec<T> = client.select(table).await?;
+
+    Ok(records)
+}
+
 pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de>>(
     ns: String,
     db: String,
@@ -143,7 +158,6 @@ pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de>>(
     db_configuration.db = Some(db);
 
     let client = create_surrealdb_client(&db_configuration).await?;
-
     let record: Option<T> = client.select((table, id)).await?;
 
     Ok(record)
