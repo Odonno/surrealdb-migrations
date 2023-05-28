@@ -58,6 +58,24 @@ pub fn create_branch(branch_name: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn create_branch_from_ns_db(branch_name: &str, ns_db: (&str, &str)) -> Result<()> {
+    let (ns, db) = ns_db;
+
+    let mut cmd = create_cmd()?;
+    cmd.arg("branch")
+        .arg("new")
+        .arg(branch_name)
+        .arg("--address")
+        .arg("http://localhost:8000")
+        .arg("--ns")
+        .arg(ns)
+        .arg("--db")
+        .arg(db);
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
 pub fn create_cmd() -> Result<Command> {
     let cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     Ok(cmd)

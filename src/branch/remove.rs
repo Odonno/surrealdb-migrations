@@ -5,7 +5,7 @@ use crate::{
         common::{
             create_branch_client, create_branching_feature_client, retrieve_existing_branch_names,
         },
-        constants::BRANCH_TABLE,
+        constants::{BRANCH_NS, BRANCH_TABLE},
     },
     input::SurrealdbConfiguration,
     models::Branch,
@@ -19,6 +19,19 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
 
     if !existing_branch_names.contains(&name) {
         return Err(anyhow!("Branch {} does not exist", name));
+    }
+
+    // Prevent branch to be removed if used by another branch
+    let number_of_dependent_branches: Option<u32> = branching_feature_client
+        .query("SELECT VALUE count() FROM branch WHERE from_ns = $ns AND from_db = $db")
+        .bind(("ns", BRANCH_NS))
+        .bind(("db", name.to_string()))
+        .await?
+        .take(0)?;
+    let number_of_dependent_branches = number_of_dependent_branches.unwrap_or(0);
+
+    if number_of_dependent_branches > 0 {
+        return Err(anyhow!("Branch {} is used by another branch", name));
     }
 
     // Remove database created for this branch
