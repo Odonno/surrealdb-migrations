@@ -2,7 +2,9 @@ use anyhow::{anyhow, Result};
 
 use crate::{
     branch::{
-        common::{create_branch_client, create_branch_data_client, retrieve_existing_branch_names},
+        common::{
+            create_branch_client, create_branching_feature_client, retrieve_existing_branch_names,
+        },
         constants::BRANCH_TABLE,
     },
     input::SurrealdbConfiguration,
@@ -10,10 +12,10 @@ use crate::{
 };
 
 pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branch_data_client = create_branch_data_client(db_configuration).await?;
+    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
 
     // Check if branch really exists
-    let existing_branch_names = retrieve_existing_branch_names(&branch_data_client).await?;
+    let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
 
     if !existing_branch_names.contains(&name) {
         return Err(anyhow!("Branch {} does not exist", name));
@@ -26,7 +28,7 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
         .await?;
 
     // Remove branch from branches table
-    let _record: Option<Branch> = branch_data_client
+    let _record: Option<Branch> = branching_feature_client
         .delete((BRANCH_TABLE, name.to_string()))
         .await?;
 

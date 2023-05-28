@@ -7,7 +7,9 @@ use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
     branch::{
-        common::{create_branch_data_client, remove_dump_file, retrieve_existing_branch_names},
+        common::{
+            create_branching_feature_client, remove_dump_file, retrieve_existing_branch_names,
+        },
         constants::BRANCH_NS,
     },
     config,
@@ -26,10 +28,10 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
     let folder_path = config::retrieve_folder_path();
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
-    let branch_data_client = create_branch_data_client(db_configuration).await?;
-    execute_schema_changes(&branch_data_client).await?;
+    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+    execute_schema_changes(&branching_feature_client).await?;
 
-    let existing_branch_names = retrieve_existing_branch_names(&branch_data_client).await?;
+    let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
 
     fails_if_branch_already_exists(name.to_owned(), &existing_branch_names)?;
 
@@ -39,7 +41,7 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
         name,
         existing_branch_names,
         db_configuration,
-        branch_data_client,
+        branching_feature_client,
         dump_file_path.to_owned(),
     )
     .await;
@@ -103,7 +105,7 @@ async fn replicate_database_into_branch(
     name: Option<String>,
     existing_branch_names: Vec<String>,
     db_configuration: &SurrealdbConfiguration,
-    branch_data_client: Surreal<Any>,
+    branching_feature_client: Surreal<Any>,
     dump_file_path: PathBuf,
 ) -> Result<String> {
     let branch_name = match name {
@@ -115,7 +117,7 @@ async fn replicate_database_into_branch(
 
     save_branch_in_database(
         branch_name.to_string(),
-        branch_data_client,
+        branching_feature_client,
         db_configuration,
     )
     .await?;
@@ -151,11 +153,11 @@ async fn import_branch_data_from_dump_file(
 
 async fn save_branch_in_database(
     branch_name: String,
-    branch_data_client: Surreal<Any>,
+    branching_feature_client: Surreal<Any>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<()> {
     let record_key: (&str, &String) = (BRANCH_TABLE, &branch_name);
-    let record: Option<Branch> = branch_data_client
+    let record: Option<Branch> = branching_feature_client
         .create(record_key)
         .content(Branch {
             name: branch_name.to_string(),

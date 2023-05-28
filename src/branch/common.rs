@@ -8,10 +8,10 @@ use crate::{input::SurrealdbConfiguration, surrealdb::create_surrealdb_client};
 use super::constants::{BRANCH_NS, BRANCH_TABLE};
 
 #[allow(deprecated)]
-pub async fn create_branch_data_client(
+pub async fn create_branching_feature_client(
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
-    const BRANCH_DATA_NS: &str = "database";
+    const BRANCH_DATA_NS: &str = "features";
     const BRANCH_DATA_DB: &str = "branching";
 
     let branch_data_db_configuration = SurrealdbConfiguration {
@@ -46,9 +46,9 @@ pub async fn create_branch_client(
 }
 
 pub async fn retrieve_existing_branch_names(
-    branch_data_client: &Surreal<Any>,
+    branching_feature_client: &Surreal<Any>,
 ) -> Result<Vec<String>> {
-    let existing_branch_names: Vec<String> = branch_data_client
+    let existing_branch_names: Vec<String> = branching_feature_client
         .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
         .await?
         .take(0)?;

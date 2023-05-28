@@ -46,7 +46,7 @@ async fn merge_existing_branch() -> Result<()> {
 
             // Check "branch" record does not exist in surrealdb
             let branch: Option<Branch> = get_surrealdb_record(
-                "database".to_string(),
+                "features".to_string(),
                 "branching".to_string(),
                 "branch".to_string(),
                 "test-branch".to_string(),

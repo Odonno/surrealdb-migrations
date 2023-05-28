@@ -9,13 +9,13 @@ use crate::{
 };
 
 use super::{
-    common::{create_branch_client, create_branch_data_client, remove_dump_file},
+    common::{create_branch_client, create_branching_feature_client, remove_dump_file},
     constants::DUMP_FILENAME,
 };
 
 pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branch_data_client = create_branch_data_client(&db_configuration).await?;
-    let branch: Option<Branch> = branch_data_client
+    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
+    let branch: Option<Branch> = branching_feature_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
 
@@ -64,7 +64,7 @@ async fn apply_changes_to_main_branch(
         .await?;
 
     // Remove branch from branches table
-    let branch_data_client = create_branch_data_client(&db_configuration).await?;
+    let branch_data_client = create_branching_feature_client(&db_configuration).await?;
     let _record: Option<Branch> = branch_data_client
         .delete((BRANCH_TABLE, branch.name.to_string()))
         .await?;
