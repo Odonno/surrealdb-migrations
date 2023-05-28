@@ -3,6 +3,7 @@ mod common;
 mod config;
 mod input;
 mod io;
+mod models;
 mod surrealdb;
 
 pub use crate::helpers::surrealdb::*;
@@ -11,3 +12,4 @@ pub use common::*;
 pub use config::*;
 pub use input::*;
 pub use io::*;
+pub use models::*;
