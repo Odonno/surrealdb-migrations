@@ -6,11 +6,18 @@ use names::{Generator, Name};
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
-    config, input::SurrealdbConfiguration, io, models::Branch, surrealdb::create_surrealdb_client,
+    branch::{
+        common::{create_branch_data_client, retrieve_existing_branch_names},
+        constants::BRANCH_NS,
+    },
+    config,
+    input::SurrealdbConfiguration,
+    io,
+    models::Branch,
+    surrealdb::create_surrealdb_client,
 };
 
-const BRANCH_NS: &str = "branches";
-const BRANCH_TABLE: &str = "branch";
+use super::{common::create_branch_client, constants::BRANCH_TABLE};
 
 pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguration) -> Result<()> {
     const DUMP_FILENAME: &str = "branch.surrealdb";
@@ -54,26 +61,6 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
     }
 }
 
-#[allow(deprecated)]
-async fn create_branch_data_client(
-    db_configuration: &SurrealdbConfiguration,
-) -> Result<Surreal<Any>> {
-    const BRANCH_DATA_NS: &str = "database";
-    const BRANCH_DATA_DB: &str = "branching";
-
-    let branch_data_db_configuration = SurrealdbConfiguration {
-        address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
-        username: db_configuration.username.clone(),
-        password: db_configuration.password.clone(),
-        ns: Some(BRANCH_DATA_NS.to_owned()),
-        db: Some(BRANCH_DATA_DB.to_owned()),
-    };
-
-    let client = create_surrealdb_client(&branch_data_db_configuration).await?;
-    Ok(client)
-}
-
 async fn execute_schema_changes(branch_data_client: &Surreal<Any>) -> Result<()> {
     const SCHEMAS_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/src/branch/schemas");
 
@@ -86,15 +73,6 @@ async fn execute_schema_changes(branch_data_client: &Surreal<Any>) -> Result<()>
     branch_data_client.query(branch_schema).await?;
 
     Ok(())
-}
-
-async fn retrieve_existing_branch_names(branch_data_client: &Surreal<Any>) -> Result<Vec<String>> {
-    let existing_branch_names: Vec<String> = branch_data_client
-        .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
-        .await?
-        .take(0)?;
-
-    Ok(existing_branch_names)
 }
 
 fn fails_if_branch_already_exists(
@@ -159,22 +137,12 @@ fn generate_random_branch_name(existing_branch_names: Vec<String>) -> Result<Str
     Ok(branch_name)
 }
 
-#[allow(deprecated)]
 async fn import_branch_data_from_dump_file(
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
-    let branch_db_configuration = SurrealdbConfiguration {
-        address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
-        username: db_configuration.username.clone(),
-        password: db_configuration.password.clone(),
-        ns: Some(BRANCH_NS.to_owned()),
-        db: Some(branch_name.to_owned()),
-    };
-
-    let client = create_surrealdb_client(&branch_db_configuration).await?;
+    let client = create_branch_client(branch_name, &db_configuration).await?;
     client.import(dump_file_path).await?;
 
     Ok(())

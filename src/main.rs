@@ -184,6 +184,24 @@ async fn main() -> Result<()> {
                     };
                     branch::new::main(name, &db_configuration).await
                 }
+                Some(BranchAction::Remove {
+                    name,
+                    address,
+                    ns,
+                    db,
+                    username,
+                    password,
+                }) => {
+                    let db_configuration = SurrealdbConfiguration {
+                        address,
+                        url: None,
+                        ns,
+                        db,
+                        username,
+                        password,
+                    };
+                    branch::remove::main(name, &db_configuration).await
+                }
                 None => Err(anyhow!("No action specified for `branch` command")),
             }
         }
