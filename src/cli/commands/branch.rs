@@ -4,6 +4,8 @@ use clap::{Args, Subcommand};
 pub struct BranchArgs {
     #[command(subcommand)]
     pub command: Option<BranchAction>,
+    /// Display information of the named branch
+    pub name: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]
@@ -84,6 +86,11 @@ pub enum BranchAction {
         /// Default value is `root`.
         #[clap(short, long)]
         password: Option<String>,
+    },
+    /// Display information of a branch
+    Status {
+        /// Name of a branch
+        name: String,
     },
     #[clap(aliases = vec!["ls"])]
     /// List all existing branches

@@ -14,7 +14,7 @@ use super::{
 };
 
 pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branch_data_client = create_branch_data_client(db_configuration).await?;
+    let branch_data_client = create_branch_data_client(&db_configuration).await?;
     let branch: Option<Branch> = branch_data_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
