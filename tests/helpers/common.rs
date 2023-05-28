@@ -34,6 +34,18 @@ pub fn apply_migrations_up_to(name: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn apply_migrations_on_branch(branch_name: &str) -> Result<()> {
+    let mut cmd = create_cmd()?;
+    cmd.arg("apply")
+        .arg("--ns")
+        .arg("branches")
+        .arg("--db")
+        .arg(branch_name);
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
 pub fn create_branch(branch_name: &str) -> Result<()> {
     let mut cmd = create_cmd()?;
     cmd.arg("branch")

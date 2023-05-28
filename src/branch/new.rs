@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 use include_dir::{include_dir, Dir};
@@ -7,7 +7,7 @@ use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
     branch::{
-        common::{create_branch_data_client, retrieve_existing_branch_names},
+        common::{create_branch_data_client, remove_dump_file, retrieve_existing_branch_names},
         constants::BRANCH_NS,
     },
     config,
@@ -17,11 +17,12 @@ use crate::{
     surrealdb::create_surrealdb_client,
 };
 
-use super::{common::create_branch_client, constants::BRANCH_TABLE};
+use super::{
+    common::create_branch_client,
+    constants::{BRANCH_TABLE, DUMP_FILENAME},
+};
 
 pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    const DUMP_FILENAME: &str = "branch.surrealdb";
-
     let folder_path = config::retrieve_folder_path();
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
@@ -45,7 +46,7 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
 
     match result {
         Ok(branch_name) => {
-            remove_dump_file(dump_file_path.to_owned())?;
+            remove_dump_file(&dump_file_path)?;
 
             println!("You can now use the branch with the following configuration:\n");
             println!("ns: {}", BRANCH_NS);
@@ -54,7 +55,7 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
             Ok(())
         }
         Err(error) => {
-            remove_dump_file(dump_file_path.to_owned())?;
+            remove_dump_file(&dump_file_path)?;
 
             Err(error)
         }
@@ -168,10 +169,5 @@ async fn save_branch_in_database(
         return Err(anyhow!("Cannot insert branch name into branch table"));
     }
 
-    Ok(())
-}
-
-fn remove_dump_file(dump_file_path: PathBuf) -> Result<()> {
-    fs::remove_file(dump_file_path)?;
     Ok(())
 }

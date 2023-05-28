@@ -1,3 +1,5 @@
+use std::{fs, path::PathBuf};
+
 use anyhow::Result;
 use surrealdb::{engine::any::Any, Surreal};
 
@@ -52,4 +54,9 @@ pub async fn retrieve_existing_branch_names(
         .take(0)?;
 
     Ok(existing_branch_names)
+}
+
+pub fn remove_dump_file(dump_file_path: &PathBuf) -> Result<()> {
+    fs::remove_file(dump_file_path)?;
+    Ok(())
 }
