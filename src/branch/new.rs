@@ -80,7 +80,7 @@ async fn execute_schema_changes(branch_data_client: &Surreal<Any>) -> Result<()>
 
 fn fails_if_branch_already_exists(
     branch_name: Option<String>,
-    existing_branch_names: &Vec<String>,
+    existing_branch_names: &[String],
 ) -> Result<()> {
     if let Some(name) = branch_name {
         if existing_branch_names.contains(&name) {
@@ -95,7 +95,7 @@ async fn export_original_branch_data_in_dump_file(
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
-    let client = create_surrealdb_client(&db_configuration).await?;
+    let client = create_surrealdb_client(db_configuration).await?;
     client.export(dump_file_path).await?;
 
     Ok(())
@@ -145,7 +145,7 @@ async fn import_branch_data_from_dump_file(
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
-    let client = create_branch_client(branch_name, &db_configuration).await?;
+    let client = create_branch_client(branch_name, db_configuration).await?;
     client.import(dump_file_path).await?;
 
     Ok(())
