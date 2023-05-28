@@ -48,7 +48,7 @@ db: test-branch\n",
             )
             .await?;
 
-            ensure!(!is_empty, "SurrealDB should not be empty");
+            ensure!(!is_empty, "SurrealDB database should not be empty");
 
             Ok(())
         })
@@ -148,7 +148,7 @@ db: (\S+)\n$",
                 is_surrealdb_empty(Some("branches".to_string()), Some(branch_name.to_string()))
                     .await?;
 
-            ensure!(!is_empty, "SurrealDB should not be empty");
+            ensure!(!is_empty, "SurrealDB database should not be empty");
 
             Ok(())
         })
