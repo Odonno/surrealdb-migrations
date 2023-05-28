@@ -11,28 +11,15 @@ async fn remove_existing_branch() -> Result<()> {
             clear_tests_files()?;
             scaffold_blog_template()?;
             apply_migrations()?;
+            create_branch("test-branch")?;
 
-            {
-                let mut cmd = create_cmd()?;
+            let mut cmd = create_cmd()?;
 
-                cmd.arg("branch")
-                    .arg("new")
-                    .arg("test-branch")
-                    .arg("--address")
-                    .arg("http://localhost:8000");
+            cmd.arg("branch").arg("remove").arg("test-branch");
 
-                cmd.assert().try_success()?;
-            }
-
-            {
-                let mut cmd = create_cmd()?;
-
-                cmd.arg("branch").arg("remove").arg("test-branch");
-
-                cmd.assert().try_success().and_then(|assert| {
-                    assert.try_stdout("Branch test-branch successfully removed\n")
-                })?;
-            }
+            cmd.assert().try_success().and_then(|assert| {
+                assert.try_stdout("Branch test-branch successfully removed\n")
+            })?;
 
             // Check "branch" record does not exist in surrealdb
             let branch: Option<Branch> = get_surrealdb_record(
