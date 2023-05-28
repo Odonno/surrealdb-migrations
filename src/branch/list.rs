@@ -5,7 +5,7 @@ use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 
 use crate::{
     branch::{
-        common::create_branch_data_client,
+        common::create_branching_feature_client,
         constants::{BRANCH_NS, BRANCH_TABLE},
     },
     input::SurrealdbConfiguration,
@@ -13,8 +13,8 @@ use crate::{
 };
 
 pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> Result<()> {
-    let client = create_branch_data_client(db_configuration).await?;
-    let existing_branches: Vec<Branch> = client.select(BRANCH_TABLE).await?;
+    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+    let existing_branches: Vec<Branch> = branching_feature_client.select(BRANCH_TABLE).await?;
 
     if existing_branches.is_empty() {
         println!("There are no branch yet!");

@@ -4,7 +4,7 @@ use chrono_human_duration::ChronoHumanDuration;
 
 use crate::{
     branch::{
-        common::create_branch_data_client,
+        common::create_branching_feature_client,
         constants::{BRANCH_NS, BRANCH_TABLE},
     },
     input::SurrealdbConfiguration,
@@ -13,8 +13,8 @@ use crate::{
 
 pub async fn main(name: String) -> Result<()> {
     let db_configuration = SurrealdbConfiguration::default();
-    let branch_data_client = create_branch_data_client(&db_configuration).await?;
-    let branch: Option<Branch> = branch_data_client
+    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
+    let branch: Option<Branch> = branching_feature_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
 

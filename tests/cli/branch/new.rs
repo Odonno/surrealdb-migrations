@@ -32,7 +32,7 @@ db: test-branch\n",
 
             // Check "branch" record exist in surrealdb
             let branch: Option<Branch> = get_surrealdb_record(
-                "database".to_string(),
+                "features".to_string(),
                 "branching".to_string(),
                 "branch".to_string(),
                 "test-branch".to_string(),
@@ -121,7 +121,7 @@ db: (\S+)\n$",
 
             // Check "branch" record exist in surrealdb
             let branch: Option<Branch> = get_surrealdb_record(
-                "database".to_string(),
+                "features".to_string(),
                 "branching".to_string(),
                 "branch".to_string(),
                 branch_name.to_string(),
