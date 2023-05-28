@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use super::{ApplyArgs, CreateArgs, ListArgs, ScaffoldAction};
+use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs, ScaffoldAction};
 
 #[derive(Parser, Debug)]
 #[clap(name = "surrealdb-migrations", version, author = "Odonno")]
@@ -31,4 +31,7 @@ pub enum Action {
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]
     List(ListArgs),
+    /// A set of commands for database branching
+    #[clap(aliases = vec!["b"])]
+    Branch(BranchArgs),
 }

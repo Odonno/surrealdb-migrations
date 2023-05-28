@@ -3,11 +3,12 @@ use crate::surrealdb::create_surrealdb_client;
 use anyhow::{anyhow, Result};
 use apply::ApplyArgs;
 use clap::Parser;
-use cli::{Action, Args, CreateAction, ScaffoldAction};
+use cli::{Action, Args, BranchAction, CreateAction, ScaffoldAction};
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 
 mod apply;
+mod branch;
 mod cli;
 mod config;
 mod constants;
@@ -159,6 +160,32 @@ async fn main() -> Result<()> {
                 password,
             };
             list::main(&db_configuration, no_color).await
+        }
+        #[allow(deprecated)]
+        Action::Branch(branch_args) => {
+            let cli::BranchArgs { command } = branch_args;
+
+            match command {
+                Some(BranchAction::New {
+                    name,
+                    address,
+                    ns,
+                    db,
+                    username,
+                    password,
+                }) => {
+                    let db_configuration = SurrealdbConfiguration {
+                        address,
+                        url: None,
+                        ns,
+                        db,
+                        username,
+                        password,
+                    };
+                    branch::new::main(name, &db_configuration).await
+                }
+                None => Err(anyhow!("No action specified for `branch` command")),
+            }
         }
     }
 }

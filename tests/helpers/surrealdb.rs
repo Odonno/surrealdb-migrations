@@ -115,8 +115,10 @@ fn is_surreal_ready() -> Result<bool> {
     Ok(output.status.success())
 }
 
-pub async fn check_surrealdb_empty() -> Result<()> {
-    let db_configuration = SurrealdbConfiguration::default();
+pub async fn is_surrealdb_empty(ns: Option<String>, db: Option<String>) -> Result<bool> {
+    let mut db_configuration = SurrealdbConfiguration::default();
+    db_configuration.ns = ns;
+    db_configuration.db = db;
 
     let client = create_surrealdb_client(&db_configuration).await?;
 
@@ -127,11 +129,24 @@ pub async fn check_surrealdb_empty() -> Result<()> {
     let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
-    if !table_definitions.is_empty() {
-        return Err(anyhow!("SurrealDB instance is not empty"));
-    }
+    Ok(table_definitions.is_empty())
+}
 
-    Ok(())
+pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de>>(
+    ns: String,
+    db: String,
+    table: String,
+    id: String,
+) -> Result<Option<T>> {
+    let mut db_configuration = SurrealdbConfiguration::default();
+    db_configuration.ns = Some(ns);
+    db_configuration.db = Some(db);
+
+    let client = create_surrealdb_client(&db_configuration).await?;
+
+    let record: Option<T> = client.select((table, id)).await?;
+
+    Ok(record)
 }
 
 pub async fn create_surrealdb_client(

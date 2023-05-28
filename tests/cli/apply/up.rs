@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -200,7 +200,8 @@ async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
                 .try_success()
                 .and_then(|assert| assert.try_stdout(""))?;
 
-            check_surrealdb_empty().await?;
+            let is_empty = is_surrealdb_empty(None, None).await?;
+            ensure!(is_empty, "SurrealDB should be empty");
 
             Ok(())
         })
@@ -224,7 +225,8 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
                 .try_success()
                 .and_then(|assert| assert.try_stdout(""))?;
 
-            check_surrealdb_empty().await?;
+            let is_empty = is_surrealdb_empty(None, None).await?;
+            ensure!(is_empty, "SurrealDB should be empty");
 
             Ok(())
         })
