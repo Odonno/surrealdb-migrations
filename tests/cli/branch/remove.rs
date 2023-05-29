@@ -41,6 +41,15 @@ async fn remove_existing_branch() -> Result<()> {
 
             ensure!(is_empty, "SurrealDB database should be empty");
 
+            // Check database is removed from surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
+                Some("test-branch".to_string()),
+            )
+            .await?;
+
+            ensure!(is_empty, "SurrealDB database should be empty");
+
             Ok(())
         })
     })
@@ -102,6 +111,15 @@ async fn prevent_branch_to_be_removed_if_used_by_another_branch() -> Result<()> 
             let is_empty =
                 is_surrealdb_empty(Some("branches".to_string()), Some("branch-1".to_string()))
                     .await?;
+
+            ensure!(!is_empty, "SurrealDB database should not be empty");
+
+            // Check database is still here in surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
+                Some("branch-1".to_string()),
+            )
+            .await?;
 
             ensure!(!is_empty, "SurrealDB database should not be empty");
 

@@ -66,6 +66,15 @@ async fn merge_existing_branch() -> Result<()> {
 
             ensure!(is_empty, "SurrealDB database should be empty");
 
+            // Check database is removed from surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
+                Some("test-branch".to_string()),
+            )
+            .await?;
+
+            ensure!(is_empty, "SurrealDB database should be empty");
+
             Ok(())
         })
     })

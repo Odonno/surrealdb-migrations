@@ -7,7 +7,7 @@ use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_sur
 
 use super::{
     common::create_branching_feature_client,
-    constants::{BRANCH_NS, BRANCH_TABLE},
+    constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS},
 };
 
 #[allow(deprecated)]
@@ -36,8 +36,8 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
                 url: db_configuration.url.clone(),
                 username: db_configuration.username.clone(),
                 password: db_configuration.password.clone(),
-                ns: Some(branch.from_ns.to_owned()),
-                db: Some(branch.from_db.to_owned()),
+                ns: Some(ORIGIN_BRANCH_NS.to_owned()),
+                db: Some(branch.name.to_owned()),
             };
             let origin_branch_table_definitions =
                 get_surrealdb_database_definition(origin_branch_db_configuration).await?;

@@ -20,7 +20,7 @@ use crate::{
 };
 
 use super::{
-    common::create_branch_client,
+    common::{create_branch_client, create_origin_branch_client},
     constants::{BRANCH_TABLE, DUMP_FILENAME},
 };
 
@@ -173,7 +173,10 @@ async fn import_branch_data_from_dump_file(
     dump_file_path: PathBuf,
 ) -> Result<()> {
     let client = create_branch_client(branch_name, db_configuration).await?;
-    client.import(dump_file_path).await?;
+    client.import(&dump_file_path).await?;
+
+    let client = create_origin_branch_client(branch_name, db_configuration).await?;
+    client.import(&dump_file_path).await?;
 
     Ok(())
 }
