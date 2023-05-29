@@ -206,6 +206,7 @@ async fn main() -> Result<()> {
                     }
                     Some(BranchAction::Merge {
                         name,
+                        mode,
                         address,
                         ns,
                         db,
@@ -220,7 +221,7 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::merge::main(name, &db_configuration).await
+                        branch::merge::main(name, mode, &db_configuration).await
                     }
                     Some(BranchAction::Status { name }) => branch::status::main(name).await,
                     Some(BranchAction::List {

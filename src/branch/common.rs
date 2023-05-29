@@ -3,7 +3,7 @@ use std::{fs, path::PathBuf};
 use anyhow::Result;
 use surrealdb::{engine::any::Any, Surreal};
 
-use crate::{input::SurrealdbConfiguration, surrealdb::create_surrealdb_client};
+use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
 
 use super::constants::{BRANCH_NS, BRANCH_TABLE};
 
@@ -42,6 +42,24 @@ pub async fn create_branch_client(
     };
 
     let client = create_surrealdb_client(&branch_db_configuration).await?;
+    Ok(client)
+}
+
+#[allow(deprecated)]
+pub async fn create_main_branch_client(
+    db_configuration: &SurrealdbConfiguration,
+    branch: &Branch,
+) -> Result<Surreal<Any>> {
+    let main_branch_db_configuration = SurrealdbConfiguration {
+        address: db_configuration.address.clone(),
+        url: db_configuration.url.clone(),
+        username: db_configuration.username.clone(),
+        password: db_configuration.password.clone(),
+        ns: Some(branch.from_ns.to_string()),
+        db: Some(branch.from_db.to_string()),
+    };
+
+    let client = create_surrealdb_client(&main_branch_db_configuration).await?;
     Ok(client)
 }
 

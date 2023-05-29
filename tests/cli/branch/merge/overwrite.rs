@@ -30,6 +30,8 @@ async fn merge_existing_branch() -> Result<()> {
             cmd.arg("branch")
                 .arg("merge")
                 .arg("test-branch")
+                .arg("--mode")
+                .arg("overwrite")
                 .arg("--address")
                 .arg("http://localhost:8000");
 
@@ -79,7 +81,11 @@ async fn fails_to_merge_if_branch_does_not_exist() -> Result<()> {
 
             let mut cmd = create_cmd()?;
 
-            cmd.arg("branch").arg("merge").arg("void");
+            cmd.arg("branch")
+                .arg("merge")
+                .arg("void")
+                .arg("--mode")
+                .arg("overwrite");
 
             cmd.assert()
                 .try_failure()
