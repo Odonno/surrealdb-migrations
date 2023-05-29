@@ -1,5 +1,12 @@
 use clap::{Args, Subcommand};
 
+#[derive(clap::ValueEnum, Debug, Clone)]
+pub enum BranchMergeMode {
+    SchemaOnly,
+    All,
+    Overwrite,
+}
+
 #[derive(Args, Debug)]
 pub struct BranchArgs {
     #[command(subcommand)]
@@ -66,6 +73,12 @@ pub enum BranchAction {
     Merge {
         /// Name of the branch to remove
         name: String,
+        /// Mode to use when merging the branch
+        /// - `schema-only`: only apply schema changes (including event changes)
+        /// - `all`: apply schema and data changes
+        /// - `overwrite`: overwrite the main branch with the branch to merge
+        #[clap(long)]
+        mode: BranchMergeMode,
         /// Address of the surrealdb instance.
         /// Default value is `ws://localhost:8000`.
         #[clap(long)]
