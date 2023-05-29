@@ -1,8 +1,8 @@
-use std::path::PathBuf;
-
 use anyhow::{anyhow, Context, Result};
+use chrono::Utc;
 use include_dir::{include_dir, Dir};
 use names::{Generator, Name};
+use std::path::PathBuf;
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
@@ -25,22 +25,25 @@ use super::{
 };
 
 pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguration) -> Result<()> {
+    let db_config = config::retrieve_db_config();
+    let db_configuration = merge_db_config(db_configuration, &db_config);
+
     let folder_path = config::retrieve_folder_path();
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
-    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
     execute_schema_changes(&branching_feature_client).await?;
 
     let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
 
     fails_if_branch_already_exists(name.to_owned(), &existing_branch_names)?;
 
-    export_original_branch_data_in_dump_file(db_configuration, dump_file_path.to_owned()).await?;
+    export_original_branch_data_in_dump_file(&db_configuration, dump_file_path.to_owned()).await?;
 
     let result = replicate_database_into_branch(
         name,
         existing_branch_names,
-        db_configuration,
+        &db_configuration,
         branching_feature_client,
         dump_file_path.to_owned(),
     )
@@ -61,6 +64,30 @@ pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguratio
 
             Err(error)
         }
+    }
+}
+
+#[allow(deprecated)]
+fn merge_db_config(
+    db_configuration: &SurrealdbConfiguration,
+    db_config: &config::DbConfig,
+) -> SurrealdbConfiguration {
+    SurrealdbConfiguration {
+        address: db_configuration
+            .address
+            .to_owned()
+            .or(db_config.address.to_owned()),
+        url: db_configuration.url.to_owned().or(db_config.url.to_owned()),
+        username: db_configuration
+            .username
+            .to_owned()
+            .or(db_config.username.to_owned()),
+        password: db_configuration
+            .password
+            .to_owned()
+            .or(db_config.password.to_owned()),
+        ns: db_configuration.ns.to_owned().or(db_config.ns.to_owned()),
+        db: db_configuration.db.to_owned().or(db_config.db.to_owned()),
     }
 }
 
@@ -163,7 +190,7 @@ async fn save_branch_in_database(
             name: branch_name.to_string(),
             from_ns: db_configuration.ns.clone().unwrap_or("test".to_owned()),
             from_db: db_configuration.db.clone().unwrap_or("test".to_owned()),
-            created_at: chrono::Utc::now().to_rfc3339(),
+            created_at: Utc::now().to_rfc3339(),
         })
         .await?;
 
