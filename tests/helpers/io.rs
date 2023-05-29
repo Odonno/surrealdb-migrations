@@ -38,7 +38,7 @@ pub fn add_new_schema_file() -> Result<()> {
         const CATEGORY_CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
 
 DEFINE FIELD name ON category TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();";
+DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();";
 
         fs::write(category_schema_file, CATEGORY_CONTENT)?;
     }

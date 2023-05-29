@@ -120,16 +120,24 @@ pub async fn is_surrealdb_empty(ns: Option<String>, db: Option<String>) -> Resul
     db_configuration.ns = ns;
     db_configuration.db = db;
 
+    let table_definitions = get_surrealdb_table_definitions(db_configuration).await?;
+
+    Ok(table_definitions.is_empty())
+}
+
+type SurrealdbTableDefinitions = HashMap<String, String>;
+
+async fn get_surrealdb_table_definitions(
+    db_configuration: SurrealdbConfiguration,
+) -> Result<SurrealdbTableDefinitions> {
     let client = create_surrealdb_client(&db_configuration).await?;
 
     let mut response = client.query("INFO FOR DB;").await?;
 
-    type SurrealdbTableDefinitions = HashMap<String, String>;
-
     let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
-    Ok(table_definitions.is_empty())
+    Ok(table_definitions)
 }
 
 pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
