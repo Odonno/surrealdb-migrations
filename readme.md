@@ -38,7 +38,7 @@ A migration file represents a change in SurrealDB data. It can be a change in th
 ## Get started
 
 ```mermaid
- stateDiagram-v2
+stateDiagram-v2
     scaffold : Scaffold a project
     changeSchema : Change schema/event
     createMigration: Create migration (data changes)
@@ -298,6 +298,89 @@ And if you need to undo all your migrations, use this command:
 
 ```
 surrealdb-migrations apply --down 0
+```
+
+## Database branching
+
+Database branching is a similar concept to version control system like Git where you manage code repositories with branches.
+
+With database branching, you can create a separate copy or branch of the main database to perform various tasks such as testing new features, implementing changes, or running experiments. This allows developers or teams to work independently on different branches without interfering with the stability and integrity of the original database.
+
+You can make make schemas changes, apply new migrations and/or change data on a separate branch. These changes are isolated from the main database until they are merged back, allowing for better control and organization of database changes.
+
+### Development workflow
+
+In a development workflow, you have a primary/main database that contains the latest features on your project. You often work on multiple features or you want to try the work of your colleagues but it messes up your development database, whether you are using migrations or not. Database branching allows you to create a fork of the main database, work on a new feature, apply schema or data changes and then merge your new changes to the main database when your feature is ready.
+
+```mermaid
+stateDiagram-v2
+    main : Main branch
+    createBranch : Create branch "feature-1"
+    makeChanges : Make changes on "feature-1"
+    merge : Merge "feature-1" on main
+    remove : Remove branch "feature-1"
+
+    [*] --> main
+    main --> [*]
+    main --> createBranch
+    createBranch --> makeChanges
+    makeChanges --> remove
+    makeChanges --> merge
+    remove --> [*]
+    merge --> [*]
+```
+
+You start by creating a new branch using the following command line:
+
+```
+surrealdb-migrations branch new --address http://localhost:8000
+```
+
+You will then receive a message like this:
+
+```
+You can now use the branch with the following configuration:
+
+ns: branches
+db: bright-fold-1617
+```
+
+You can now make your changes on the newly generated database using `ns` and `db` properties.
+When you are done with your changes, you can merge your branch to the origin branch using the following command line:
+
+```
+surrealdb-migrations branch merge bright-fold-1617 --address http://localhost:8000
+```
+
+### Production workflow
+
+TBD
+
+### Documentation
+
+```
+# create new branch from current branch with a random name, from default ns/db
+surrealdb-migrations branch new
+# create new branch from current branch with a name, from default ns/db
+surrealdb-migrations branch new <BRANCH_NAME>
+# create new branch, from a specific ns/db
+surrealdb-migrations branch new --ns <NS> --db <DB>
+
+# review diffs between original branch and the new branch
+surrealdb-migrations branch diff <BRANCH_NAME>
+
+# commit and merge branch changes to the original branch
+surrealdb-migrations branch merge <BRANCH_NAME>
+
+# remove branch (ie. rollback)
+surrealdb-migrations branch remove <BRANCH_NAME>
+
+# list all existing branches
+surrealdb-migrations branch list
+
+# display infos of a branch
+surrealdb-migrations branch status <BRANCH_NAME>
+surrealdb-migrations branch <BRANCH_NAME>
 ```
 
 ## Samples
