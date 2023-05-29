@@ -3,7 +3,8 @@ use anyhow::{anyhow, Result};
 use crate::{
     branch::{
         common::{
-            create_branch_client, create_branching_feature_client, retrieve_existing_branch_names,
+            create_branch_client, create_branching_feature_client, create_origin_branch_client,
+            retrieve_existing_branch_names,
         },
         constants::{BRANCH_NS, BRANCH_TABLE},
     },
@@ -34,13 +35,16 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
         return Err(anyhow!("Branch {} is used by another branch", name));
     }
 
-    // Remove database created for this branch
+    // Remove databases created for this branch
     let client = create_branch_client(&name, db_configuration).await?;
     client.query(format!("REMOVE DATABASE ⟨{}⟩", name)).await?;
 
+    let client = create_origin_branch_client(&name, db_configuration).await?;
+    client.query(format!("REMOVE DATABASE ⟨{}⟩", name)).await?;
+
     // Remove branch from branches table
-    let _record: Option<Branch> = branching_feature_client
-        .delete((BRANCH_TABLE, name.to_string()))
+    branching_feature_client
+        .delete::<Option<Branch>>((BRANCH_TABLE, name.to_string()))
         .await?;
 
     println!("Branch {} successfully removed", name);

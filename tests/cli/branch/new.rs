@@ -58,6 +58,15 @@ db: test-branch\n",
 
             ensure!(!is_empty, "SurrealDB database should not be empty");
 
+            // Check origin database is replicated in surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
+                Some("test-branch".to_string()),
+            )
+            .await?;
+
+            ensure!(!is_empty, "SurrealDB database should not be empty");
+
             Ok(())
         })
     })
@@ -151,6 +160,15 @@ db: (\S+)\n$",
 
             ensure!(!is_empty, "SurrealDB database should not be empty");
 
+            // Check origin database is replicated in surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
+                Some(branch_name.to_string()),
+            )
+            .await?;
+
+            ensure!(!is_empty, "SurrealDB database should not be empty");
+
             Ok(())
         })
     })
@@ -207,6 +225,15 @@ db: test-branch\n",
             // Check database is replicated in surrealdb
             let is_empty = is_surrealdb_empty(
                 Some("branches".to_string()),
+                Some("test-branch".to_string()),
+            )
+            .await?;
+
+            ensure!(!is_empty, "SurrealDB database should not be empty");
+
+            // Check origin database is replicated in surrealdb
+            let is_empty = is_surrealdb_empty(
+                Some("branches/origin".to_string()),
                 Some("test-branch".to_string()),
             )
             .await?;

@@ -5,7 +5,7 @@ use crate::{
     branch::{
         common::{
             create_branch_client, create_branching_feature_client, create_main_branch_client,
-            remove_dump_file,
+            create_origin_branch_client, remove_dump_file,
         },
         constants::{BRANCH_TABLE, DUMP_FILENAME},
     },
@@ -48,16 +48,21 @@ async fn apply_changes_to_main_branch(
     let main_branch_client = create_main_branch_client(db_configuration, branch).await?;
     main_branch_client.import(dump_file_path).await?;
 
-    // Remove database created for this branch
-    let branch_client = create_branch_client(&branch.name, db_configuration).await?;
-    branch_client
+    // Remove databases created for this branch
+    let client = create_branch_client(&branch.name, db_configuration).await?;
+    client
+        .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name))
+        .await?;
+
+    let client = create_origin_branch_client(&branch.name, db_configuration).await?;
+    client
         .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name))
         .await?;
 
     // Remove branch from branches table
     let branch_data_client = create_branching_feature_client(db_configuration).await?;
-    let _record: Option<Branch> = branch_data_client
-        .delete((BRANCH_TABLE, branch.name.to_string()))
+    branch_data_client
+        .delete::<Option<Branch>>((BRANCH_TABLE, branch.name.to_string()))
         .await?;
 
     Ok(())

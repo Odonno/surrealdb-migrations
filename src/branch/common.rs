@@ -5,7 +5,7 @@ use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
 
-use super::constants::{BRANCH_NS, BRANCH_TABLE};
+use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
 #[allow(deprecated)]
 pub async fn create_branching_feature_client(
@@ -38,6 +38,24 @@ pub async fn create_branch_client(
         username: db_configuration.username.clone(),
         password: db_configuration.password.clone(),
         ns: Some(BRANCH_NS.to_owned()),
+        db: Some(branch_name.to_owned()),
+    };
+
+    let client = create_surrealdb_client(&branch_db_configuration).await?;
+    Ok(client)
+}
+
+#[allow(deprecated)]
+pub async fn create_origin_branch_client(
+    branch_name: &String,
+    db_configuration: &SurrealdbConfiguration,
+) -> Result<Surreal<Any>> {
+    let branch_db_configuration = SurrealdbConfiguration {
+        address: db_configuration.address.clone(),
+        url: db_configuration.url.clone(),
+        username: db_configuration.username.clone(),
+        password: db_configuration.password.clone(),
+        ns: Some(ORIGIN_BRANCH_NS.to_owned()),
         db: Some(branch_name.to_owned()),
     };
 
