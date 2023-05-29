@@ -2282,6 +2282,7 @@ dependencies = [
  "dir-diff",
  "fs_extra",
  "include_dir",
+ "itertools",
  "names",
  "pretty_assertions",
  "regex",

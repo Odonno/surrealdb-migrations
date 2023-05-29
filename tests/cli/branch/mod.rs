@@ -1,3 +1,4 @@
+mod diff;
 mod list;
 mod merge;
 mod new;
