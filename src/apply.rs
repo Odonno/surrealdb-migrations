@@ -1,4 +1,4 @@
-use ::surrealdb::{engine::any::Any, Surreal};
+use ::surrealdb::{Connection, Surreal};
 use anyhow::{Context, Result};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use include_dir::Dir;
@@ -17,9 +17,9 @@ use crate::{
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
 
-pub struct ApplyArgs<'a> {
+pub struct ApplyArgs<'a, C: Connection> {
     pub operation: ApplyOperation,
-    pub db: &'a Surreal<Any>,
+    pub db: &'a Surreal<C>,
     pub dir: Option<&'a Dir<'static>>,
     pub display_logs: bool,
     pub dry_run: bool,
@@ -32,7 +32,7 @@ pub enum ApplyOperation {
     Down(String),
 }
 
-pub async fn main(args: ApplyArgs<'_>) -> Result<()> {
+pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     let ApplyArgs {
         operation,
         db: client,
@@ -173,8 +173,8 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
         .join("\n")
 }
 
-async fn apply_schema_definitions(
-    client: &Surreal<Any>,
+async fn apply_schema_definitions<C: Connection>(
+    client: &Surreal<C>,
     schema_definitions: &String,
     dry_run: bool,
 ) -> Result<()> {
@@ -182,8 +182,8 @@ async fn apply_schema_definitions(
     surrealdb::apply_in_transaction(client, schema_definitions, action).await
 }
 
-async fn apply_event_definitions(
-    client: &Surreal<Any>,
+async fn apply_event_definitions<C: Connection>(
+    client: &Surreal<C>,
     event_definitions: &String,
     dry_run: bool,
 ) -> Result<()> {
@@ -475,10 +475,10 @@ fn filter_migration_file_to_execute(
     Ok(true)
 }
 
-async fn apply_migrations(
+async fn apply_migrations<C: Connection>(
     migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
-    client: &Surreal<Any>,
+    client: &Surreal<C>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {
@@ -509,10 +509,10 @@ CREATE {} SET script_name = '{}';",
     Ok(())
 }
 
-async fn revert_migrations(
+async fn revert_migrations<C: Connection>(
     migration_files_to_execute: Vec<SurqlFile>,
     display_logs: bool,
-    client: &Surreal<Any>,
+    client: &Surreal<C>,
     dry_run: bool,
 ) -> Result<()> {
     for migration_file in migration_files_to_execute {

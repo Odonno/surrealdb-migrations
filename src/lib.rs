@@ -63,7 +63,7 @@ mod models;
 mod surrealdb;
 mod validate_version_order;
 
-use ::surrealdb::{engine::any::Any, Surreal};
+use ::surrealdb::{Connection, Surreal};
 use anyhow::Result;
 use apply::ApplyArgs;
 use include_dir::Dir;
@@ -71,8 +71,8 @@ use models::ScriptMigration;
 use validate_version_order::ValidateVersionOrderArgs;
 
 /// The main entry point for the library, used to apply migrations.
-pub struct MigrationRunner<'a> {
-    db: &'a Surreal<Any>,
+pub struct MigrationRunner<'a, C: Connection> {
+    db: &'a Surreal<C>,
     dir: Option<&'a Dir<'static>>,
 }
 
@@ -80,15 +80,15 @@ pub struct MigrationRunner<'a> {
     since = "0.9.6",
     note = "SurrealdbMigrations is a confusing name. You should use MigrationRunner instead."
 )]
-pub type SurrealdbMigrations<'a> = MigrationRunner<'a>;
+pub type SurrealdbMigrations<'a, C> = MigrationRunner<'a, C>;
 
-impl MigrationRunner<'_> {
+impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// Create a new instance of `MigrationRunner`.
     ///
     /// ## Arguments
     ///
     /// * `db` - The SurrealDB instance used to apply migrations, etc...
-    pub fn new(db: &Surreal<Any>) -> MigrationRunner<'_> {
+    pub fn new(db: &'_ Surreal<C>) -> MigrationRunner<'_, C> {
         MigrationRunner { db, dir: None }
     }
 
@@ -131,7 +131,7 @@ impl MigrationRunner<'_> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load_files<'a>(&'a self, dir: &'a Dir<'static>) -> MigrationRunner<'a> {
+    pub fn load_files(&'a self, dir: &'a Dir<'static>) -> MigrationRunner<'a, C> {
         MigrationRunner {
             db: self.db,
             dir: Some(dir),
@@ -210,7 +210,7 @@ impl MigrationRunner<'_> {
     /// # }
     /// ```
     pub async fn up(&self) -> Result<()> {
-        let args: ApplyArgs = ApplyArgs {
+        let args: ApplyArgs<C> = ApplyArgs {
             operation: apply::ApplyOperation::Up,
             db: self.db,
             dir: self.dir,

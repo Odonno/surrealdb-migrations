@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::Root,
-    Surreal,
+    Connection, Surreal,
 };
 
 use crate::{
@@ -82,8 +82,8 @@ async fn set_namespace_and_database(
     client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
 }
 
-pub async fn list_script_migration_ordered_by_execution_date(
-    client: &Surreal<Any>,
+pub async fn list_script_migration_ordered_by_execution_date<C: Connection>(
+    client: &Surreal<C>,
 ) -> Result<Vec<ScriptMigration>> {
     let mut result = list_script_migration(client).await?;
     result.sort_by_key(|m| m.executed_at.clone());
@@ -91,13 +91,13 @@ pub async fn list_script_migration_ordered_by_execution_date(
     Ok(result)
 }
 
-async fn list_script_migration(client: &Surreal<Any>) -> Result<Vec<ScriptMigration>> {
+async fn list_script_migration<C: Connection>(client: &Surreal<C>) -> Result<Vec<ScriptMigration>> {
     let result = client.select(SCRIPT_MIGRATION_TABLE_NAME).await?;
     Ok(result)
 }
 
-pub async fn apply_in_transaction(
-    client: &Surreal<Any>,
+pub async fn apply_in_transaction<C: Connection>(
+    client: &Surreal<C>,
     inner_query: &String,
     action: TransactionAction,
 ) -> Result<()> {
