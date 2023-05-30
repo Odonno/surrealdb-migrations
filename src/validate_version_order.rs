@@ -1,4 +1,4 @@
-use ::surrealdb::{engine::any::Any, Surreal};
+use ::surrealdb::{Connection, Surreal};
 use anyhow::{anyhow, Result};
 use include_dir::Dir;
 
@@ -8,12 +8,12 @@ use crate::{
     surrealdb,
 };
 
-pub struct ValidateVersionOrderArgs<'a> {
-    pub db: &'a Surreal<Any>,
+pub struct ValidateVersionOrderArgs<'a, C: Connection> {
+    pub db: &'a Surreal<C>,
     pub dir: Option<&'a Dir<'static>>,
 }
 
-pub async fn main(args: ValidateVersionOrderArgs<'_>) -> Result<()> {
+pub async fn main<C: Connection>(args: ValidateVersionOrderArgs<'_, C>) -> Result<()> {
     let ValidateVersionOrderArgs { db: client, dir } = args;
 
     let migrations_applied =
