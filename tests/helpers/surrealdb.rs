@@ -140,7 +140,7 @@ async fn get_surrealdb_table_definitions(
     Ok(table_definitions)
 }
 
-pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
+pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de> + Send + Sync>(
     ns: String,
     db: String,
     table: String,
@@ -155,7 +155,7 @@ pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
     Ok(records)
 }
 
-pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de>>(
+pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de> + Send + Sync>(
     ns: String,
     db: String,
     table: String,

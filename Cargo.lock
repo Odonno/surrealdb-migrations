@@ -710,10 +710,11 @@ dependencies = [
 
 [[package]]
 name = "dmp"
-version = "0.2.0"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfaa1135a34d26e5cc5b4927a8935af887d4f30a5653a797c33b9a4222beb6d9"
+checksum = "1796e147190351ab441586c68b74494b18a70b0e39fb9bf8e84e38635bf4c92a"
 dependencies = [
+ "regex",
  "urlencoding",
 ]
 
@@ -2177,12 +2178,11 @@ checksum = "a8f112729512f8e442d81f95a8a7ddf2b7c6b8a1a6f509a95864142b30cab2d3"
 
 [[package]]
 name = "storekey"
-version = "0.5.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43c42833834a5d23b344f71d87114e0cc9994766a5c42938f4b50e7b2aef85b2"
+checksum = "475592c1aa8849fa7874777c9df46aa93ffc47851c7c60bee88b1745a1adb893"
 dependencies = [
  "byteorder",
- "memchr",
  "serde",
  "thiserror",
 ]
@@ -2202,7 +2202,8 @@ checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 [[package]]
 name = "surrealdb"
 version = "1.0.0-beta.9+20230402"
-source = "git+https://github.com/surrealdb/surrealdb.git?branch=main#e962eae70cb0957fad08a435edb3ab3653921fb7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f02e7f6cba9dcb779fe13984a064b7f68e398425355430dcf7184fc4abfc0f97"
 dependencies = [
  "addr",
  "any_ascii",
@@ -2210,7 +2211,6 @@ dependencies = [
  "async-channel",
  "async-executor",
  "async-recursion",
- "base64 0.21.1",
  "bcrypt",
  "bigdecimal",
  "bung",
@@ -2230,7 +2230,6 @@ dependencies = [
  "once_cell",
  "pbkdf2",
  "pharos",
- "pin-project-lite",
  "rand",
  "regex",
  "reqwest",
@@ -2245,6 +2244,7 @@ dependencies = [
  "surrealdb-derive",
  "thiserror",
  "tokio",
+ "tokio-stream",
  "tokio-tungstenite",
  "tokio-util",
  "tracing",
@@ -2253,15 +2253,14 @@ dependencies = [
  "url",
  "uuid",
  "wasm-bindgen-futures",
- "wasmtimer",
  "ws_stream_wasm",
 ]
 
 [[package]]
 name = "surrealdb-derive"
-version = "0.8.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f44db5c0ba9716670cb45585f475e46b2c2e64428736e03a4e4a83a628b8a21"
+checksum = "0e0f2a75e22417f587cf23a5efa9f680f4002b8655b8481a01ee5e787f15d82b"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -2269,7 +2268,7 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-migrations"
-version = "0.9.6"
+version = "0.9.7"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -2496,7 +2495,6 @@ dependencies = [
  "tokio-rustls 0.23.4",
  "tungstenite",
  "webpki",
- "webpki-roots",
 ]
 
 [[package]]
@@ -2816,19 +2814,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
-]
-
-[[package]]
-name = "wasmtimer"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f656cd8858a5164932d8a90f936700860976ec21eb00e0fe2aa8cab13f6b4cf"
-dependencies = [
- "futures",
- "js-sys",
- "parking_lot",
- "pin-utils",
- "wasm-bindgen",
 ]
 
 [[package]]
