@@ -10,9 +10,21 @@ use super::{
     constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS},
 };
 
-#[allow(deprecated)]
-pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+pub struct BranchDiffArgs<'a> {
+    pub name: String,
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
+    let BranchDiffArgs {
+        name,
+        db_configuration,
+        config_file,
+    } = args;
+
+    let branching_feature_client =
+        create_branching_feature_client(config_file, db_configuration).await?;
     let branch: Option<Branch> = branching_feature_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
@@ -20,6 +32,7 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
     match branch {
         Some(branch) => {
             // Retrieve branch table definitions from the 2 branches
+            #[allow(deprecated)]
             let branch_db_configuration = SurrealdbConfiguration {
                 address: db_configuration.address.clone(),
                 url: db_configuration.url.clone(),
@@ -29,8 +42,9 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
                 db: Some(branch.name.to_owned()),
             };
             let branch_table_definitions =
-                get_surrealdb_database_definition(branch_db_configuration).await?;
+                get_surrealdb_database_definition(config_file, branch_db_configuration).await?;
 
+            #[allow(deprecated)]
             let origin_branch_db_configuration = SurrealdbConfiguration {
                 address: db_configuration.address.clone(),
                 url: db_configuration.url.clone(),
@@ -40,7 +54,8 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
                 db: Some(branch.name.to_owned()),
             };
             let origin_branch_table_definitions =
-                get_surrealdb_database_definition(origin_branch_db_configuration).await?;
+                get_surrealdb_database_definition(config_file, origin_branch_db_configuration)
+                    .await?;
 
             // Compare branch table definitions
             let origin_tables = origin_branch_table_definitions.keys().collect::<Vec<_>>();
@@ -166,9 +181,10 @@ struct SurrealdbInfoForTableResponse {
 }
 
 async fn get_surrealdb_database_definition(
+    config_file: Option<&str>,
     db_configuration: SurrealdbConfiguration,
 ) -> Result<SurrealdbDatabaseDefinition> {
-    let client = create_surrealdb_client(&db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &db_configuration).await?;
 
     const DATABASE_DEFINITION_QUERY: &str = "INFO FOR DB;";
     let mut response = client.query(DATABASE_DEFINITION_QUERY).await?;

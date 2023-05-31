@@ -13,8 +13,22 @@ use super::common::{
     apply_after_scaffold, apply_before_scaffold, copy_template_files_to_current_dir,
 };
 
-pub fn main(schema: String, db_type: ScaffoldSchemaDbType, preserve_casing: bool) -> Result<()> {
-    let folder_path = config::retrieve_folder_path();
+pub struct ScaffoldFromSchemaArgs<'a> {
+    pub schema: String,
+    pub db_type: ScaffoldSchemaDbType,
+    pub preserve_casing: bool,
+    pub config_file: Option<&'a str>,
+}
+
+pub fn main(args: ScaffoldFromSchemaArgs) -> Result<()> {
+    let ScaffoldFromSchemaArgs {
+        schema,
+        db_type,
+        preserve_casing,
+        config_file,
+    } = args;
+
+    let folder_path = config::retrieve_folder_path(config_file)?;
 
     apply_before_scaffold(folder_path.to_owned())?;
 

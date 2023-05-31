@@ -12,8 +12,21 @@ use crate::{
     models::Branch,
 };
 
-pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> Result<()> {
-    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+pub struct ListBranchArgs<'a> {
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub no_color: bool,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: ListBranchArgs<'_>) -> Result<()> {
+    let ListBranchArgs {
+        db_configuration,
+        no_color,
+        config_file,
+    } = args;
+
+    let branching_feature_client =
+        create_branching_feature_client(config_file, db_configuration).await?;
     let existing_branches: Vec<Branch> = branching_feature_client.select(BRANCH_TABLE).await?;
 
     if existing_branches.is_empty() {

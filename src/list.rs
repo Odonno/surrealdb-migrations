@@ -8,8 +8,20 @@ use crate::{
     surrealdb::{create_surrealdb_client, list_script_migration_ordered_by_execution_date},
 };
 
-pub async fn main(db_configuration: &SurrealdbConfiguration, no_color: bool) -> Result<()> {
-    let client = create_surrealdb_client(db_configuration).await?;
+pub struct ListArgs<'a> {
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub no_color: bool,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: ListArgs<'_>) -> Result<()> {
+    let ListArgs {
+        db_configuration,
+        no_color,
+        config_file,
+    } = args;
+
+    let client = create_surrealdb_client(config_file, db_configuration).await?;
 
     let migrations_applied = list_script_migration_ordered_by_execution_date(&client).await?;
 

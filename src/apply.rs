@@ -24,6 +24,7 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub display_logs: bool,
     pub dry_run: bool,
     pub validate_version_order: bool,
+    pub config_file: Option<&'a str>,
 }
 
 pub enum ApplyOperation {
@@ -40,10 +41,15 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         display_logs,
         dry_run,
         validate_version_order,
+        config_file,
     } = args;
 
     if validate_version_order {
-        let validate_version_order_args = ValidateVersionOrderArgs { db: client, dir };
+        let validate_version_order_args = ValidateVersionOrderArgs {
+            db: client,
+            dir,
+            config_file,
+        };
         validate_version_order::main(validate_version_order_args).await?;
     }
 
@@ -61,9 +67,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     config.insert(DirEntryAttr::IsFile);
     config.insert(DirEntryAttr::FullName); // Used to filter migrations files (from down files)
 
-    let folder_path = config::retrieve_folder_path();
+    let folder_path = config::retrieve_folder_path(config_file)?;
 
-    let schemas_files = io::extract_schemas_files(dir)?;
+    let schemas_files = io::extract_schemas_files(config_file, dir)?;
 
     let schema_definitions = extract_schema_definitions(schemas_files);
     apply_schema_definitions(client, &schema_definitions, dry_run).await?;
@@ -72,7 +78,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         println!("Schema files successfully executed!");
     }
 
-    let events_files = match io::extract_events_files(dir).ok() {
+    let events_files = match io::extract_events_files(config_file, dir).ok() {
         Some(files) => files,
         None => vec![],
     };
@@ -90,7 +96,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         String::new()
     };
 
-    if io::can_use_filesystem() {
+    if io::can_use_filesystem(config_file)? {
         const DEFINITIONS_FOLDER: &str = "migrations/definitions";
         let definitions_path = io::concat_path(&folder_path, DEFINITIONS_FOLDER);
 
@@ -120,8 +126,8 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         }
     }
 
-    let forward_migrations_files = io::extract_forward_migrations_files(dir);
-    let backward_migrations_files = io::extract_backward_migrations_files(dir);
+    let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
+    let backward_migrations_files = io::extract_backward_migrations_files(config_file, dir);
 
     let migration_files_to_execute = get_migration_files_to_execute(
         forward_migrations_files,

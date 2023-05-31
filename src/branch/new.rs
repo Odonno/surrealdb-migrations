@@ -24,23 +24,42 @@ use super::{
     constants::{BRANCH_TABLE, DUMP_FILENAME},
 };
 
-pub async fn main(name: Option<String>, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let db_config = config::retrieve_db_config();
+pub struct NewBranchArgs<'a> {
+    pub name: Option<String>,
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
+    let NewBranchArgs {
+        name,
+        db_configuration,
+        config_file,
+    } = args;
+
+    let db_config = config::retrieve_db_config(config_file)?;
     let db_configuration = merge_db_config(db_configuration, &db_config);
 
-    let folder_path = config::retrieve_folder_path();
+    let folder_path = config::retrieve_folder_path(config_file)?;
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
-    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
+    let branching_feature_client =
+        create_branching_feature_client(config_file, &db_configuration).await?;
     execute_schema_changes(&branching_feature_client).await?;
 
     let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
 
     fails_if_branch_already_exists(name.to_owned(), &existing_branch_names)?;
 
-    export_original_branch_data_in_dump_file(&db_configuration, dump_file_path.to_owned()).await?;
+    export_original_branch_data_in_dump_file(
+        config_file,
+        &db_configuration,
+        dump_file_path.to_owned(),
+    )
+    .await?;
 
     let result = replicate_database_into_branch(
+        config_file,
         name,
         existing_branch_names,
         &db_configuration,
@@ -119,16 +138,18 @@ fn fails_if_branch_already_exists(
 }
 
 async fn export_original_branch_data_in_dump_file(
+    config_file: Option<&str>,
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
-    let client = create_surrealdb_client(db_configuration).await?;
+    let client = create_surrealdb_client(config_file, db_configuration).await?;
     client.export(dump_file_path).await?;
 
     Ok(())
 }
 
 async fn replicate_database_into_branch(
+    config_file: Option<&str>,
     name: Option<String>,
     existing_branch_names: Vec<String>,
     db_configuration: &SurrealdbConfiguration,
@@ -140,7 +161,8 @@ async fn replicate_database_into_branch(
         None => generate_random_branch_name(existing_branch_names)?,
     };
 
-    import_branch_data_from_dump_file(&branch_name, db_configuration, dump_file_path).await?;
+    import_branch_data_from_dump_file(config_file, &branch_name, db_configuration, dump_file_path)
+        .await?;
 
     save_branch_in_database(
         branch_name.to_string(),
@@ -168,14 +190,15 @@ fn generate_random_branch_name(existing_branch_names: Vec<String>) -> Result<Str
 }
 
 async fn import_branch_data_from_dump_file(
+    config_file: Option<&str>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
-    let client = create_branch_client(branch_name, db_configuration).await?;
+    let client = create_branch_client(config_file, branch_name, db_configuration).await?;
     client.import(&dump_file_path).await?;
 
-    let client = create_origin_branch_client(branch_name, db_configuration).await?;
+    let client = create_origin_branch_client(config_file, branch_name, db_configuration).await?;
     client.import(&dump_file_path).await?;
 
     Ok(())

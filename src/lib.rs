@@ -74,6 +74,7 @@ use validate_version_order::ValidateVersionOrderArgs;
 pub struct MigrationRunner<'a, C: Connection> {
     db: &'a Surreal<C>,
     dir: Option<&'a Dir<'static>>,
+    config_file: Option<&'a str>,
 }
 
 #[deprecated(
@@ -88,8 +89,57 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Arguments
     ///
     /// * `db` - The SurrealDB instance used to apply migrations, etc...
-    pub fn new(db: &'_ Surreal<C>) -> MigrationRunner<'_, C> {
-        MigrationRunner { db, dir: None }
+    pub fn new(db: &'a Surreal<C>) -> Self {
+        MigrationRunner {
+            db,
+            dir: None,
+            config_file: None,
+        }
+    }
+
+    /// Set path to the configuration file.
+    /// By default, it will try to read configuration from the file `.surrealdb`.
+    ///
+    /// ## Arguments
+    ///
+    /// * `config_file` - Path to the configuration file.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use anyhow::Result;
+    /// use include_dir::{include_dir, Dir};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// let runner = MigrationRunner::new(&db)
+    ///     .use_config_file(".surrealdb")
+    ///     .up()
+    ///     .await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn use_config_file(&'_ self, config_file: &'a str) -> Self {
+        MigrationRunner {
+            db: self.db,
+            dir: self.dir,
+            config_file: Some(config_file),
+        }
     }
 
     /// Load migration project files from an embedded directory.
@@ -131,10 +181,11 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load_files(&'a self, dir: &'a Dir<'static>) -> MigrationRunner<'a, C> {
+    pub fn load_files(&'a self, dir: &'a Dir<'static>) -> Self {
         MigrationRunner {
             db: self.db,
             dir: Some(dir),
+            config_file: self.config_file,
         }
     }
 
@@ -174,6 +225,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
         let args = ValidateVersionOrderArgs {
             db: self.db,
             dir: self.dir,
+            config_file: self.config_file,
         };
         validate_version_order::main(args).await
     }
@@ -217,6 +269,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             display_logs: false,
             dry_run: false,
             validate_version_order: false,
+            config_file: self.config_file,
         };
         apply::main(args).await
     }
@@ -264,6 +317,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             display_logs: false,
             dry_run: false,
             validate_version_order: false,
+            config_file: self.config_file,
         };
         apply::main(args).await
     }
@@ -311,6 +365,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             display_logs: false,
             dry_run: false,
             validate_version_order: false,
+            config_file: self.config_file,
         };
         apply::main(args).await
     }

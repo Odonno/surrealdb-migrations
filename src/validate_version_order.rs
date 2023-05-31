@@ -11,15 +11,20 @@ use crate::{
 pub struct ValidateVersionOrderArgs<'a, C: Connection> {
     pub db: &'a Surreal<C>,
     pub dir: Option<&'a Dir<'static>>,
+    pub config_file: Option<&'a str>,
 }
 
 pub async fn main<C: Connection>(args: ValidateVersionOrderArgs<'_, C>) -> Result<()> {
-    let ValidateVersionOrderArgs { db: client, dir } = args;
+    let ValidateVersionOrderArgs {
+        db: client,
+        dir,
+        config_file,
+    } = args;
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let forward_migrations_files = io::extract_forward_migrations_files(dir);
+    let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
 
     let migrations_not_applied = forward_migrations_files
         .into_iter()

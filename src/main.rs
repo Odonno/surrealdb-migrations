@@ -2,10 +2,16 @@ use crate::surrealdb::create_surrealdb_client;
 
 use anyhow::{anyhow, Result};
 use apply::ApplyArgs;
+use branch::{
+    diff::BranchDiffArgs, list::ListBranchArgs, merge::MergeBranchArgs, new::NewBranchArgs,
+    remove::RemoveBranchArgs, status::BranchStatusArgs,
+};
 use clap::Parser;
 use cli::{Action, Args, BranchAction, CreateAction, ScaffoldAction};
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
+use list::ListArgs;
+use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
 
 mod apply;
 mod branch;
@@ -27,14 +33,30 @@ mod validate_version_order;
 async fn main() -> Result<()> {
     let args = Args::parse();
 
+    let config_file = args.config_file.as_deref();
+
     match args.command {
         Action::Scaffold { command } => match command {
-            ScaffoldAction::Template { template } => scaffold::template::main(template),
+            ScaffoldAction::Template { template } => {
+                let args = ScaffoldFromTemplateArgs {
+                    template,
+                    config_file,
+                };
+                scaffold::template::main(args)
+            }
             ScaffoldAction::Schema {
                 schema,
                 db_type,
                 preserve_casing,
-            } => scaffold::schema::main(schema, db_type, preserve_casing),
+            } => {
+                let args = ScaffoldFromSchemaArgs {
+                    schema,
+                    db_type,
+                    preserve_casing,
+                    config_file,
+                };
+                scaffold::schema::main(args)
+            }
         },
         Action::Create(create_args) => {
             let cli::CreateArgs {
@@ -48,7 +70,11 @@ async fn main() -> Result<()> {
                 Some(name) => {
                     let operation =
                         CreateOperation::Migration(CreateMigrationArgs { down, content });
-                    let args = CreateArgs { name, operation };
+                    let args = CreateArgs {
+                        name,
+                        operation,
+                        config_file,
+                    };
                     create::main(args)
                 }
                 None => match command {
@@ -63,7 +89,11 @@ async fn main() -> Result<()> {
                             dry_run,
                             schemafull,
                         });
-                        let args = CreateArgs { name, operation };
+                        let args = CreateArgs {
+                            name,
+                            operation,
+                            config_file,
+                        };
                         create::main(args)
                     }
                     Some(CreateAction::Event {
@@ -77,7 +107,11 @@ async fn main() -> Result<()> {
                             dry_run,
                             schemafull,
                         });
-                        let args = CreateArgs { name, operation };
+                        let args = CreateArgs {
+                            name,
+                            operation,
+                            config_file,
+                        };
                         create::main(args)
                     }
                     Some(CreateAction::Migration {
@@ -87,14 +121,18 @@ async fn main() -> Result<()> {
                     }) => {
                         let operation =
                             CreateOperation::Migration(CreateMigrationArgs { down, content });
-                        let args = CreateArgs { name, operation };
+                        let args = CreateArgs {
+                            name,
+                            operation,
+                            config_file,
+                        };
                         create::main(args)
                     }
                     None => Err(anyhow!("No action specified for `create` command")),
                 },
             }
         }
-        Action::Remove {} => remove::main(),
+        Action::Remove => remove::main(config_file),
         #[allow(deprecated)]
         Action::Apply(apply_args) => {
             let cli::ApplyArgs {
@@ -128,7 +166,7 @@ async fn main() -> Result<()> {
                 username,
                 password,
             };
-            let db = create_surrealdb_client(&db_configuration).await?;
+            let db = create_surrealdb_client(config_file, &db_configuration).await?;
             let args = ApplyArgs {
                 operation,
                 db: &db,
@@ -136,6 +174,7 @@ async fn main() -> Result<()> {
                 display_logs: true,
                 dry_run,
                 validate_version_order,
+                config_file,
             };
             apply::main(args).await
         }
@@ -159,14 +198,22 @@ async fn main() -> Result<()> {
                 username,
                 password,
             };
-            list::main(&db_configuration, no_color).await
+            let args = ListArgs {
+                db_configuration: &db_configuration,
+                no_color,
+                config_file,
+            };
+            list::main(args).await
         }
         #[allow(deprecated)]
         Action::Branch(branch_args) => {
             let cli::BranchArgs { command, name } = branch_args;
 
             match name {
-                Some(name) => branch::status::main(name).await,
+                Some(name) => {
+                    let args = BranchStatusArgs { name, config_file };
+                    branch::status::main(args).await
+                }
                 None => match command {
                     Some(BranchAction::New {
                         name,
@@ -184,7 +231,12 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::new::main(name, &db_configuration).await
+                        let args = NewBranchArgs {
+                            name,
+                            db_configuration: &db_configuration,
+                            config_file,
+                        };
+                        branch::new::main(args).await
                     }
                     Some(BranchAction::Remove {
                         name,
@@ -202,7 +254,12 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::remove::main(name, &db_configuration).await
+                        let args = RemoveBranchArgs {
+                            name,
+                            db_configuration: &db_configuration,
+                            config_file,
+                        };
+                        branch::remove::main(args).await
                     }
                     Some(BranchAction::Merge {
                         name,
@@ -221,9 +278,18 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::merge::main(name, mode, &db_configuration).await
+                        let args = MergeBranchArgs {
+                            name,
+                            mode,
+                            db_configuration: &db_configuration,
+                            config_file,
+                        };
+                        branch::merge::main(args).await
                     }
-                    Some(BranchAction::Status { name }) => branch::status::main(name).await,
+                    Some(BranchAction::Status { name }) => {
+                        let args = BranchStatusArgs { name, config_file };
+                        branch::status::main(args).await
+                    }
                     Some(BranchAction::List {
                         address,
                         ns,
@@ -240,7 +306,12 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::list::main(&db_configuration, no_color).await
+                        let args = ListBranchArgs {
+                            db_configuration: &db_configuration,
+                            no_color,
+                            config_file,
+                        };
+                        branch::list::main(args).await
                     }
                     Some(BranchAction::Diff {
                         name,
@@ -258,7 +329,12 @@ async fn main() -> Result<()> {
                             username,
                             password,
                         };
-                        branch::diff::main(name, &db_configuration).await
+                        let args = BranchDiffArgs {
+                            name,
+                            db_configuration: &db_configuration,
+                            config_file,
+                        };
+                        branch::diff::main(args).await
                     }
                     None => Err(anyhow!("No action specified for `branch` command")),
                 },

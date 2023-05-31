@@ -7,9 +7,10 @@ use crate::{
     io,
 };
 
-pub struct CreateArgs {
+pub struct CreateArgs<'a> {
     pub name: String,
     pub operation: CreateOperation,
+    pub config_file: Option<&'a str>,
 }
 
 pub enum CreateOperation {
@@ -36,7 +37,11 @@ pub struct CreateMigrationArgs {
 }
 
 pub fn main(args: CreateArgs) -> Result<()> {
-    let CreateArgs { name, operation } = args;
+    let CreateArgs {
+        name,
+        operation,
+        config_file,
+    } = args;
 
     let dry_run = match &operation {
         CreateOperation::Schema(args) => args.dry_run,
@@ -44,7 +49,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
         CreateOperation::Migration(_) => false,
     };
 
-    let folder_path = config::retrieve_folder_path();
+    let folder_path = config::retrieve_folder_path(config_file)?;
 
     let dir_name = match operation {
         CreateOperation::Schema(_) => SCHEMAS_DIR_NAME,
@@ -68,7 +73,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
         }
     }
 
-    let content = generate_file_content(&operation, name);
+    let content = generate_file_content(config_file, &operation, name)?;
 
     match dry_run {
         true => {
@@ -113,10 +118,15 @@ fn get_filename(operation: &CreateOperation, name: &String) -> String {
     }
 }
 
-fn generate_file_content(operation: &CreateOperation, name: String) -> String {
-    match operation {
+fn generate_file_content(
+    config_file: Option<&str>,
+    operation: &CreateOperation,
+    name: String,
+) -> Result<String> {
+    let content = match operation {
         CreateOperation::Schema(args) => {
-            let table_schema_design_str = get_table_schema_design_str(args.schemafull);
+            let table_schema_design_str =
+                get_table_schema_design_str(config_file, args.schemafull)?;
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
@@ -127,7 +137,8 @@ fn generate_file_content(operation: &CreateOperation, name: String) -> String {
             )
         }
         CreateOperation::Event(args) => {
-            let table_schema_design_str = get_table_schema_design_str(args.schemafull);
+            let table_schema_design_str =
+                get_table_schema_design_str(config_file, args.schemafull)?;
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
@@ -142,26 +153,32 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
             )
         }
         CreateOperation::Migration(args) => args.content.to_owned().unwrap_or(String::new()),
-    }
+    };
+
+    Ok(content)
 }
 
-fn get_table_schema_design_str(schemafull: bool) -> &'static str {
+fn get_table_schema_design_str(
+    config_file: Option<&str>,
+    schemafull: bool,
+) -> Result<&'static str> {
     const SCHEMAFULL: &str = "SCHEMAFULL";
     const SCHEMALESS: &str = "SCHEMALESS";
 
     if schemafull {
-        return SCHEMAFULL;
+        return Ok(SCHEMAFULL);
     }
 
-    let table_schema_design = retrieve_table_schema_design();
+    let table_schema_design = retrieve_table_schema_design(config_file)?;
 
-    match table_schema_design {
+    let value = match table_schema_design {
         Some(table_schema_design) => match table_schema_design {
             config::TableSchemaDesign::Schemafull => SCHEMAFULL,
             config::TableSchemaDesign::Schemaless => SCHEMALESS,
         },
         None => SCHEMALESS,
-    }
+    };
+    Ok(value)
 }
 
 fn generate_field_definitions(fields: &Option<Vec<String>>, name: String) -> String {
