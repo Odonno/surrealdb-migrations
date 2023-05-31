@@ -12,6 +12,7 @@ use crate::{
 
 #[allow(dead_code)]
 pub async fn create_surrealdb_client(
+    config_file: Option<&str>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
     #[allow(deprecated)]
@@ -24,7 +25,7 @@ pub async fn create_surrealdb_client(
         db,
     } = db_configuration;
 
-    let db_config = config::retrieve_db_config();
+    let db_config = config::retrieve_db_config(config_file)?;
 
     let client = create_surrealdb_connection(url.clone(), address.clone(), &db_config).await?;
     sign_in(username.clone(), password.clone(), &db_config, &client).await?;

@@ -3,16 +3,19 @@ use assert_cmd::Command;
 use std::{fs, io, path::PathBuf};
 
 pub fn scaffold_empty_template() -> Result<()> {
-    scaffold_template("empty")
+    scaffold_template(None, "empty")
 }
 
 pub fn scaffold_blog_template() -> Result<()> {
-    scaffold_template("blog")
+    scaffold_template(None, "blog")
 }
 
-fn scaffold_template(template_name: &str) -> Result<()> {
+fn scaffold_template(config_file: Option<&str>, template_name: &str) -> Result<()> {
     let mut cmd = create_cmd()?;
     cmd.arg("scaffold").arg("template").arg(template_name);
+    if let Some(config_file) = config_file {
+        cmd.arg("--config-file").arg(config_file);
+    }
     cmd.assert().try_success()?;
 
     Ok(())

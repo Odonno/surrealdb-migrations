@@ -12,8 +12,21 @@ use crate::{
     models::Branch,
 };
 
-pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Result<()> {
-    let branching_feature_client = create_branching_feature_client(db_configuration).await?;
+pub struct RemoveBranchArgs<'a> {
+    pub name: String,
+    pub db_configuration: &'a SurrealdbConfiguration,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: RemoveBranchArgs<'_>) -> Result<()> {
+    let RemoveBranchArgs {
+        name,
+        db_configuration,
+        config_file,
+    } = args;
+
+    let branching_feature_client =
+        create_branching_feature_client(config_file, db_configuration).await?;
 
     // Check if branch really exists
     let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
@@ -36,10 +49,10 @@ pub async fn main(name: String, db_configuration: &SurrealdbConfiguration) -> Re
     }
 
     // Remove databases created for this branch
-    let client = create_branch_client(&name, db_configuration).await?;
+    let client = create_branch_client(config_file, &name, db_configuration).await?;
     client.query(format!("REMOVE DATABASE ⟨{}⟩", name)).await?;
 
-    let client = create_origin_branch_client(&name, db_configuration).await?;
+    let client = create_origin_branch_client(config_file, &name, db_configuration).await?;
     client.query(format!("REMOVE DATABASE ⟨{}⟩", name)).await?;
 
     // Remove branch from branches table

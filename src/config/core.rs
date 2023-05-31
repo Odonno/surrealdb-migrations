@@ -1,4 +1,6 @@
-use super::common::retrieve_config_value;
+use anyhow::Result;
+
+use super::common::{load_config, retrieve_config_value};
 
 #[allow(dead_code)]
 pub enum TableSchemaDesign {
@@ -6,24 +8,33 @@ pub enum TableSchemaDesign {
     Schemaless,
 }
 
-pub fn retrieve_folder_path() -> Option<String> {
-    retrieve_config_value("core", "path")
+pub fn retrieve_folder_path(config_file: Option<&str>) -> Result<Option<String>> {
+    let config = load_config(config_file)?;
+    let value = retrieve_config_value(&config, "core", "path");
+
+    Ok(value)
 }
 
 #[allow(dead_code)]
-pub fn retrieve_table_schema_design() -> Option<TableSchemaDesign> {
-    let schema_str = retrieve_config_value("core", "schema");
+pub fn retrieve_table_schema_design(
+    config_file: Option<&str>,
+) -> Result<Option<TableSchemaDesign>> {
+    let config = load_config(config_file)?;
+    let schema_str = retrieve_config_value(&config, "core", "schema");
 
-    if let Some(schema_str) = schema_str {
-        let schema_str = schema_str.to_lowercase();
-
-        if schema_str == "full" {
-            return Some(TableSchemaDesign::Schemafull);
+    match schema_str {
+        Some(schema_str) => {
+            let value = parse_table_schema_design(schema_str);
+            Ok(value)
         }
-        if schema_str == "less" {
-            return Some(TableSchemaDesign::Schemaless);
-        }
+        _ => Ok(None),
     }
+}
 
-    None
+fn parse_table_schema_design(schema_str: String) -> Option<TableSchemaDesign> {
+    match schema_str.to_lowercase().as_str() {
+        "full" => Some(TableSchemaDesign::Schemafull),
+        "less" => Some(TableSchemaDesign::Schemaless),
+        _ => None,
+    }
 }

@@ -21,13 +21,15 @@ pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
     }
 }
 
-pub fn can_use_filesystem() -> bool {
-    let folder_path = config::retrieve_folder_path();
+pub fn can_use_filesystem(config_file: Option<&str>) -> Result<bool> {
+    let folder_path = config::retrieve_folder_path(config_file)?;
     let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
         .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
 
-    script_migration_file_try_exists.unwrap_or(false)
+    let can_use_filesystem = script_migration_file_try_exists.unwrap_or(false);
+
+    Ok(can_use_filesystem)
 }
 
 pub struct SurqlFile {
@@ -42,22 +44,32 @@ impl SurqlFile {
     }
 }
 
-pub fn extract_schemas_files(embedded_dir: Option<&Dir<'static>>) -> Result<Vec<SurqlFile>> {
+pub fn extract_schemas_files(
+    config_file: Option<&str>,
+    embedded_dir: Option<&Dir<'static>>,
+) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(SCHEMAS_DIR_NAME).to_path_buf();
-    extract_surql_files(dir_path, embedded_dir)
+    extract_surql_files(config_file, dir_path, embedded_dir)
 }
 
-pub fn extract_events_files(embedded_dir: Option<&Dir<'static>>) -> Result<Vec<SurqlFile>> {
+pub fn extract_events_files(
+    config_file: Option<&str>,
+    embedded_dir: Option<&Dir<'static>>,
+) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(EVENTS_DIR_NAME).to_path_buf();
-    extract_surql_files(dir_path, embedded_dir)
+    extract_surql_files(config_file, dir_path, embedded_dir)
 }
 
-pub fn extract_forward_migrations_files(embedded_dir: Option<&Dir<'static>>) -> Vec<SurqlFile> {
+pub fn extract_forward_migrations_files(
+    config_file: Option<&str>,
+    embedded_dir: Option<&Dir<'static>>,
+) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let root_migrations_files = match extract_surql_files(root_migrations_dir, embedded_dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let root_migrations_files =
+        match extract_surql_files(config_file, root_migrations_dir, embedded_dir).ok() {
+            Some(files) => files,
+            None => vec![],
+        };
 
     let root_forward_migrations_files = root_migrations_files
         .into_iter()
@@ -72,12 +84,16 @@ pub fn extract_forward_migrations_files(embedded_dir: Option<&Dir<'static>>) -> 
     get_sorted_migrations_files(forward_migrations_files)
 }
 
-pub fn extract_backward_migrations_files(embedded_dir: Option<&Dir<'static>>) -> Vec<SurqlFile> {
+pub fn extract_backward_migrations_files(
+    config_file: Option<&str>,
+    embedded_dir: Option<&Dir<'static>>,
+) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let root_migrations_files = match extract_surql_files(root_migrations_dir, embedded_dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let root_migrations_files =
+        match extract_surql_files(config_file, root_migrations_dir, embedded_dir).ok() {
+            Some(files) => files,
+            None => vec![],
+        };
 
     let root_backward_migrations_files = root_migrations_files
         .into_iter()
@@ -85,10 +101,11 @@ pub fn extract_backward_migrations_files(embedded_dir: Option<&Dir<'static>>) ->
         .collect::<Vec<_>>();
 
     let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
-    let down_migrations_files = match extract_surql_files(down_migrations_dir, embedded_dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let down_migrations_files =
+        match extract_surql_files(config_file, down_migrations_dir, embedded_dir).ok() {
+            Some(files) => files,
+            None => vec![],
+        };
 
     let mut backward_migrations_files = root_backward_migrations_files;
     backward_migrations_files.extend(down_migrations_files);
@@ -97,12 +114,13 @@ pub fn extract_backward_migrations_files(embedded_dir: Option<&Dir<'static>>) ->
 }
 
 fn extract_surql_files(
+    config_file: Option<&str>,
     dir_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     match embedded_dir {
         Some(dir) => extract_surql_files_from_embedded_dir(dir_path, dir),
-        None => extract_surql_files_from_filesystem(dir_path),
+        None => extract_surql_files_from_filesystem(config_file, dir_path),
     }
 }
 
@@ -172,10 +190,13 @@ fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
     f.contents_utf8().map(|content| content.to_string())
 }
 
-fn extract_surql_files_from_filesystem(dir_path: PathBuf) -> Result<Vec<SurqlFile>> {
+fn extract_surql_files_from_filesystem(
+    config_file: Option<&str>,
+    dir_path: PathBuf,
+) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
-    let folder_path = config::retrieve_folder_path();
+    let folder_path = config::retrieve_folder_path(config_file)?;
     let dir_path = concat_path(&folder_path, &dir_path_str);
 
     let mut config = HashSet::new();

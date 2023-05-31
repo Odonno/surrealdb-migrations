@@ -5,6 +5,7 @@ use super::create_cmd;
 
 pub fn clear_tests_files() -> Result<()> {
     remove_folder("tests-files")?;
+    remove_folder("tests-files-alt")?;
 
     Ok(())
 }

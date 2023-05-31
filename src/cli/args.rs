@@ -9,6 +9,10 @@ use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs, ScaffoldAction};
 pub struct Args {
     #[command(subcommand)]
     pub command: Action,
+    /// Path to the configuration file
+    /// Default value is `.surrealdb`.
+    #[clap(long, global = true)]
+    pub config_file: Option<String>,
 }
 
 #[derive(Subcommand, Debug)]

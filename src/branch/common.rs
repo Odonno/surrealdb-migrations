@@ -9,6 +9,7 @@ use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
 #[allow(deprecated)]
 pub async fn create_branching_feature_client(
+    config_file: Option<&str>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
     const BRANCH_DATA_NS: &str = "features";
@@ -23,12 +24,13 @@ pub async fn create_branching_feature_client(
         db: Some(BRANCH_DATA_DB.to_owned()),
     };
 
-    let client = create_surrealdb_client(&branch_data_db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &branch_data_db_configuration).await?;
     Ok(client)
 }
 
 #[allow(deprecated)]
 pub async fn create_branch_client(
+    config_file: Option<&str>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
@@ -41,12 +43,13 @@ pub async fn create_branch_client(
         db: Some(branch_name.to_owned()),
     };
 
-    let client = create_surrealdb_client(&branch_db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &branch_db_configuration).await?;
     Ok(client)
 }
 
 #[allow(deprecated)]
 pub async fn create_origin_branch_client(
+    config_file: Option<&str>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
@@ -59,12 +62,13 @@ pub async fn create_origin_branch_client(
         db: Some(branch_name.to_owned()),
     };
 
-    let client = create_surrealdb_client(&branch_db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &branch_db_configuration).await?;
     Ok(client)
 }
 
 #[allow(deprecated)]
 pub async fn create_main_branch_client(
+    config_file: Option<&str>,
     db_configuration: &SurrealdbConfiguration,
     branch: &Branch,
 ) -> Result<Surreal<Any>> {
@@ -77,7 +81,7 @@ pub async fn create_main_branch_client(
         db: Some(branch.from_db.to_string()),
     };
 
-    let client = create_surrealdb_client(&main_branch_db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &main_branch_db_configuration).await?;
     Ok(client)
 }
 

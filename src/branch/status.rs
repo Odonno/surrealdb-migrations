@@ -11,9 +11,17 @@ use crate::{
     models::Branch,
 };
 
-pub async fn main(name: String) -> Result<()> {
+pub struct BranchStatusArgs<'a> {
+    pub name: String,
+    pub config_file: Option<&'a str>,
+}
+
+pub async fn main(args: BranchStatusArgs<'_>) -> Result<()> {
+    let BranchStatusArgs { name, config_file } = args;
+
     let db_configuration = SurrealdbConfiguration::default();
-    let branching_feature_client = create_branching_feature_client(&db_configuration).await?;
+    let branching_feature_client =
+        create_branching_feature_client(config_file, &db_configuration).await?;
     let branch: Option<Branch> = branching_feature_client
         .select((BRANCH_TABLE, name.to_string()))
         .await?;
