@@ -349,12 +349,30 @@ You can now make your changes on the newly generated database using `ns` and `db
 When you are done with your changes, you can merge your branch to the origin branch using the following command line:
 
 ```
-surrealdb-migrations branch merge bright-fold-1617 --address http://localhost:8000
+surrealdb-migrations branch merge bright-fold-1617 --mode all --address http://localhost:8000
 ```
+
+There are 3 merge modes, each with its own interest:
+
+| Mode        | Description                                                                                                                                                                                                                                                                                                                                                                                                      | Status      |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| schema-only | A diff of schema will be applied between the branch and the origin branch at the moment of the branch creation.<br /><br /> If possible, the merge will operate schema changes on the origin branch:<br /> \* defining new tables, fields, etc...<br /> \* removing tables, fields, etc...                                                                                                                       | Planned     |
+| all         | As an extension to the `schema-only` mode, a diff of schema and data will be applied between the branch and the origin branch at the moment of the branch creation.<br /><br /> If possible, the merge will operate schema and data changes on the origin branch:<br /> \* defining new tables, fields, etc...<br /> \* removing tables, fields, etc...<br /> \* adding, updating or removing table rows/columns | Planned     |
+| overwrite   | Merging the branch will completely destroy the origin branch and replace it with the new one.<br /> The main branch will have the schema and the data set in the merged branch.                                                                                                                                                                                                                                  | In progress |
 
 ### Production workflow
 
 TBD
+
+### Database restrictions
+
+This feature requires 3 namespaces:
+
+- `features`
+- `branches`
+- `branches/origin`
+
+It is strongly recommended to avoid using one of these namespaces in your SurrealDB instance.
 
 ### Documentation
 
