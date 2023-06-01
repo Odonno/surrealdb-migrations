@@ -7,6 +7,7 @@ use std::{
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::Root,
+    sql::Thing,
     Surreal,
 };
 
@@ -115,7 +116,7 @@ fn is_surreal_ready() -> Result<bool> {
     Ok(output.status.success())
 }
 
-pub async fn is_surrealdb_empty(ns: Option<String>, db: Option<String>) -> Result<bool> {
+pub async fn is_surreal_db_empty(ns: Option<String>, db: Option<String>) -> Result<bool> {
     let mut db_configuration = SurrealdbConfiguration::default();
     db_configuration.ns = ns;
     db_configuration.db = db;
@@ -138,6 +139,24 @@ async fn get_surrealdb_table_definitions(
     let table_definitions = result.context("Failed to get table definitions")?;
 
     Ok(table_definitions)
+}
+
+pub async fn is_surreal_table_empty(ns_db: Option<(&str, &str)>, table: &str) -> Result<bool> {
+    let mut db_configuration = SurrealdbConfiguration::default();
+    if let Some((ns, db)) = ns_db {
+        db_configuration.ns = Some(ns.to_string());
+        db_configuration.db = Some(db.to_string());
+    }
+
+    let client = create_surrealdb_client(&db_configuration).await?;
+    let mut response = client
+        .query("SELECT VALUE id FROM type::table($table);")
+        .bind(("table", table))
+        .await?;
+
+    let records: Vec<Thing> = response.take(0)?;
+
+    Ok(records.is_empty())
 }
 
 pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
