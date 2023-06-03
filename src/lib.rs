@@ -54,6 +54,7 @@
 //! ```
 
 mod apply;
+mod common;
 mod config;
 mod constants;
 mod definitions;

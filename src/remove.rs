@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use std::path::Path;
 
 use crate::{
+    common::get_migration_display_name,
     config,
     constants::{DOWN_MIGRATIONS_DIR_NAME, MIGRATIONS_DIR_NAME},
     io::{self, SurqlFile},
@@ -22,7 +23,7 @@ pub fn main(config_file: Option<&str>) -> Result<()> {
     remove_definition_file_if_exists(config_file, last_migration)?;
     remove_down_migration_file_if_exists(config_file, last_migration)?;
 
-    let last_migration_display_name = get_migration_display_name(last_migration);
+    let last_migration_display_name = get_migration_display_name(&last_migration.name);
 
     println!(
         "Migration '{}' successfully removed",
@@ -104,14 +105,4 @@ fn remove_inlined_down_migration_file_if_exists(
     }
 
     Ok(())
-}
-
-fn get_migration_display_name(migration_file: &SurqlFile) -> String {
-    migration_file
-        .name
-        .split('_')
-        .skip(2)
-        .map(|s| s.to_string())
-        .collect::<Vec<_>>()
-        .join("_")
 }

@@ -4,6 +4,7 @@ use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 
 use crate::{
+    common::get_migration_display_name,
     input::SurrealdbConfiguration,
     surrealdb::{create_surrealdb_client, list_script_migration_ordered_by_execution_date},
 };
@@ -33,13 +34,7 @@ pub async fn main(args: ListArgs<'_>) -> Result<()> {
         let rows = migrations_applied
             .iter()
             .map(|m| {
-                let display_name = m
-                    .script_name
-                    .split('_')
-                    .skip(2)
-                    .map(|s| s.to_string())
-                    .collect::<Vec<_>>()
-                    .join("_");
+                let display_name = get_migration_display_name(&m.script_name);
 
                 let since = match DateTime::parse_from_rfc3339(&m.executed_at) {
                     Ok(executed_at) => {

@@ -8,6 +8,7 @@ use std::{
 };
 
 use crate::{
+    common::get_migration_display_name,
     config,
     constants::SCRIPT_MIGRATION_TABLE_NAME,
     definitions,
@@ -61,12 +62,6 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let mut config = HashSet::new();
-    config.insert(DirEntryAttr::Name);
-    config.insert(DirEntryAttr::Path);
-    config.insert(DirEntryAttr::IsFile);
-    config.insert(DirEntryAttr::FullName); // Used to filter migrations files (from down files)
-
     let folder_path = config::retrieve_folder_path(config_file)?;
 
     let schemas_files = io::extract_schemas_files(config_file, dir)?;
@@ -118,7 +113,6 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                 last_migration_applied,
                 initial_definition_path,
                 definitions_path,
-                &config,
                 schema_definitions,
                 event_definitions,
                 &folder_path,
@@ -212,7 +206,145 @@ fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
     Ok(())
 }
 
-fn filter_expect_initial_definition(file: &&HashMap<DirEntryAttr, DirEntryValue>) -> Result<bool> {
+fn create_definition_files(
+    last_migration_applied: Option<&ScriptMigration>,
+    initial_definition_path: PathBuf,
+    definitions_path: PathBuf,
+    schema_definitions: String,
+    event_definitions: String,
+    folder_path: &Option<String>,
+) -> Result<()> {
+    match last_migration_applied {
+        Some(last_migration_applied) => {
+            let initial_definition = fs_extra::file::read_to_string(initial_definition_path)?;
+            let initial_definition = serde_json::from_str::<definitions::SchemaMigrationDefinition>(
+                &initial_definition,
+            )?;
+
+            // Calculate new definition based on all definitions files
+            let mut config = HashSet::new();
+            config.insert(DirEntryAttr::Name);
+            config.insert(DirEntryAttr::Path);
+
+            let diff_definition_files = fs_extra::dir::ls(definitions_path, &config)?;
+
+            let definition_diffs = diff_definition_files
+                .items
+                .iter()
+                .filter(|file| filter_except_initial_definition(file).unwrap_or(false))
+                .take_while(|file| {
+                    take_while_not_applied(file, last_migration_applied).unwrap_or(false)
+                })
+                .map(map_to_file_content)
+                .collect::<Vec<_>>();
+
+            let mut last_definition = initial_definition;
+
+            for diff_definition in definition_diffs {
+                let diff_definition = diff_definition?;
+
+                let definition_diff =
+                    serde_json::from_str::<definitions::DefinitionDiff>(&diff_definition)?;
+
+                let schemas = match definition_diff.schemas {
+                    Some(schemas_diff) => {
+                        let schemas_patch = diffy::Patch::from_str(&schemas_diff)?;
+                        diffy::apply(&last_definition.schemas, &schemas_patch)?
+                    }
+                    _ => last_definition.schemas,
+                };
+
+                let events = match definition_diff.events {
+                    Some(events_diff) => {
+                        let events_patch = diffy::Patch::from_str(&events_diff)?;
+                        diffy::apply(&last_definition.events, &events_patch)?
+                    }
+                    _ => last_definition.events,
+                };
+
+                last_definition = definitions::SchemaMigrationDefinition { schemas, events };
+            }
+
+            // Make diff between new definition and last definition
+            let current_definition = definitions::SchemaMigrationDefinition {
+                schemas: schema_definitions,
+                events: event_definitions,
+            };
+
+            // Save definition if any changes
+            let definition_filepath = format!(
+                "migrations/definitions/{}.json",
+                last_migration_applied.script_name
+            );
+            let definition_filepath = match folder_path {
+                Some(folder_path) => Path::new(&folder_path).join(definition_filepath),
+                None => Path::new(&definition_filepath).to_path_buf(),
+            };
+
+            let has_schema_diffs =
+                last_definition.schemas.trim() != current_definition.schemas.trim();
+            let has_event_diffs = last_definition.events.trim() != current_definition.events.trim();
+
+            let schemas_diffs = match has_schema_diffs {
+                true => Some(
+                    diffy::create_patch(&last_definition.schemas, &current_definition.schemas)
+                        .to_string(),
+                ),
+                false => None,
+            };
+
+            let events_diffs = match has_event_diffs {
+                true => Some(
+                    diffy::create_patch(&last_definition.events, &current_definition.events)
+                        .to_string(),
+                ),
+                false => None,
+            };
+
+            let definition_diff = definitions::DefinitionDiff {
+                schemas: schemas_diffs,
+                events: events_diffs,
+            };
+
+            // Create definition file if any changes
+            let has_changes = definition_diff.schemas.is_some() || definition_diff.events.is_some();
+
+            match has_changes {
+                true => {
+                    let serialized_definition = serde_json::to_string(&definition_diff)?;
+                    fs_extra::file::write_all(&definition_filepath, &serialized_definition)?;
+                }
+                false => {
+                    // Remove definition file if exists
+                    let definition_filepath = Path::new(&definition_filepath);
+
+                    if definition_filepath.exists() {
+                        fs_extra::file::remove(definition_filepath)?;
+                    }
+                }
+            }
+        }
+        None => {
+            // Create folder "migrations/definitions" if not exists
+            if !definitions_path.exists() {
+                fs_extra::dir::create(&definitions_path, false)?;
+            }
+
+            let current_definition = definitions::SchemaMigrationDefinition {
+                schemas: schema_definitions,
+                events: event_definitions,
+            };
+
+            let serialized_definition = serde_json::to_string(&current_definition)?;
+
+            fs_extra::file::write_all(&initial_definition_path, &serialized_definition)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn filter_except_initial_definition(file: &&HashMap<DirEntryAttr, DirEntryValue>) -> Result<bool> {
     let name = file
         .get(&DirEntryAttr::Name)
         .context("Cannot get name to definition files")?;
@@ -255,141 +387,6 @@ fn map_to_file_content(file: &HashMap<DirEntryAttr, DirEntryValue>) -> Result<St
     let path = path.context("Cannot get path to definition files")?;
 
     fs_extra::file::read_to_string(path).context("Cannot get path to definition files")
-}
-
-fn create_definition_files(
-    last_migration_applied: Option<&ScriptMigration>,
-    initial_definition_path: PathBuf,
-    definitions_path: PathBuf,
-    config: &HashSet<DirEntryAttr>,
-    schema_definitions: String,
-    event_definitions: String,
-    folder_path: &Option<String>,
-) -> Result<()> {
-    match last_migration_applied {
-        Some(last_migration_applied) => {
-            let initial_definition = fs_extra::file::read_to_string(initial_definition_path)?;
-            let initial_definition = serde_json::from_str::<definitions::SchemaMigrationDefinition>(
-                &initial_definition,
-            )?;
-
-            // calculate new definition based on all definitions files
-            let diff_definition_files = fs_extra::dir::ls(definitions_path, config)?;
-
-            let definition_diffs = diff_definition_files
-                .items
-                .iter()
-                .filter(|file| filter_expect_initial_definition(file).unwrap_or(false))
-                .take_while(|file| {
-                    take_while_not_applied(file, last_migration_applied).unwrap_or(false)
-                })
-                .map(map_to_file_content)
-                .collect::<Vec<_>>();
-
-            let mut last_definition = initial_definition;
-
-            for diff_definition in definition_diffs {
-                let diff_definition = diff_definition?;
-
-                let definition_diff =
-                    serde_json::from_str::<definitions::DefinitionDiff>(&diff_definition)?;
-
-                let schemas = match definition_diff.schemas {
-                    Some(schemas_diff) => {
-                        let schemas_patch = diffy::Patch::from_str(&schemas_diff)?;
-                        diffy::apply(&last_definition.schemas, &schemas_patch)?
-                    }
-                    _ => last_definition.schemas,
-                };
-
-                let events = match definition_diff.events {
-                    Some(events_diff) => {
-                        let events_patch = diffy::Patch::from_str(&events_diff)?;
-                        diffy::apply(&last_definition.events, &events_patch)?
-                    }
-                    _ => last_definition.events,
-                };
-
-                last_definition = definitions::SchemaMigrationDefinition { schemas, events };
-            }
-
-            // make diff between new definition and last definition
-            let current_definition = definitions::SchemaMigrationDefinition {
-                schemas: schema_definitions,
-                events: event_definitions,
-            };
-
-            // save definition if any changes
-            let definition_filepath = format!(
-                "migrations/definitions/{}.json",
-                last_migration_applied.script_name
-            );
-            let definition_filepath = match folder_path {
-                Some(folder_path) => Path::new(&folder_path).join(definition_filepath),
-                None => Path::new(&definition_filepath).to_path_buf(),
-            };
-
-            let has_schema_diffs =
-                last_definition.schemas.trim() != current_definition.schemas.trim();
-            let has_event_diffs = last_definition.events.trim() != current_definition.events.trim();
-
-            let schemas_diffs = match has_schema_diffs {
-                true => Some(
-                    diffy::create_patch(&last_definition.schemas, &current_definition.schemas)
-                        .to_string(),
-                ),
-                false => None,
-            };
-
-            let events_diffs = match has_event_diffs {
-                true => Some(
-                    diffy::create_patch(&last_definition.events, &current_definition.events)
-                        .to_string(),
-                ),
-                false => None,
-            };
-
-            let definition_diff = definitions::DefinitionDiff {
-                schemas: schemas_diffs,
-                events: events_diffs,
-            };
-
-            // create definition file if any changes
-            let has_changes = definition_diff.schemas.is_some() || definition_diff.events.is_some();
-
-            match has_changes {
-                true => {
-                    let serialized_definition = serde_json::to_string(&definition_diff)?;
-                    fs_extra::file::write_all(&definition_filepath, &serialized_definition)?;
-                }
-                false => {
-                    // remove definition file if exists
-                    let definition_filepath = Path::new(&definition_filepath);
-
-                    if definition_filepath.exists() {
-                        fs_extra::file::remove(definition_filepath)?;
-                    }
-                }
-            }
-        }
-        None => {
-            // create folder "migrations/definitions" if not exists
-            if !definitions_path.exists() {
-                fs_extra::dir::create(&definitions_path, false)?;
-            }
-
-            let current_definition = definitions::SchemaMigrationDefinition {
-                schemas: schema_definitions,
-                events: event_definitions,
-            };
-
-            let serialized_definition = serde_json::to_string(&current_definition)?;
-
-            fs_extra::file::write_all(&initial_definition_path, &serialized_definition)?;
-        }
-    }
-
-    Ok(())
 }
 
 fn get_migration_files_to_execute(
@@ -496,16 +493,9 @@ CREATE {} SET script_name = '{}';",
             inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
-        let script_display_name = migration_file
-            .name
-            .split('_')
-            .skip(2)
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-            .join("_");
-
         if display_logs {
-            println!("Executing migration {}...", script_display_name);
+            let migration_display_name = get_migration_display_name(&migration_file.name);
+            println!("Executing migration {}...", migration_display_name);
         }
 
         let transaction_action = get_transaction_action(dry_run);
@@ -530,16 +520,9 @@ DELETE {} WHERE script_name = '{}';",
             inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
         );
 
-        let script_display_name = migration_file
-            .name
-            .split('_')
-            .skip(2)
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>()
-            .join("_");
-
         if display_logs {
-            println!("Reverting migration {}...", script_display_name);
+            let migration_display_name = get_migration_display_name(&migration_file.name);
+            println!("Reverting migration {}...", migration_display_name);
         }
 
         let transaction_action = get_transaction_action(dry_run);
