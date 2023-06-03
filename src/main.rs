@@ -16,6 +16,7 @@ use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArg
 mod apply;
 mod branch;
 mod cli;
+mod common;
 mod config;
 mod constants;
 mod create;
