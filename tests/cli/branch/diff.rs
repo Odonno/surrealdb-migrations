@@ -36,7 +36,7 @@ async fn diff_with_changes() -> Result<()> {
             scaffold_blog_template()?;
             apply_migrations()?;
             create_branch("test-branch")?;
-            add_new_schema_file()?;
+            add_category_schema_file()?;
             apply_migrations_on_branch("test-branch")?;
 
             let mut cmd = create_cmd()?;

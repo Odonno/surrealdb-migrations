@@ -85,19 +85,28 @@ pub fn create_cmd() -> Result<Command> {
 }
 
 pub fn get_first_migration_name() -> Result<String> {
-    let first_migration_file = get_first_migration_file()?;
+    get_nth_migration_name(0)
+}
+pub fn get_first_migration_file() -> Result<PathBuf> {
+    get_nth_migration_file(0)
+}
 
-    let first_migration_name = first_migration_file
+pub fn get_second_migration_name() -> Result<String> {
+    get_nth_migration_name(1)
+}
+
+fn get_nth_migration_name(index: i8) -> std::result::Result<String, anyhow::Error> {
+    let migration_name = get_nth_migration_file(index)?
         .file_stem()
         .ok_or_else(|| anyhow!("Could not get file stem"))?
         .to_str()
         .ok_or_else(|| anyhow!("Could not convert file stem to str"))?
         .to_owned();
 
-    Ok(first_migration_name)
+    Ok(migration_name)
 }
 
-pub fn get_first_migration_file() -> Result<PathBuf> {
+fn get_nth_migration_file(index: i8) -> Result<PathBuf> {
     let migrations_files_dir = std::path::Path::new("tests-files/migrations");
 
     let mut migration_files = fs::read_dir(migrations_files_dir)?
@@ -111,7 +120,7 @@ pub fn get_first_migration_file() -> Result<PathBuf> {
     });
 
     let first_migration_file = migration_files
-        .first()
+        .get(index as usize)
         .ok_or_else(|| anyhow!("No migration files found"))?;
 
     Ok(first_migration_file.to_path_buf())

@@ -33,7 +33,7 @@ async fn apply_new_schema_changes() -> Result<()> {
             scaffold_blog_template()?;
             empty_folder("tests-files/migrations")?;
             apply_migrations()?;
-            add_new_schema_file()?;
+            add_category_schema_file()?;
 
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
