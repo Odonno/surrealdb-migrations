@@ -13,3 +13,9 @@ pub struct Post {
     pub title: String,
     pub content: String,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MigrationDefinition {
+    pub schemas: Option<String>,
+    pub events: Option<String>,
+}

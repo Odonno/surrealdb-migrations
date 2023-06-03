@@ -27,14 +27,14 @@ Migration files successfully executed!\n",
                 )
             })?;
 
-            let is_table_empty = !is_surreal_table_empty(None, "user").await?;
-            ensure!(!is_table_empty, "'user' table should be empty");
+            let is_table_empty = is_surreal_table_empty(None, "user").await?;
+            ensure!(is_table_empty, "'user' table should be empty");
 
-            let is_table_empty = !is_surreal_table_empty(None, "post").await?;
-            ensure!(!is_table_empty, "'post' table should be empty");
+            let is_table_empty = is_surreal_table_empty(None, "post").await?;
+            ensure!(is_table_empty, "'post' table should be empty");
 
-            let is_table_empty = !is_surreal_table_empty(None, "comment").await?;
-            ensure!(!is_table_empty, "'comment' table should be empty");
+            let is_table_empty = is_surreal_table_empty(None, "comment").await?;
+            ensure!(is_table_empty, "'comment' table should be empty");
 
             Ok(())
         })
@@ -68,14 +68,14 @@ Migration files successfully executed!\n",
                 )
             })?;
 
-            let is_table_empty = !is_surreal_table_empty(None, "user").await?;
-            ensure!(is_table_empty, "'user' table should not be empty");
+            let is_table_empty = is_surreal_table_empty(None, "user").await?;
+            ensure!(!is_table_empty, "'user' table should not be empty");
 
-            let is_table_empty = !is_surreal_table_empty(None, "post").await?;
-            ensure!(!is_table_empty, "'post' table should be empty");
+            let is_table_empty = is_surreal_table_empty(None, "post").await?;
+            ensure!(is_table_empty, "'post' table should be empty");
 
-            let is_table_empty = !is_surreal_table_empty(None, "comment").await?;
-            ensure!(!is_table_empty, "'comment' table should be empty");
+            let is_table_empty = is_surreal_table_empty(None, "comment").await?;
+            ensure!(is_table_empty, "'comment' table should be empty");
 
             Ok(())
         })

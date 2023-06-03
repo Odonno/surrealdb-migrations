@@ -31,23 +31,23 @@ pub fn remove_folder(folder: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn add_new_schema_file() -> Result<()> {
+pub fn add_category_schema_file() -> Result<()> {
     let schemas_files_dir = Path::new("tests-files/schemas");
 
     if schemas_files_dir.exists() {
-        let category_schema_file = schemas_files_dir.join("category.surql");
-        const CATEGORY_CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
+        let schema_file = schemas_files_dir.join("category.surql");
+        const CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
 
 DEFINE FIELD name ON category TYPE string;
 DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();";
 
-        fs::write(category_schema_file, CATEGORY_CONTENT)?;
+        fs::write(schema_file, CONTENT)?;
     }
 
     Ok(())
 }
 
-pub fn add_new_migration_file() -> Result<()> {
+pub fn add_category_migration_file() -> Result<()> {
     let content = "CREATE category SET name = 'Technology';
 CREATE category SET name = 'Marketing';
 CREATE category SET name = 'Books';";
@@ -59,6 +59,24 @@ CREATE category SET name = 'Books';";
         .arg("--content")
         .arg(content);
     cmd.assert().try_success()?;
+
+    Ok(())
+}
+
+pub fn add_archive_schema_file() -> Result<()> {
+    let schemas_files_dir = Path::new("tests-files/schemas");
+
+    if schemas_files_dir.exists() {
+        let schema_file = schemas_files_dir.join("archive.surql");
+        const CONTENT: &str = "DEFINE TABLE archive SCHEMALESS;
+
+DEFINE FIELD name ON archive TYPE string;
+DEFINE FIELD from_date ON archive TYPE datetime;
+DEFINE FIELD to_date ON archive TYPE datetime;
+DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();";
+
+        fs::write(schema_file, CONTENT)?;
+    }
 
     Ok(())
 }

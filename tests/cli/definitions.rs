@@ -69,8 +69,8 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
         clear_tests_files()?;
         scaffold_blog_template()?;
         apply_migrations()?;
-        add_new_schema_file()?;
-        add_new_migration_file()?;
+        add_category_schema_file()?;
+        add_category_migration_file()?;
 
         let mut cmd = create_cmd()?;
 
