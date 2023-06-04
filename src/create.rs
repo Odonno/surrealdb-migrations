@@ -92,7 +92,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
                 ensures_folder_exists(&down_folder_path)?;
 
                 let down_file_path = down_folder_path.join(&filename);
-                fs_extra::file::write_all(down_file_path, &content)?;
+                fs_extra::file::write_all(down_file_path, "")?;
             }
 
             println!("File {} created successfully", filename);
