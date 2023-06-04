@@ -20,7 +20,6 @@ mod common;
 mod config;
 mod constants;
 mod create;
-mod definitions;
 mod input;
 mod io;
 mod list;

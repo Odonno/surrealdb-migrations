@@ -9,7 +9,7 @@ use std::{
 use crate::{
     cli::ScaffoldTemplate,
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
-    io,
+    io::{self, ensures_folder_exists},
 };
 
 pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
@@ -105,14 +105,6 @@ pub fn extract<S: AsRef<Path>>(dir: &Dir<'_>, path: S) -> std::io::Result<()> {
     }
 
     extract_dir(dir.clone(), path)
-}
-
-fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
-    if !dir_path.exists() {
-        fs_extra::dir::create_all(dir_path, false)?;
-    }
-
-    Ok(())
 }
 
 fn rename_migrations_files_to_match_current_date(

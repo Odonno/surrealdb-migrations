@@ -121,16 +121,17 @@ pub async fn is_surreal_db_empty(ns: Option<String>, db: Option<String>) -> Resu
     db_configuration.ns = ns;
     db_configuration.db = db;
 
-    let table_definitions = get_surrealdb_table_definitions(db_configuration).await?;
+    let table_definitions = get_surrealdb_table_definitions(Some(db_configuration)).await?;
 
     Ok(table_definitions.is_empty())
 }
 
 type SurrealdbTableDefinitions = HashMap<String, String>;
 
-async fn get_surrealdb_table_definitions(
-    db_configuration: SurrealdbConfiguration,
+pub async fn get_surrealdb_table_definitions(
+    db_configuration: Option<SurrealdbConfiguration>,
 ) -> Result<SurrealdbTableDefinitions> {
+    let db_configuration = db_configuration.unwrap_or(SurrealdbConfiguration::default());
     let client = create_surrealdb_client(&db_configuration).await?;
 
     let mut response = client.query("INFO FOR DB;").await?;

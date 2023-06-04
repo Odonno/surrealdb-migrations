@@ -18,9 +18,9 @@ fn apply_with_skipped_migrations() -> Result<()> {
 
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
-                "Schema files successfully executed!
+                "Executing migration AddAdminUser...
+Schema files successfully executed!
 Event files successfully executed!
-Executing migration AddAdminUser...
 Migration files successfully executed!\n",
             )
         })?;
