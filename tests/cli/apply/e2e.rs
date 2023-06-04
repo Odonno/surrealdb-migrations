@@ -401,12 +401,12 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
     .await
 }
 
-const INITIAL_DEFINITION_SCHEMAS: &str = "DEFINE TABLE user SCHEMALESS;
+const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
+# out: post, comment
+DEFINE TABLE comment SCHEMALESS;
 
-DEFINE FIELD username ON user TYPE string ASSERT $value != NONE;
-DEFINE FIELD email ON user TYPE string ASSERT is::email($value);
-DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
-DEFINE FIELD registered_at ON user TYPE datetime VALUE $before OR time::now();
+DEFINE FIELD content ON comment TYPE string ASSERT $value != NONE;
+DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();
 DEFINE TABLE post SCHEMALESS;
 
 DEFINE FIELD title ON post TYPE string;
@@ -418,56 +418,50 @@ DEFINE TABLE script_migration SCHEMAFULL;
 
 DEFINE FIELD script_name ON script_migration TYPE string;
 DEFINE FIELD executed_at ON script_migration TYPE datetime VALUE $before OR time::now();
-# in: user
-# out: post, comment
-DEFINE TABLE comment SCHEMALESS;
+DEFINE TABLE user SCHEMALESS;
 
-DEFINE FIELD content ON comment TYPE string ASSERT $value != NONE;
-DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();";
+DEFINE FIELD username ON user TYPE string ASSERT $value != NONE;
+DEFINE FIELD email ON user TYPE string ASSERT is::email($value);
+DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
+DEFINE FIELD registered_at ON user TYPE datetime VALUE $before OR time::now();";
 
-const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE unpublish_post SCHEMALESS;
-
-DEFINE FIELD post_id ON unpublish_post;
-DEFINE FIELD created_at ON unpublish_post TYPE datetime VALUE $before OR time::now();
-
-DEFINE EVENT unpublish_post ON TABLE unpublish_post WHEN $before == NONE THEN (
-    UPDATE post SET status = \"DRAFT\" WHERE id = $after.post_id
-);
-DEFINE TABLE publish_post SCHEMALESS;
+const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE publish_post SCHEMALESS;
 
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post TYPE datetime VALUE $before OR time::now();
 
 DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
     UPDATE post SET status = \"PUBLISHED\" WHERE id = $after.post_id
+);
+DEFINE TABLE unpublish_post SCHEMALESS;
+
+DEFINE FIELD post_id ON unpublish_post;
+DEFINE FIELD created_at ON unpublish_post TYPE datetime VALUE $before OR time::now();
+
+DEFINE EVENT unpublish_post ON TABLE unpublish_post WHEN $before == NONE THEN (
+    UPDATE post SET status = \"DRAFT\" WHERE id = $after.post_id
 );";
 
 const SECOND_MIGRATION_SCHEMAS: &str = "--- original
 +++ modified
-@@ -11,6 +11,10 @@
- DEFINE FIELD author ON post TYPE record (user) ASSERT $value != NONE;
- DEFINE FIELD created_at ON post TYPE datetime VALUE $before OR time::now();
- DEFINE FIELD status ON post TYPE string VALUE $value OR $before OR 'DRAFT' ASSERT $value == NONE OR $value INSIDE ['DRAFT', 'PUBLISHED'];
+@@ -1,3 +1,7 @@
 +DEFINE TABLE category SCHEMALESS;
 +
 +DEFINE FIELD name ON category TYPE string;
 +DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();
- DEFINE TABLE script_migration SCHEMAFULL;
-
- DEFINE FIELD script_name ON script_migration TYPE string;\n";
+ # in: user
+ # out: post, comment
+ DEFINE TABLE comment SCHEMALESS;\n";
 
 const THIRD_MIGRATION_SCHEMAS: &str = "--- original
 +++ modified
-@@ -4,6 +4,12 @@
- DEFINE FIELD email ON user TYPE string ASSERT is::email($value);
- DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
- DEFINE FIELD registered_at ON user TYPE datetime VALUE $before OR time::now();
+@@ -1,3 +1,9 @@
 +DEFINE TABLE archive SCHEMALESS;
 +
 +DEFINE FIELD name ON archive TYPE string;
 +DEFINE FIELD from_date ON archive TYPE datetime;
 +DEFINE FIELD to_date ON archive TYPE datetime;
 +DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();
- DEFINE TABLE post SCHEMALESS;
+ DEFINE TABLE category SCHEMALESS;
 
- DEFINE FIELD title ON post TYPE string;\n";
+ DEFINE FIELD name ON category TYPE string;\n";
