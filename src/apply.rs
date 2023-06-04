@@ -1,15 +1,16 @@
 use std::path::{Path, PathBuf};
 
 use ::surrealdb::{Connection, Surreal};
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use include_dir::Dir;
 
 use crate::{
     common::get_migration_display_name,
     constants::SCRIPT_MIGRATION_TABLE_NAME,
     io::{
-        self, apply_patch, create_definition_files, get_current_definition, get_initial_definition,
-        get_migration_definition_diff, SurqlFile,
+        self, apply_patch, calculate_definition_using_patches, create_definition_files,
+        extract_json_definition_files, filter_except_initial_definition, get_current_definition,
+        get_initial_definition, get_migration_definition_diff, SurqlFile,
     },
     models::{SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{self, TransactionAction},
@@ -91,8 +92,12 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                 event_definitions.to_string(),
             )?;
         }
-    } else {
-        // TODO : Expect last definition (in files) to match the current one
+    } else if let Some(dir) = dir {
+        expect_migration_definitions_to_be_up_to_date(
+            schema_definitions.to_string(),
+            event_definitions.to_string(),
+            dir,
+        )?;
     }
 
     let last_migration_applied = migrations_applied.last();
@@ -304,6 +309,42 @@ fn filter_migration_file_to_execute(
     }
 
     Ok(true)
+}
+
+fn expect_migration_definitions_to_be_up_to_date(
+    schema_definitions: String,
+    event_definitions: String,
+    embedded_dir: &Dir<'static>,
+) -> Result<()> {
+    const DEFINITIONS_FOLDER: &str = "migrations/definitions";
+    let definitions_path = Path::new(DEFINITIONS_FOLDER);
+
+    let initial_definition =
+        get_initial_definition(None, definitions_path.to_path_buf(), Some(embedded_dir))?;
+
+    let mut definition_files =
+        extract_json_definition_files(None, definitions_path, Some(embedded_dir))?;
+    definition_files.sort_by(|a, b| a.name.cmp(&b.name));
+    let definition_files = definition_files;
+
+    let definition_diffs = definition_files
+        .into_iter()
+        .filter(filter_except_initial_definition)
+        .map(|file| file.get_content().unwrap_or_default())
+        .collect::<Vec<_>>();
+
+    let last_applied_definition =
+        calculate_definition_using_patches(initial_definition, definition_diffs)?;
+
+    let is_up_to_date = schema_definitions == last_applied_definition.schemas
+        && event_definitions == last_applied_definition.events;
+
+    if is_up_to_date {
+        Ok(())
+    } else {
+        const ERROR_MESSAGE: &str = "The migration definitions are not up to date. Please run `surrealdb-migrations apply` on your local environment and publish definitions files.";
+        Err(anyhow!(ERROR_MESSAGE))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
