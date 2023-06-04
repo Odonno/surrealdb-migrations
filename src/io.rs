@@ -297,7 +297,7 @@ impl JsonDefinitionFile {
     }
 }
 
-fn extract_json_definition_files(
+pub fn extract_json_definition_files(
     config_file: Option<&str>,
     dir_path: &Path,
     embedded_dir: Option<&Dir<'static>>,
@@ -550,11 +550,11 @@ fn create_initial_definition_file(
     Ok(serialized_definition)
 }
 
-fn filter_except_initial_definition(file: &JsonDefinitionFile) -> bool {
+pub fn filter_except_initial_definition(file: &JsonDefinitionFile) -> bool {
     file.name != "_initial"
 }
 
-fn calculate_definition_using_patches(
+pub fn calculate_definition_using_patches(
     initial_definition: SchemaMigrationDefinition,
     definition_diffs: Vec<String>,
 ) -> Result<SchemaMigrationDefinition> {
