@@ -18,8 +18,7 @@ fn apply_initial_schema_changes() -> Result<()> {
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
                 "Schema files successfully executed!
-Event files successfully executed!
-Migration files successfully executed!\n",
+Event files successfully executed!\n",
             )
         })?;
 
@@ -64,8 +63,7 @@ fn apply_new_schema_changes() -> Result<()> {
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
                 "Schema files successfully executed!
-Event files successfully executed!
-Migration files successfully executed!\n",
+Event files successfully executed!\n",
             )
         })?;
 
@@ -86,11 +84,11 @@ fn apply_initial_migrations() -> Result<()> {
 
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
-                "Schema files successfully executed!
-Event files successfully executed!
-Executing migration AddAdminUser...
+                "Executing migration AddAdminUser...
 Executing migration AddPost...
 Executing migration CommentPost...
+Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
             )
         })?;
@@ -115,10 +113,10 @@ fn apply_new_migrations() -> Result<()> {
 
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
-                "Schema files successfully executed!
-Event files successfully executed!
-Executing migration AddPost...
+                "Executing migration AddPost...
 Executing migration CommentPost...
+Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
             )
         })?;
@@ -150,8 +148,7 @@ fn apply_with_db_configuration() -> Result<()> {
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
                 "Schema files successfully executed!
-Event files successfully executed!
-Migration files successfully executed!\n",
+Event files successfully executed!\n",
             )
         })?;
 
@@ -172,12 +169,9 @@ fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
 
         cmd.arg("apply");
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Schema files successfully executed!
-Migration files successfully executed!\n",
-            )
-        })?;
+        cmd.assert()
+            .try_success()
+            .and_then(|assert| assert.try_stdout("Schema files successfully executed!\n"))?;
 
         Ok(())
     })
@@ -248,11 +242,11 @@ fn apply_with_inlined_down_files() -> Result<()> {
 
         cmd.assert().try_success().and_then(|assert| {
             assert.try_stdout(
-                "Schema files successfully executed!
-Event files successfully executed!
-Executing migration AddAdminUser...
+                "Executing migration AddAdminUser...
 Executing migration AddPost...
 Executing migration CommentPost...
+Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
             )
         })?;

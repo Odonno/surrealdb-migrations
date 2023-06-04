@@ -8,10 +8,10 @@ use crate::helpers::*;
 #[tokio::test]
 #[serial]
 async fn load_files_from_empty_template() -> Result<()> {
+    clear_tests_files()?;
+
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_tests_files()?;
-
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
@@ -28,10 +28,10 @@ async fn load_files_from_empty_template() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn load_files_from_blog_template() -> Result<()> {
+    clear_tests_files()?;
+
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_tests_files()?;
-
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
@@ -48,10 +48,10 @@ async fn load_files_from_blog_template() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn load_files_from_ecommerce_template() -> Result<()> {
+    clear_tests_files()?;
+
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_tests_files()?;
-
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
@@ -69,17 +69,17 @@ async fn load_files_from_ecommerce_template() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn validate_version_order_from_embedded_files() -> Result<()> {
+    clear_tests_files()?;
+
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_tests_files()?;
-
-            const BLOG_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+            const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
 
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
             MigrationRunner::new(&db)
-                .load_files(&BLOG_TEMPLATE)
+                .load_files(&EMBEDDED_DIR)
                 .validate_version_order()
                 .await?;
 
@@ -92,17 +92,17 @@ async fn validate_version_order_from_embedded_files() -> Result<()> {
 #[tokio::test]
 #[serial]
 async fn apply_migrations_from_embedded_files() -> Result<()> {
+    clear_tests_files()?;
+
     run_with_surreal_instance_async(|| {
         Box::pin(async {
-            clear_tests_files()?;
-
-            const BLOG_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+            const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
 
             let configuration = SurrealdbConfiguration::default();
             let db = create_surrealdb_client(&configuration).await?;
 
             MigrationRunner::new(&db)
-                .load_files(&BLOG_TEMPLATE)
+                .load_files(&EMBEDDED_DIR)
                 .up()
                 .await?;
 

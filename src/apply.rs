@@ -1,19 +1,17 @@
+use std::path::{Path, PathBuf};
+
 use ::surrealdb::{Connection, Surreal};
-use anyhow::{Context, Result};
-use fs_extra::dir::{DirEntryAttr, DirEntryValue};
+use anyhow::Result;
 use include_dir::Dir;
-use std::{
-    collections::{HashMap, HashSet},
-    path::{Path, PathBuf},
-};
 
 use crate::{
     common::get_migration_display_name,
-    config,
     constants::SCRIPT_MIGRATION_TABLE_NAME,
-    definitions,
-    io::{self, SurqlFile},
-    models::ScriptMigration,
+    io::{
+        self, apply_patch, create_definition_files, get_current_definition, get_initial_definition,
+        get_migration_definition_diff, SurqlFile,
+    },
+    models::{SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{self, TransactionAction},
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
@@ -62,44 +60,22 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
-
     let schemas_files = io::extract_schemas_files(config_file, dir)?;
-
     let schema_definitions = extract_schema_definitions(schemas_files);
-    apply_schema_definitions(client, &schema_definitions, dry_run).await?;
-
-    if display_logs {
-        println!("Schema files successfully executed!");
-    }
 
     let events_files = match io::extract_events_files(config_file, dir).ok() {
         Some(files) => files,
         None => vec![],
     };
+    let event_definitions = extract_event_definitions(events_files);
 
-    let event_definitions = if !events_files.is_empty() {
-        let event_definitions = extract_event_definitions(events_files);
-        apply_event_definitions(client, &event_definitions, dry_run).await?;
+    const DEFINITIONS_FOLDER: &str = "migrations/definitions";
+    let definitions_path = Path::new(DEFINITIONS_FOLDER);
 
-        if display_logs {
-            println!("Event files successfully executed!");
-        }
-
-        event_definitions
-    } else {
-        String::new()
-    };
+    const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
+    let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
 
     if io::can_use_filesystem(config_file)? {
-        const DEFINITIONS_FOLDER: &str = "migrations/definitions";
-        let definitions_path = io::concat_path(&folder_path, DEFINITIONS_FOLDER);
-
-        const INITIAL_DEFINITION_FILENAME: &str = "_initial.json";
-        let initial_definition_path = definitions_path.join(INITIAL_DEFINITION_FILENAME);
-
-        ensures_folder_exists(&definitions_path)?;
-
         let should_create_definition_files = match &operation {
             ApplyOperation::Up => true,
             ApplyOperation::UpTo(_) => true,
@@ -107,18 +83,19 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         };
 
         if should_create_definition_files {
-            let last_migration_applied = migrations_applied.last();
-
             create_definition_files(
-                last_migration_applied,
-                initial_definition_path,
-                definitions_path,
-                schema_definitions,
-                event_definitions,
-                &folder_path,
+                config_file,
+                definitions_path.to_path_buf(),
+                initial_definition_path.to_path_buf(),
+                schema_definitions.to_string(),
+                event_definitions.to_string(),
             )?;
         }
+    } else {
+        // TODO : Expect last definition (in files) to match the current one
     }
+
+    let last_migration_applied = migrations_applied.last();
 
     let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
     let backward_migrations_files = io::extract_backward_migrations_files(config_file, dir);
@@ -138,15 +115,29 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
 
     match migration_direction {
         MigrationDirection::Forward => {
-            apply_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
+            apply_migrations(
+                config_file,
+                definitions_path.to_path_buf(),
+                migration_files_to_execute,
+                last_migration_applied,
+                display_logs,
+                client,
+                dry_run,
+                dir,
+            )
+            .await?;
         }
         MigrationDirection::Backward => {
-            revert_migrations(migration_files_to_execute, display_logs, client, dry_run).await?;
+            revert_migrations(
+                migration_files_to_execute,
+                schema_definitions.to_string(),
+                event_definitions.to_string(),
+                display_logs,
+                client,
+                dry_run,
+            )
+            .await?;
         }
-    }
-
-    if display_logs {
-        println!("Migration files successfully executed!");
     }
 
     Ok(())
@@ -173,6 +164,17 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
         .join("\n")
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn concat_empty_list_of_files() {
+        let result = concat_files_content(vec![]);
+        assert_eq!(result, "");
+    }
+}
+
 async fn apply_schema_definitions<C: Connection>(
     client: &Surreal<C>,
     schema_definitions: &String,
@@ -196,197 +198,6 @@ fn get_transaction_action(dry_run: bool) -> TransactionAction {
         true => TransactionAction::Rollback,
         false => TransactionAction::Commit,
     }
-}
-
-fn ensures_folder_exists(dir_path: &PathBuf) -> Result<()> {
-    if !dir_path.exists() {
-        fs_extra::dir::create_all(dir_path, false)?;
-    }
-
-    Ok(())
-}
-
-fn create_definition_files(
-    last_migration_applied: Option<&ScriptMigration>,
-    initial_definition_path: PathBuf,
-    definitions_path: PathBuf,
-    schema_definitions: String,
-    event_definitions: String,
-    folder_path: &Option<String>,
-) -> Result<()> {
-    match last_migration_applied {
-        Some(last_migration_applied) => {
-            let initial_definition = fs_extra::file::read_to_string(initial_definition_path)?;
-            let initial_definition = serde_json::from_str::<definitions::SchemaMigrationDefinition>(
-                &initial_definition,
-            )?;
-
-            // Calculate new definition based on all definitions files
-            let mut config = HashSet::new();
-            config.insert(DirEntryAttr::Name);
-            config.insert(DirEntryAttr::Path);
-
-            let diff_definition_files = fs_extra::dir::ls(definitions_path, &config)?;
-
-            let definition_diffs = diff_definition_files
-                .items
-                .iter()
-                .filter(|file| filter_except_initial_definition(file).unwrap_or(false))
-                .take_while(|file| {
-                    take_while_not_applied(file, last_migration_applied).unwrap_or(false)
-                })
-                .map(map_to_file_content)
-                .collect::<Vec<_>>();
-
-            let mut last_definition = initial_definition;
-
-            for diff_definition in definition_diffs {
-                let diff_definition = diff_definition?;
-
-                let definition_diff =
-                    serde_json::from_str::<definitions::DefinitionDiff>(&diff_definition)?;
-
-                let schemas = match definition_diff.schemas {
-                    Some(schemas_diff) => {
-                        let schemas_patch = diffy::Patch::from_str(&schemas_diff)?;
-                        diffy::apply(&last_definition.schemas, &schemas_patch)?
-                    }
-                    _ => last_definition.schemas,
-                };
-
-                let events = match definition_diff.events {
-                    Some(events_diff) => {
-                        let events_patch = diffy::Patch::from_str(&events_diff)?;
-                        diffy::apply(&last_definition.events, &events_patch)?
-                    }
-                    _ => last_definition.events,
-                };
-
-                last_definition = definitions::SchemaMigrationDefinition { schemas, events };
-            }
-
-            // Make diff between new definition and last definition
-            let current_definition = definitions::SchemaMigrationDefinition {
-                schemas: schema_definitions,
-                events: event_definitions,
-            };
-
-            // Save definition if any changes
-            let definition_filepath = format!(
-                "migrations/definitions/{}.json",
-                last_migration_applied.script_name
-            );
-            let definition_filepath = match folder_path {
-                Some(folder_path) => Path::new(&folder_path).join(definition_filepath),
-                None => Path::new(&definition_filepath).to_path_buf(),
-            };
-
-            let has_schema_diffs =
-                last_definition.schemas.trim() != current_definition.schemas.trim();
-            let has_event_diffs = last_definition.events.trim() != current_definition.events.trim();
-
-            let schemas_diffs = match has_schema_diffs {
-                true => Some(
-                    diffy::create_patch(&last_definition.schemas, &current_definition.schemas)
-                        .to_string(),
-                ),
-                false => None,
-            };
-
-            let events_diffs = match has_event_diffs {
-                true => Some(
-                    diffy::create_patch(&last_definition.events, &current_definition.events)
-                        .to_string(),
-                ),
-                false => None,
-            };
-
-            let definition_diff = definitions::DefinitionDiff {
-                schemas: schemas_diffs,
-                events: events_diffs,
-            };
-
-            // Create definition file if any changes
-            let has_changes = definition_diff.schemas.is_some() || definition_diff.events.is_some();
-
-            match has_changes {
-                true => {
-                    let serialized_definition = serde_json::to_string(&definition_diff)?;
-                    fs_extra::file::write_all(&definition_filepath, &serialized_definition)?;
-                }
-                false => {
-                    // Remove definition file if exists
-                    let definition_filepath = Path::new(&definition_filepath);
-
-                    if definition_filepath.exists() {
-                        fs_extra::file::remove(definition_filepath)?;
-                    }
-                }
-            }
-        }
-        None => {
-            // Create folder "migrations/definitions" if not exists
-            if !definitions_path.exists() {
-                fs_extra::dir::create(&definitions_path, false)?;
-            }
-
-            let current_definition = definitions::SchemaMigrationDefinition {
-                schemas: schema_definitions,
-                events: event_definitions,
-            };
-
-            let serialized_definition = serde_json::to_string(&current_definition)?;
-
-            fs_extra::file::write_all(&initial_definition_path, &serialized_definition)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn filter_except_initial_definition(file: &&HashMap<DirEntryAttr, DirEntryValue>) -> Result<bool> {
-    let name = file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name to definition files")?;
-
-    let name = match name {
-        DirEntryValue::String(name) => Some(name.to_owned()),
-        _ => None,
-    };
-
-    let result = name != Some("_initial.json".to_string());
-    Ok(result)
-}
-
-fn take_while_not_applied(
-    file: &&HashMap<DirEntryAttr, DirEntryValue>,
-    last_migration_applied: &ScriptMigration,
-) -> Result<bool> {
-    let name = file
-        .get(&DirEntryAttr::Name)
-        .context("Cannot get name to definition files")?;
-    let name = match name {
-        DirEntryValue::String(name) => Some(name),
-        _ => None,
-    };
-    let name = name.context("Cannot get name to definition files")?;
-
-    let result = name != &last_migration_applied.script_name;
-    Ok(result)
-}
-
-fn map_to_file_content(file: &HashMap<DirEntryAttr, DirEntryValue>) -> Result<String> {
-    let path = file
-        .get(&DirEntryAttr::Path)
-        .context("Cannot get path to definition files")?;
-
-    let path = match path {
-        DirEntryValue::String(path) => Some(path),
-        _ => None,
-    };
-    let path = path.context("Cannot get path to definition files")?;
-
-    fs_extra::file::read_to_string(path).context("Cannot get path to definition files")
 }
 
 fn get_migration_files_to_execute(
@@ -478,19 +289,91 @@ fn filter_migration_file_to_execute(
     Ok(true)
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn apply_migrations<C: Connection>(
+    config_file: Option<&str>,
+    definitions_path: PathBuf,
     migration_files_to_execute: Vec<SurqlFile>,
+    last_migration_applied: Option<&ScriptMigration>,
     display_logs: bool,
     client: &Surreal<C>,
     dry_run: bool,
+    embedded_dir: Option<&Dir<'static>>,
 ) -> Result<()> {
-    for migration_file in migration_files_to_execute {
-        let inner_query = migration_file.get_content().unwrap_or(String::new());
+    let mut has_applied_schemas = false;
+    let mut has_applied_events = false;
+
+    let mut current_definition = match last_migration_applied {
+        Some(last_migration_applied) => get_current_definition(
+            config_file,
+            definitions_path.to_path_buf(),
+            last_migration_applied,
+            embedded_dir,
+        ),
+        None => get_initial_definition(config_file, definitions_path.to_path_buf(), embedded_dir),
+    }?;
+
+    let has_applied_migrations = !&migration_files_to_execute.is_empty();
+
+    if !has_applied_migrations {
+        let schemas_statements = current_definition.schemas.to_string();
+        let events_statements = current_definition.events.to_string();
 
         let query = format!(
             "{}
+{}",
+            schemas_statements, events_statements,
+        );
+
+        let transaction_action = get_transaction_action(dry_run);
+        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+
+        if !current_definition.schemas.is_empty() {
+            has_applied_schemas = true;
+        }
+        if !current_definition.events.is_empty() {
+            has_applied_events = true;
+        }
+    }
+
+    for migration_file in &migration_files_to_execute {
+        let migration_definition_diff = get_migration_definition_diff(
+            config_file,
+            definitions_path.to_path_buf(),
+            migration_file.name.to_string(),
+            embedded_dir,
+        )?;
+
+        current_definition = match migration_definition_diff {
+            Some(migration_definition_diff) => {
+                let schemas = match migration_definition_diff.schemas {
+                    Some(schemas_diff) => apply_patch(current_definition.schemas, schemas_diff)?,
+                    None => current_definition.schemas,
+                };
+                let events = match migration_definition_diff.events {
+                    Some(events_diff) => apply_patch(current_definition.events, events_diff)?,
+                    None => current_definition.events,
+                };
+
+                SchemaMigrationDefinition { schemas, events }
+            }
+            None => current_definition,
+        };
+
+        let schemas_statements = current_definition.schemas.to_string();
+        let events_statements = current_definition.events.to_string();
+        let migration_statements = migration_file.get_content().unwrap_or(String::new());
+
+        let query = format!(
+            "{}
+{}
+{}
 CREATE {} SET script_name = '{}';",
-            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
+            schemas_statements,
+            events_statements,
+            migration_statements,
+            SCRIPT_MIGRATION_TABLE_NAME,
+            migration_file.name
         );
 
         if display_logs {
@@ -500,6 +383,25 @@ CREATE {} SET script_name = '{}';",
 
         let transaction_action = get_transaction_action(dry_run);
         surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+
+        if !current_definition.schemas.is_empty() {
+            has_applied_schemas = true;
+        }
+        if !current_definition.events.is_empty() {
+            has_applied_events = true;
+        }
+    }
+
+    if display_logs {
+        if has_applied_schemas {
+            println!("Schema files successfully executed!");
+        }
+        if has_applied_events {
+            println!("Event files successfully executed!");
+        }
+        if has_applied_migrations {
+            println!("Migration files successfully executed!");
+        }
     }
 
     Ok(())
@@ -507,11 +409,21 @@ CREATE {} SET script_name = '{}';",
 
 async fn revert_migrations<C: Connection>(
     migration_files_to_execute: Vec<SurqlFile>,
+    definitive_schemas_definition: String,
+    definitive_events_definition: String,
     display_logs: bool,
     client: &Surreal<C>,
     dry_run: bool,
 ) -> Result<()> {
-    for migration_file in migration_files_to_execute {
+    // TODO : Same logic as apply_migrations
+
+    let has_applied_schemas = !definitive_schemas_definition.is_empty();
+    let has_applied_events = !definitive_events_definition.is_empty();
+
+    apply_schema_definitions(client, &definitive_schemas_definition, dry_run).await?;
+    apply_event_definitions(client, &definitive_events_definition, dry_run).await?;
+
+    for migration_file in &migration_files_to_execute {
         let inner_query = migration_file.get_content().unwrap_or(String::new());
 
         let query = format!(
@@ -527,6 +439,20 @@ DELETE {} WHERE script_name = '{}';",
 
         let transaction_action = get_transaction_action(dry_run);
         surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+    }
+
+    if display_logs {
+        let has_applied_migrations = !&migration_files_to_execute.is_empty();
+
+        if has_applied_schemas {
+            println!("Schema files successfully executed!");
+        }
+        if has_applied_events {
+            println!("Event files successfully executed!");
+        }
+        if has_applied_migrations {
+            println!("Migration files successfully executed!");
+        }
     }
 
     Ok(())

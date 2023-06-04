@@ -18,11 +18,11 @@ async fn apply_revert_all_migrations() -> Result<()> {
 
             cmd.assert().try_success().and_then(|assert| {
                 assert.try_stdout(
-                    "Schema files successfully executed!
-Event files successfully executed!
-Reverting migration CommentPost...
+                    "Reverting migration CommentPost...
 Reverting migration AddPost...
 Reverting migration AddAdminUser...
+Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
                 )
             })?;
@@ -60,10 +60,10 @@ async fn apply_revert_to_first_migration() -> Result<()> {
 
             cmd.assert().try_success().and_then(|assert| {
                 assert.try_stdout(
-                    "Schema files successfully executed!
-Event files successfully executed!
-Reverting migration CommentPost...
+                    "Reverting migration CommentPost...
 Reverting migration AddPost...
+Schema files successfully executed!
+Event files successfully executed!
 Migration files successfully executed!\n",
                 )
             })?;

@@ -31,6 +31,20 @@ pub fn remove_folder(folder: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn add_post_migration_file() -> Result<()> {
+    let content = "CREATE post SET title = 'Hello world!', content = 'This is my first post!', author = user:admin;";
+
+    let mut cmd = create_cmd()?;
+    cmd.arg("create")
+        .arg("migration")
+        .arg("AddPost")
+        .arg("--content")
+        .arg(content);
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
 pub fn add_category_schema_file() -> Result<()> {
     let schemas_files_dir = Path::new("tests-files/schemas");
 
@@ -77,6 +91,21 @@ DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();";
 
         fs::write(schema_file, CONTENT)?;
     }
+
+    Ok(())
+}
+
+pub fn add_archive_migration_file() -> Result<()> {
+    let content =
+        "CREATE archive SET name = '2022', from_date = '2022-01-01', to_date = '2022-12-31';";
+
+    let mut cmd = create_cmd()?;
+    cmd.arg("create")
+        .arg("migration")
+        .arg("AddArchive")
+        .arg("--content")
+        .arg(content);
+    cmd.assert().try_success()?;
 
     Ok(())
 }

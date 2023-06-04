@@ -95,6 +95,10 @@ pub fn get_second_migration_name() -> Result<String> {
     get_nth_migration_name(1)
 }
 
+pub fn get_third_migration_name() -> Result<String> {
+    get_nth_migration_name(2)
+}
+
 fn get_nth_migration_name(index: i8) -> std::result::Result<String, anyhow::Error> {
     let migration_name = get_nth_migration_file(index)?
         .file_stem()
