@@ -157,7 +157,10 @@ fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
 }
 
 fn concat_files_content(files: Vec<SurqlFile>) -> String {
-    files
+    let mut ordered_files = files;
+    ordered_files.sort_by(|a, b| a.name.cmp(&b.name));
+
+    ordered_files
         .iter()
         .map(|file| file.get_content().unwrap_or(String::new()))
         .collect::<Vec<_>>()
@@ -166,12 +169,26 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
 
 #[cfg(test)]
 mod tests {
+    use crate::io::create_surql_file;
+
     use super::*;
 
     #[test]
     fn concat_empty_list_of_files() {
         let result = concat_files_content(vec![]);
         assert_eq!(result, "");
+    }
+
+    #[test]
+    fn concat_files_in_alphabetic_order() {
+        let files = vec![
+            create_surql_file("a.text", "Text of a file"),
+            create_surql_file("c.text", "Text of c file"),
+            create_surql_file("b.text", "Text of b file"),
+        ];
+
+        let result = concat_files_content(files);
+        assert_eq!(result, "Text of a file\nText of b file\nText of c file");
     }
 }
 

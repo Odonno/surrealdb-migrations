@@ -45,6 +45,15 @@ impl SurqlFile {
     }
 }
 
+#[cfg(test)]
+pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
+    SurqlFile {
+        name: full_name.to_string(),
+        full_name: full_name.to_string(),
+        content: Box::new(move || Some(content.to_string())),
+    }
+}
+
 pub fn extract_schemas_files(
     config_file: Option<&str>,
     embedded_dir: Option<&Dir<'static>>,
@@ -418,7 +427,9 @@ fn update_migration_definition_file(
     schema_definitions: String,
     event_definitions: String,
 ) -> Result<()> {
-    let definition_files = extract_json_definition_files(config_file, &definitions_path, None)?;
+    let mut definition_files = extract_json_definition_files(config_file, &definitions_path, None)?;
+    definition_files.sort_by(|a, b| a.name.cmp(&b.name));
+    let definition_files = definition_files;
 
     let initial_definition_file = definition_files.iter().find(|file| file.name == "_initial");
 
@@ -581,8 +592,10 @@ pub fn get_current_definition(
     last_migration_applied: &ScriptMigration,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<SchemaMigrationDefinition> {
-    let definition_files =
+    let mut definition_files =
         extract_json_definition_files(config_file, &definitions_path, embedded_dir)?;
+    definition_files.sort_by(|a, b| a.name.cmp(&b.name));
+    let definition_files = definition_files;
 
     let initial_definition_file = definition_files.iter().find(|file| file.name == "_initial");
 
