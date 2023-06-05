@@ -496,6 +496,65 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migr
     .await
 }
 
+#[tokio::test]
+#[serial]
+async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migration() -> Result<()> {
+    clear_tests_files()?;
+    scaffold_blog_template()?;
+    empty_folder("tests-files/migrations")?;
+
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            // First migration
+            add_post_migration_file()?;
+            let first_migration_name = get_first_migration_name()?;
+            write_post_migration_down_file(&first_migration_name)?;
+
+            apply_migrations_up_to(&first_migration_name)?;
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
+            // Second migration
+            add_category_schema_file()?;
+            add_category_migration_file()?;
+            let second_migration_name = get_second_migration_name()?;
+            write_category_migration_down_file(&second_migration_name)?;
+
+            apply_migrations_up_to(&second_migration_name)?;
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
+            // Last migration
+            add_archive_schema_file()?;
+            add_archive_migration_file()?;
+            let third_migration_name = get_third_migration_name()?;
+            write_archive_migration_down_file(&third_migration_name)?;
+
+            apply_migrations()?;
+
+            // Down to first migration
+            apply_migrations_down("0")?;
+
+            // Check data
+            let is_table_empty = is_surreal_table_empty(None, "post").await?;
+            ensure!(is_table_empty, "'post' table should be empty");
+
+            let is_table_empty = is_surreal_table_empty(None, "category").await?;
+            ensure!(is_table_empty, "'category' table should be empty");
+
+            let is_table_empty = is_surreal_table_empty(None, "archive").await?;
+            ensure!(is_table_empty, "'archive' table should be empty");
+
+            // Check db schema
+            let table_definitions = get_surrealdb_table_definitions(None).await?;
+            ensure!(table_definitions.len() == 6);
+
+            Ok(())
+        })
+    })
+    .await
+}
+
 const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
 # out: post, comment
 DEFINE TABLE comment SCHEMALESS;
