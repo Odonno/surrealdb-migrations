@@ -456,6 +456,7 @@ fn update_migration_definition_file(
     let definition_diffs = definition_files
         .into_iter()
         .filter(filter_except_initial_definition)
+        .filter(|file| file.name < last_migration_file.name)
         .map(|file| file.get_content().unwrap_or_default())
         .collect::<Vec<_>>();
 

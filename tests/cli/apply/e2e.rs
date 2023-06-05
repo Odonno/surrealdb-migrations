@@ -286,6 +286,8 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
             add_archive_schema_file()?;
             add_archive_migration_file()?;
 
+            let third_migration_name = get_third_migration_name()?;
+
             apply_migrations()?;
 
             // Check db schema
@@ -294,6 +296,24 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
                 table_definitions.len() == 8,
                 "First run, last migration: wrong number of tables"
             );
+
+            // Check definition files
+            const INITIAL_DEFINITION_FILE_PATH: &str =
+                "tests-files/migrations/definitions/_initial.json";
+
+            let second_migration_definition_file_path: String = format!(
+                "tests-files/migrations/definitions/{}.json",
+                &second_migration_name
+            );
+
+            let third_migration_definition_file_path: String = format!(
+                "tests-files/migrations/definitions/{}.json",
+                &third_migration_name
+            );
+
+            ensure!(Path::new(INITIAL_DEFINITION_FILE_PATH).exists());
+            ensure!(Path::new(&second_migration_definition_file_path).exists());
+            ensure!(Path::new(&third_migration_definition_file_path).exists());
 
             Ok(())
         })
@@ -304,7 +324,6 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
         Box::pin(async {
             // First migration
             let first_migration_name = get_first_migration_name()?;
-
             apply_migrations_up_to(&first_migration_name)?;
 
             // Check db schema
@@ -335,8 +354,6 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
 
             // Second migration
             let second_migration_name = get_second_migration_name()?;
-
-            add_category_schema_file()?;
             apply_migrations_up_to(&second_migration_name)?;
 
             // Check db schema
@@ -366,7 +383,7 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
             );
 
             // Last migration
-            add_archive_schema_file()?;
+            let third_migration_name = get_third_migration_name()?;
             apply_migrations()?;
 
             // Check db schema
@@ -394,6 +411,84 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
                 !is_table_empty,
                 "Last migration: 'archive' table should not be empty"
             );
+
+            // Check definition files
+            const INITIAL_DEFINITION_FILE_PATH: &str =
+                "tests-files/migrations/definitions/_initial.json";
+
+            let second_migration_definition_file_path: String = format!(
+                "tests-files/migrations/definitions/{}.json",
+                &second_migration_name
+            );
+
+            let third_migration_definition_file_path: String = format!(
+                "tests-files/migrations/definitions/{}.json",
+                &third_migration_name
+            );
+
+            ensure!(Path::new(INITIAL_DEFINITION_FILE_PATH).exists());
+            ensure!(Path::new(&second_migration_definition_file_path).exists());
+            ensure!(Path::new(&third_migration_definition_file_path).exists());
+
+            Ok(())
+        })
+    })
+    .await
+}
+
+#[tokio::test]
+#[serial]
+async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migration() -> Result<()>
+{
+    clear_tests_files()?;
+    scaffold_blog_template()?;
+    empty_folder("tests-files/migrations")?;
+
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            // First migration
+            add_post_migration_file()?;
+            let first_migration_name = get_first_migration_name()?;
+            write_post_migration_down_file(&first_migration_name)?;
+
+            apply_migrations_up_to(&first_migration_name)?;
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
+            // Second migration
+            add_category_schema_file()?;
+            add_category_migration_file()?;
+            let second_migration_name = get_second_migration_name()?;
+            write_category_migration_down_file(&second_migration_name)?;
+
+            apply_migrations_up_to(&second_migration_name)?;
+
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
+            // Last migration
+            add_archive_schema_file()?;
+            add_archive_migration_file()?;
+            let third_migration_name = get_third_migration_name()?;
+            write_archive_migration_down_file(&third_migration_name)?;
+
+            apply_migrations()?;
+
+            // Down to last migration
+            apply_migrations_down(&second_migration_name)?;
+
+            // Check data
+            let is_table_empty = is_surreal_table_empty(None, "post").await?;
+            ensure!(!is_table_empty, "'post' table should not be empty");
+
+            let is_table_empty = is_surreal_table_empty(None, "category").await?;
+            ensure!(!is_table_empty, "'category' table should not be empty");
+
+            let is_table_empty = is_surreal_table_empty(None, "archive").await?;
+            ensure!(is_table_empty, "'archive' table should be empty");
+
+            // Check db schema
+            let table_definitions = get_surrealdb_table_definitions(None).await?;
+            ensure!(table_definitions.len() == 7);
 
             Ok(())
         })

@@ -39,8 +39,19 @@ pub fn add_post_migration_file() -> Result<()> {
         .arg("migration")
         .arg("AddPost")
         .arg("--content")
-        .arg(content);
+        .arg(content)
+        .arg("--down");
     cmd.assert().try_success()?;
+
+    Ok(())
+}
+
+pub fn write_post_migration_down_file(migration_name: &str) -> Result<()> {
+    let content = "DELETE post;";
+    let migration_down_file =
+        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+
+    fs::write(migration_down_file, content)?;
 
     Ok(())
 }
@@ -71,8 +82,19 @@ CREATE category SET name = 'Books';";
         .arg("migration")
         .arg("AddCategories")
         .arg("--content")
-        .arg(content);
+        .arg(content)
+        .arg("--down");
     cmd.assert().try_success()?;
+
+    Ok(())
+}
+
+pub fn write_category_migration_down_file(migration_name: &str) -> Result<()> {
+    let content = "DELETE category;";
+    let migration_down_file =
+        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+
+    fs::write(migration_down_file, content)?;
 
     Ok(())
 }
@@ -104,8 +126,19 @@ pub fn add_archive_migration_file() -> Result<()> {
         .arg("migration")
         .arg("AddArchive")
         .arg("--content")
-        .arg(content);
+        .arg(content)
+        .arg("--down");
     cmd.assert().try_success()?;
+
+    Ok(())
+}
+
+pub fn write_archive_migration_down_file(migration_name: &str) -> Result<()> {
+    let content = "DELETE archive;";
+    let migration_down_file =
+        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+
+    fs::write(migration_down_file, content)?;
 
     Ok(())
 }

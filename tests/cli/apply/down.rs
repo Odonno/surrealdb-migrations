@@ -21,8 +21,6 @@ async fn apply_revert_all_migrations() -> Result<()> {
                     "Reverting migration CommentPost...
 Reverting migration AddPost...
 Reverting migration AddAdminUser...
-Schema files successfully executed!
-Event files successfully executed!
 Migration files successfully executed!\n",
                 )
             })?;
@@ -62,8 +60,6 @@ async fn apply_revert_to_first_migration() -> Result<()> {
                 assert.try_stdout(
                     "Reverting migration CommentPost...
 Reverting migration AddPost...
-Schema files successfully executed!
-Event files successfully executed!
 Migration files successfully executed!\n",
                 )
             })?;
