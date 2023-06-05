@@ -1,7 +1,15 @@
 use std::path::{Path, PathBuf};
 
-use ::surrealdb::{Connection, Surreal};
-use anyhow::{anyhow, Result};
+use ::surrealdb::{
+    sql::{
+        statements::{
+            DefineEventStatement, DefineFieldStatement, DefineStatement, DefineTableStatement,
+        },
+        Statement,
+    },
+    Connection, Surreal,
+};
+use anyhow::{anyhow, Context, Result};
 use include_dir::Dir;
 
 use crate::{
@@ -134,12 +142,14 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         }
         MigrationDirection::Backward => {
             revert_migrations(
+                config_file,
+                definitions_path.to_path_buf(),
                 migration_files_to_execute,
-                schema_definitions.to_string(),
-                event_definitions.to_string(),
+                &migrations_applied,
                 display_logs,
                 client,
                 dry_run,
+                dir,
             )
             .await?;
         }
@@ -195,24 +205,6 @@ mod tests {
         let result = concat_files_content(files);
         assert_eq!(result, "Text of a file\nText of b file\nText of c file");
     }
-}
-
-async fn apply_schema_definitions<C: Connection>(
-    client: &Surreal<C>,
-    schema_definitions: &String,
-    dry_run: bool,
-) -> Result<()> {
-    let action = get_transaction_action(dry_run);
-    surrealdb::apply_in_transaction(client, schema_definitions, action).await
-}
-
-async fn apply_event_definitions<C: Connection>(
-    client: &Surreal<C>,
-    event_definitions: &String,
-    dry_run: bool,
-) -> Result<()> {
-    let action = get_transaction_action(dry_run);
-    surrealdb::apply_in_transaction(client, event_definitions, action).await
 }
 
 fn get_transaction_action(dry_run: bool) -> TransactionAction {
@@ -283,15 +275,15 @@ fn filter_migration_file_to_execute(
     }
 
     match &operation {
+        ApplyOperation::Up => {}
         ApplyOperation::UpTo(target_migration) => {
-            let is_beyond_target = migration_file.name > *target_migration;
+            let is_beyond_target = &migration_file.name > target_migration;
             if is_beyond_target {
                 return Ok(false);
             }
         }
-        ApplyOperation::Up => {}
         ApplyOperation::Down(target_migration) => {
-            let is_target_or_below = migration_file.name <= *target_migration;
+            let is_target_or_below = &migration_file.name <= target_migration;
             if is_target_or_below {
                 return Ok(false);
             }
@@ -465,29 +457,91 @@ CREATE {} SET script_name = '{}';",
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn revert_migrations<C: Connection>(
+    config_file: Option<&str>,
+    definitions_path: PathBuf,
     migration_files_to_execute: Vec<SurqlFile>,
-    definitive_schemas_definition: String,
-    definitive_events_definition: String,
+    migrations_applied: &[ScriptMigration],
     display_logs: bool,
     client: &Surreal<C>,
     dry_run: bool,
+    embedded_dir: Option<&Dir<'static>>,
 ) -> Result<()> {
-    // TODO : Same logic as apply_migrations
+    let last_migration_applied = migrations_applied.last();
 
-    let has_applied_schemas = !definitive_schemas_definition.is_empty();
-    let has_applied_events = !definitive_events_definition.is_empty();
+    let mut current_definition = match last_migration_applied {
+        Some(last_migration_applied) => get_current_definition(
+            config_file,
+            definitions_path.to_path_buf(),
+            last_migration_applied,
+            embedded_dir,
+        ),
+        None => get_initial_definition(config_file, definitions_path.to_path_buf(), embedded_dir),
+    }?;
 
-    apply_schema_definitions(client, &definitive_schemas_definition, dry_run).await?;
-    apply_event_definitions(client, &definitive_events_definition, dry_run).await?;
+    let has_applied_migrations = !&migration_files_to_execute.is_empty();
+
+    let mut has_applied_schemas = false;
+    let mut has_applied_events = false;
 
     for migration_file in &migration_files_to_execute {
-        let inner_query = migration_file.get_content().unwrap_or(String::new());
+        // TODO : optimize by getting the range of migration definitions before (avoid recalculation on each migration)
+        let migration_reverted = migrations_applied
+            .iter()
+            .find(|migration_applied| migration_applied.script_name == migration_file.name)
+            .context("Migration not found in applied migrations")?;
+
+        let migration_before_reverted = migrations_applied
+            .iter()
+            .filter(|migration_applied| {
+                migration_applied.script_name < migration_reverted.script_name
+            })
+            .last();
+
+        let definition_after_revert = match migration_before_reverted {
+            Some(migration_before_reverted) => get_current_definition(
+                config_file,
+                definitions_path.to_path_buf(),
+                migration_before_reverted,
+                embedded_dir,
+            ),
+            None => {
+                get_initial_definition(config_file, definitions_path.to_path_buf(), embedded_dir)
+            }
+        }?;
+
+        if definition_after_revert.schemas != current_definition.schemas {
+            has_applied_schemas = true;
+        }
+        if definition_after_revert.events != current_definition.events {
+            has_applied_events = true;
+        }
+
+        let migration_statements = migration_file.get_content().unwrap_or(String::new());
+        let rollback_schemas_statements = get_rollback_statements(
+            &current_definition.schemas,
+            &definition_after_revert.schemas,
+        )?;
+        let rollback_events_statements =
+            get_rollback_statements(&current_definition.events, &definition_after_revert.events)?;
+        let schemas_statements_after_revert = definition_after_revert.schemas.to_string();
+        let events_statements_after_revert = definition_after_revert.events.to_string();
 
         let query = format!(
             "{}
+{}
+{}
+{}
+{}
 DELETE {} WHERE script_name = '{}';",
-            inner_query, SCRIPT_MIGRATION_TABLE_NAME, migration_file.name
+            migration_statements,
+            rollback_schemas_statements,
+            rollback_events_statements,
+            schemas_statements_after_revert,
+            events_statements_after_revert,
+            SCRIPT_MIGRATION_TABLE_NAME,
+            migration_file.name
         );
 
         if display_logs {
@@ -497,11 +551,11 @@ DELETE {} WHERE script_name = '{}';",
 
         let transaction_action = get_transaction_action(dry_run);
         surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+
+        current_definition = definition_after_revert;
     }
 
     if display_logs {
-        let has_applied_migrations = !&migration_files_to_execute.is_empty();
-
         if has_applied_schemas {
             println!("Schema files successfully executed!");
         }
@@ -514,4 +568,128 @@ DELETE {} WHERE script_name = '{}';",
     }
 
     Ok(())
+}
+
+fn get_rollback_statements(
+    next_statements_str: &str,
+    previous_statements_str: &str,
+) -> Result<String> {
+    let next_statements = ::surrealdb::sql::parse(next_statements_str)?;
+    let next_statements = next_statements.0 .0;
+
+    let previous_statements = ::surrealdb::sql::parse(previous_statements_str)?;
+    let previous_statements = previous_statements.0 .0;
+
+    let next_tables_statements = extract_define_table_statements(next_statements.clone());
+    let previous_tables_statements = extract_define_table_statements(previous_statements.clone());
+
+    let tables_to_remove = next_tables_statements
+        .into_iter()
+        .filter(|next_table| {
+            previous_tables_statements
+                .iter()
+                .all(|previous_table| previous_table.name != next_table.name)
+        })
+        .map(|table| table.name.0)
+        .collect::<Vec<_>>();
+
+    let remove_table_statements = tables_to_remove
+        .clone()
+        .into_iter()
+        .map(|table_name| format!("REMOVE TABLE {};", table_name))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let next_fields_statements = extract_define_field_statements(next_statements.clone());
+    let previous_fields_statements = extract_define_field_statements(previous_statements.clone());
+
+    let fields_to_remove = next_fields_statements
+        .into_iter()
+        .filter(|next_field| {
+            !previous_fields_statements.iter().any(|previous_field| {
+                previous_field.name == next_field.name
+                    && previous_field.what.to_string() == next_field.what.to_string()
+            })
+        })
+        .map(|field| (field.name.to_string(), field.what.to_string()))
+        .filter(|(_, table_name)| !tables_to_remove.contains(table_name))
+        .collect::<Vec<_>>();
+
+    let remove_fields_statements = fields_to_remove
+        .into_iter()
+        .map(|(field_name, table_name)| format!("REMOVE FIELD {} ON {};", field_name, table_name))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let next_events_statements = extract_define_event_statements(next_statements);
+    let previous_events_statements = extract_define_event_statements(previous_statements);
+
+    let events_to_remove = next_events_statements
+        .into_iter()
+        .filter(|next_event| {
+            !previous_events_statements.iter().any(|previous_event| {
+                previous_event.name == next_event.name
+                    && previous_event.what.to_string() == next_event.what.to_string()
+            })
+        })
+        .map(|event| (event.name.to_string(), event.what.to_string()))
+        .filter(|(_, table_name)| !tables_to_remove.contains(table_name))
+        .collect::<Vec<_>>();
+
+    let remove_events_statements = events_to_remove
+        .into_iter()
+        .map(|(event_name, table_name)| format!("REMOVE EVENT {} ON {};", event_name, table_name))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let all_statements = vec![
+        remove_table_statements,
+        remove_fields_statements,
+        remove_events_statements,
+    ];
+    let all_statements = all_statements.join("\n");
+
+    Ok(all_statements)
+}
+
+fn extract_define_table_statements(statements: Vec<Statement>) -> Vec<DefineTableStatement> {
+    statements
+        .into_iter()
+        .filter_map(|statement| match statement {
+            Statement::Define(define_statement) => Some(define_statement),
+            _ => None,
+        })
+        .filter_map(|define_statement| match define_statement {
+            DefineStatement::Table(define_table_statement) => Some(define_table_statement),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+}
+
+fn extract_define_field_statements(statements: Vec<Statement>) -> Vec<DefineFieldStatement> {
+    statements
+        .into_iter()
+        .filter_map(|statement| match statement {
+            Statement::Define(define_statement) => Some(define_statement),
+            _ => None,
+        })
+        .filter_map(|define_statement| match define_statement {
+            DefineStatement::Field(define_field_statement) => Some(define_field_statement),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+}
+
+fn extract_define_event_statements(statements: Vec<Statement>) -> Vec<DefineEventStatement> {
+    statements
+        .into_iter()
+        .filter_map(|statement| match statement {
+            Statement::Define(define_statement) => Some(define_statement),
+            _ => None,
+        })
+        .filter_map(|define_statement| match define_statement {
+            DefineStatement::Event(define_event_statement) => Some(define_event_statement),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
 }
