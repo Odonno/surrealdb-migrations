@@ -28,7 +28,7 @@ pub async fn main(args: MergeOverwriteBranchArgs<'_>) -> Result<()> {
         config_file,
     } = args;
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
     let branch_client = create_branch_client(config_file, &branch.name, db_configuration).await?;

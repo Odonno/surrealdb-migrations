@@ -17,7 +17,7 @@ pub fn main(args: ScaffoldFromTemplateArgs) -> Result<()> {
         config_file,
     } = args;
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
 
     apply_before_scaffold(folder_path.to_owned())?;
 

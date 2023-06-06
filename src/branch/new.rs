@@ -37,10 +37,10 @@ pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
         config_file,
     } = args;
 
-    let db_config = config::retrieve_db_config(config_file)?;
+    let db_config = config::retrieve_db_config(config_file);
     let db_configuration = merge_db_config(db_configuration, &db_config);
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
     let branching_feature_client =

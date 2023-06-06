@@ -1,5 +1,3 @@
-use anyhow::Result;
-
 use super::common::{load_config, retrieve_config_value};
 
 #[allow(dead_code)]
@@ -8,26 +6,29 @@ pub enum TableSchemaDesign {
     Schemaless,
 }
 
-pub fn retrieve_folder_path(config_file: Option<&str>) -> Result<Option<String>> {
-    let config = load_config(config_file)?;
-    let value = retrieve_config_value(&config, "core", "path");
+pub fn retrieve_folder_path(config_file: Option<&str>) -> Option<String> {
+    let config = load_config(config_file);
 
-    Ok(value)
+    if let Some(config) = config {
+        retrieve_config_value(&config, "core", "path")
+    } else {
+        None
+    }
 }
 
 #[allow(dead_code)]
-pub fn retrieve_table_schema_design(
-    config_file: Option<&str>,
-) -> Result<Option<TableSchemaDesign>> {
-    let config = load_config(config_file)?;
-    let schema_str = retrieve_config_value(&config, "core", "schema");
+pub fn retrieve_table_schema_design(config_file: Option<&str>) -> Option<TableSchemaDesign> {
+    let config = load_config(config_file);
+
+    let schema_str = if let Some(config) = config {
+        retrieve_config_value(&config, "core", "schema")
+    } else {
+        None
+    };
 
     match schema_str {
-        Some(schema_str) => {
-            let value = parse_table_schema_design(schema_str);
-            Ok(value)
-        }
-        _ => Ok(None),
+        Some(schema_str) => parse_table_schema_design(schema_str),
+        _ => None,
     }
 }
 

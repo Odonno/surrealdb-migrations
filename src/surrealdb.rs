@@ -25,7 +25,7 @@ pub async fn create_surrealdb_client(
         db,
     } = db_configuration;
 
-    let db_config = config::retrieve_db_config(config_file)?;
+    let db_config = config::retrieve_db_config(config_file);
 
     let client = create_surrealdb_connection(url.clone(), address.clone(), &db_config).await?;
     sign_in(username.clone(), password.clone(), &db_config, &client).await?;

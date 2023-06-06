@@ -34,7 +34,7 @@ pub fn main(config_file: Option<&str>) -> Result<()> {
 }
 
 fn remove_migration_file(config_file: Option<&str>, last_migration: &SurqlFile) -> Result<()> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     let file_path = migrations_path.join(&last_migration.full_name);
@@ -48,7 +48,7 @@ fn remove_definition_file_if_exists(
     config_file: Option<&str>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     let migration_definition_file_path = Path::new(&migrations_path)
@@ -76,7 +76,7 @@ fn remove_nested_down_migration_file_if_exists(
     config_file: Option<&str>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     let down_migration_file_path = Path::new(&migrations_path)
@@ -94,7 +94,7 @@ fn remove_inlined_down_migration_file_if_exists(
     config_file: Option<&str>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
     let inlined_down_migration_file_path =

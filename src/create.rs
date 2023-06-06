@@ -49,7 +49,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
         CreateOperation::Migration(_) => false,
     };
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
 
     let dir_name = match operation {
         CreateOperation::Schema(_) => SCHEMAS_DIR_NAME,
@@ -169,7 +169,7 @@ fn get_table_schema_design_str(
         return Ok(SCHEMAFULL);
     }
 
-    let table_schema_design = retrieve_table_schema_design(config_file)?;
+    let table_schema_design = retrieve_table_schema_design(config_file);
 
     let value = match table_schema_design {
         Some(table_schema_design) => match table_schema_design {

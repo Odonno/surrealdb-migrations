@@ -23,7 +23,7 @@ pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
 }
 
 pub fn can_use_filesystem(config_file: Option<&str>) -> Result<bool> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
         .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
@@ -206,7 +206,7 @@ fn extract_surql_files_from_filesystem(
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let dir_path = concat_path(&folder_path, &dir_path_str);
 
     let mut config = HashSet::new();
@@ -345,7 +345,7 @@ fn extract_json_definition_files_from_filesystem(
 ) -> Result<Vec<JsonDefinitionFile>> {
     let dir_path_str = dir_path.display().to_string();
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let dir_path = concat_path(&folder_path, &dir_path_str);
 
     if !dir_path.exists() {
@@ -444,7 +444,7 @@ fn update_migration_definition_file(
         )?,
     };
 
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let definitions_path = match &folder_path {
         Some(folder_path) => Path::new(&folder_path).join(definitions_path),
         None => definitions_path,
@@ -528,7 +528,7 @@ fn create_initial_definition_file(
     schema_definitions: String,
     event_definitions: String,
 ) -> Result<String> {
-    let folder_path = config::retrieve_folder_path(config_file)?;
+    let folder_path = config::retrieve_folder_path(config_file);
     let definitions_path = match &folder_path {
         Some(folder_path) => Path::new(&folder_path).join(definitions_path),
         None => definitions_path.clone(),
@@ -665,7 +665,7 @@ fn extract_initial_definition_content(
             Ok(content)
         }
         None => {
-            let folder_path = config::retrieve_folder_path(config_file)?;
+            let folder_path = config::retrieve_folder_path(config_file);
             let definitions_path = match &folder_path {
                 Some(folder_path) => Path::new(&folder_path).join(definitions_path),
                 None => definitions_path,
@@ -730,7 +730,7 @@ fn extract_definition_diff_content(
             }
         }
         None => {
-            let folder_path = config::retrieve_folder_path(config_file)?;
+            let folder_path = config::retrieve_folder_path(config_file);
             let definitions_path = match &folder_path {
                 Some(folder_path) => Path::new(&folder_path).join(definitions_path),
                 None => definitions_path,
