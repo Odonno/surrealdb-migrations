@@ -535,7 +535,7 @@ fn create_initial_definition_file(
     };
     let initial_definition_path = match &folder_path {
         Some(folder_path) => Path::new(&folder_path).join(initial_definition_path),
-        None => definitions_path.clone(),
+        None => initial_definition_path.clone(),
     };
 
     ensures_folder_exists(&definitions_path)?;
