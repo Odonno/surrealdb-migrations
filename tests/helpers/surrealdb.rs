@@ -31,7 +31,7 @@ pub async fn get_surrealdb_table_definitions(
 
     let mut response = client.query("INFO FOR DB;").await?;
 
-    let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
+    let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
     Ok(table_definitions)

@@ -174,10 +174,10 @@ type SurrealdbDatabaseDefinition = HashMap<String, String>;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SurrealdbInfoForTableResponse {
-    ev: SurrealdbEventDefinitions,
-    fd: SurrealdbFieldDefinitions,
-    ft: SurrealdbForeignTableDefinitions,
-    ix: SurrealdbIndexDefinitions,
+    events: SurrealdbEventDefinitions,
+    fields: SurrealdbFieldDefinitions,
+    tables: SurrealdbForeignTableDefinitions,
+    indexes: SurrealdbIndexDefinitions,
 }
 
 async fn get_surrealdb_database_definition(
@@ -189,7 +189,7 @@ async fn get_surrealdb_database_definition(
     const DATABASE_DEFINITION_QUERY: &str = "INFO FOR DB;";
     let mut response = client.query(DATABASE_DEFINITION_QUERY).await?;
 
-    let result: Option<SurrealdbTableDefinitions> = response.take("tb")?;
+    let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
     let tables = table_definitions.keys().collect::<Vec<_>>();
@@ -215,16 +215,16 @@ async fn get_surrealdb_database_definition(
                 .context(format!("Failed to get info for table {}", table))?;
 
             let mut full_definition = vec![table_definition.to_string()];
-            for value in info_for_table_response.ev.values().sorted() {
+            for value in info_for_table_response.events.values().sorted() {
                 full_definition.push(value.to_string());
             }
-            for value in info_for_table_response.fd.values().sorted() {
+            for value in info_for_table_response.fields.values().sorted() {
                 full_definition.push(value.to_string());
             }
-            for value in info_for_table_response.ft.values().sorted() {
+            for value in info_for_table_response.tables.values().sorted() {
                 full_definition.push(value.to_string());
             }
-            for value in info_for_table_response.ix.values().sorted() {
+            for value in info_for_table_response.indexes.values().sorted() {
                 full_definition.push(value.to_string());
             }
             let full_definition = full_definition.join("\n");
