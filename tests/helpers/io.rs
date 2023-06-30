@@ -11,11 +11,11 @@ pub fn clear_tests_files() -> Result<()> {
 }
 
 pub fn empty_folder(folder: &str) -> Result<()> {
-    let migrations_files_dir = Path::new(folder);
+    let files_dir = Path::new(folder);
 
-    if migrations_files_dir.exists() {
-        fs::remove_dir_all(migrations_files_dir)?;
-        fs::create_dir(migrations_files_dir)?;
+    if files_dir.exists() {
+        fs::remove_dir_all(files_dir)?;
+        fs::create_dir(files_dir)?;
     }
 
     Ok(())

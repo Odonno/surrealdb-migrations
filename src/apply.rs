@@ -574,11 +574,21 @@ fn get_rollback_statements(
     next_statements_str: &str,
     previous_statements_str: &str,
 ) -> Result<String> {
-    let next_statements = ::surrealdb::sql::parse(next_statements_str)?;
-    let next_statements = next_statements.0 .0;
+    let next_statements = match next_statements_str.is_empty() {
+        true => vec![],
+        false => {
+            let next_statements = ::surrealdb::sql::parse(next_statements_str)?;
+            next_statements.0 .0
+        }
+    };
 
-    let previous_statements = ::surrealdb::sql::parse(previous_statements_str)?;
-    let previous_statements = previous_statements.0 .0;
+    let previous_statements = match previous_statements_str.is_empty() {
+        true => vec![],
+        false => {
+            let previous_statements = ::surrealdb::sql::parse(previous_statements_str)?;
+            previous_statements.0 .0
+        }
+    };
 
     let next_tables_statements = extract_define_table_statements(next_statements.clone());
     let previous_tables_statements = extract_define_table_statements(previous_statements.clone());

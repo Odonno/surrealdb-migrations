@@ -78,3 +78,34 @@ Migration files successfully executed!\n",
     })
     .await
 }
+
+#[tokio::test]
+#[serial]
+async fn apply_and_revert_on_empty_template() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_empty_template()?;
+
+            add_post_migration_file()?;
+            let first_migration_name = get_first_migration_name()?;
+            write_post_migration_down_file(&first_migration_name)?;
+
+            apply_migrations()?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("apply").arg("--down").arg("0");
+
+            cmd.assert().try_success().and_then(|assert| {
+                assert.try_stdout(
+                    "Reverting migration AddPost...
+Migration files successfully executed!\n",
+                )
+            })?;
+
+            Ok(())
+        })
+    })
+    .await
+}
