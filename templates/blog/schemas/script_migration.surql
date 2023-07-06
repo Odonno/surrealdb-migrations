@@ -1,5 +1,5 @@
 DEFINE TABLE script_migration SCHEMAFULL
-    PERMISSIONS 
+    PERMISSIONS
         FOR select FULL
         FOR create, update, delete NONE;
 

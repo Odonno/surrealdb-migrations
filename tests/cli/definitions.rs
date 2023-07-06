@@ -150,24 +150,71 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
 
 const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
 # out: post, comment
-DEFINE TABLE comment SCHEMALESS;
+DEFINE TABLE comment SCHEMALESS
+    PERMISSIONS
+        FOR select FULL
+        FOR create WHERE permission:create_comment IN $auth.permissions
+        FOR update, delete WHERE in = $auth.id;
 
 DEFINE FIELD content ON comment TYPE string ASSERT $value != NONE;
 DEFINE FIELD created_at ON comment TYPE datetime VALUE $before OR time::now();
-DEFINE TABLE post SCHEMALESS;
+DEFINE TABLE permission SCHEMAFULL
+    PERMISSIONS
+        FOR select FULL
+        FOR create, update, delete NONE;
+
+DEFINE FIELD name ON permission TYPE string;
+DEFINE FIELD created_at ON permission TYPE datetime VALUE $before OR time::now();
+
+DEFINE INDEX unique_name ON permission COLUMNS name UNIQUE;
+DEFINE TABLE post SCHEMALESS
+    PERMISSIONS
+        FOR select FULL
+        FOR create WHERE permission:create_post IN $auth.permissions
+        FOR update, delete WHERE author = $auth.id;
 
 DEFINE FIELD title ON post TYPE string;
 DEFINE FIELD content ON post TYPE string;
 DEFINE FIELD author ON post TYPE record (user) ASSERT $value != NONE;
 DEFINE FIELD created_at ON post TYPE datetime VALUE $before OR time::now();
 DEFINE FIELD status ON post TYPE string VALUE $value OR $before OR 'DRAFT' ASSERT $value == NONE OR $value INSIDE ['DRAFT', 'PUBLISHED'];
-DEFINE TABLE script_migration SCHEMAFULL;
+DEFINE TABLE script_migration SCHEMAFULL
+    PERMISSIONS
+        FOR select FULL
+        FOR create, update, delete NONE;
 
 DEFINE FIELD script_name ON script_migration TYPE string;
 DEFINE FIELD executed_at ON script_migration TYPE datetime VALUE $before OR time::now();
-DEFINE TABLE user SCHEMALESS;
+DEFINE TABLE user SCHEMAFULL
+    PERMISSIONS
+        FOR select FULL
+        FOR update WHERE id = $auth.id
+        FOR create, delete NONE;
 
 DEFINE FIELD username ON user TYPE string ASSERT $value != NONE;
 DEFINE FIELD email ON user TYPE string ASSERT is::email($value);
 DEFINE FIELD password ON user TYPE string ASSERT $value != NONE;
-DEFINE FIELD registered_at ON user TYPE datetime VALUE $before OR time::now();";
+DEFINE FIELD registered_at ON user TYPE datetime VALUE $before OR time::now();
+DEFINE FIELD avatar ON user TYPE string;
+
+DEFINE FIELD permissions ON user TYPE array VALUE [permission:create_post, permission:create_comment];
+DEFINE FIELD permissions.* ON user TYPE record (permission);
+
+DEFINE INDEX unique_username ON user COLUMNS username UNIQUE;
+DEFINE INDEX unique_email ON user COLUMNS email UNIQUE;
+
+DEFINE SCOPE user_scope
+    SESSION 30d
+    SIGNUP (
+        CREATE user
+        SET
+            username = $username,
+            email = $email,
+            avatar = \"https://www.gravatar.com/avatar/\" + crypto::md5($email),
+            password = crypto::argon2::generate($password)
+    )
+    SIGNIN (
+        SELECT *
+        FROM user
+        WHERE username = $username AND crypto::argon2::compare(password, $password)
+    );";

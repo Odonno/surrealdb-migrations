@@ -1,1 +1,2 @@
 DELETE user;
+DELETE permission;

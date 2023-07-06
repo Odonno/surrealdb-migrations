@@ -1,4 +1,7 @@
-DEFINE TABLE publish_post SCHEMALESS;
+DEFINE TABLE publish_post SCHEMALESS
+    PERMISSIONS
+        FOR select, create FULL
+        FOR update, delete NONE;
 
 DEFINE FIELD post_id ON publish_post TYPE record(post);
 DEFINE FIELD created_at ON publish_post TYPE datetime VALUE $before OR time::now();
