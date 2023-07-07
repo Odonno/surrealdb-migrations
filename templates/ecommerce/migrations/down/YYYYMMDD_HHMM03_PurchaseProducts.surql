@@ -1,1 +1,1 @@
-DELETE purchased;
+DELETE purchases;

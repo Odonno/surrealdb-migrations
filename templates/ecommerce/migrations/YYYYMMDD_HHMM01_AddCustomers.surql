@@ -3,14 +3,16 @@ INSERT INTO address {
     number: '221B', 
     street: 'Baker street', 
     city: 'London', 
-    country: 'UK'
+    country: 'UK',
+    customer: customer:pratim
 };
 
 INSERT INTO customer {
     id: 'pratim',
     name: 'Pratim',
     email: 'abc@gmail.com',
-    address: address:pratim_home
+    password: '12345678',
+    addresses: [address:pratim_home]
 };
 
 INSERT INTO address {
@@ -18,14 +20,16 @@ INSERT INTO address {
     number: '221A', 
     street: 'Church street', 
     city: 'London', 
-    country: 'UK'
+    country: 'UK',
+    customer: customer:tobie
 };
 
 INSERT INTO customer {
     id: 'tobie',
     name: 'Tobie',
     email: 'tobie@gmail.com',
-    address: address:tobie_home
+    password: '12345678',
+    addresses: [address:tobie_home]
 };
 
 INSERT INTO address {
@@ -33,12 +37,14 @@ INSERT INTO address {
     number: '221C', 
     street: 'Pound street', 
     city: 'London', 
-    country: 'UK'
+    country: 'UK',
+    customer: customer:alex
 };
 
 INSERT INTO customer {
     id: 'alex',
     name: 'Alex',
     email: 'alex@gmail.com',
-    address: address:alex_home
+    password: '12345678',
+    addresses: [address:alex_home]
 };
