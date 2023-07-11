@@ -135,6 +135,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// # }
     /// ```
     pub fn use_config_file(&'_ self, config_file: &'a str) -> Self {
+        // TODO : handle Path and not just &str
         MigrationRunner {
             db: self.db,
             dir: self.dir,

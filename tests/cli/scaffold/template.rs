@@ -1,60 +1,66 @@
 use anyhow::Result;
-use serial_test::serial;
+use assert_fs::TempDir;
+use std::path::Path;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn scaffold_empty_template() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("empty");
 
     cmd.assert().success();
 
     assert!(are_folders_equivalent(
-        "templates/empty/schemas",
-        "tests-files/schemas"
+        Path::new("templates/empty/schemas"),
+        &temp_dir.join("schemas")
     )?);
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_blog_template() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("blog");
 
     cmd.assert().success();
 
     assert!(are_folders_equivalent(
-        "templates/blog/schemas",
-        "tests-files/schemas"
+        Path::new("templates/blog/schemas"),
+        &temp_dir.join("schemas")
     )?);
 
     assert!(are_folders_equivalent(
-        "templates/blog/events",
-        "tests-files/events"
+        Path::new("templates/blog/events"),
+        &temp_dir.join("events")
     )?);
 
+    let migrations_dir = temp_dir.join("migrations");
+
     let migration_files =
-        std::fs::read_dir("tests-files/migrations")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(&migrations_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
     assert_eq!(migration_files.count(), 3);
 
+    let down_migrations_dir = migrations_dir.join("down");
+
     let down_migration_files =
-        std::fs::read_dir("tests-files/migrations/down")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(down_migrations_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
@@ -64,35 +70,38 @@ fn scaffold_blog_template() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_ecommerce_template() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("ecommerce");
 
     cmd.assert().success();
 
     assert!(are_folders_equivalent(
-        "templates/ecommerce/schemas",
-        "tests-files/schemas"
+        Path::new("templates/ecommerce/schemas"),
+        &temp_dir.join("schemas")
     )?);
 
     assert!(are_folders_equivalent(
-        "templates/ecommerce/events",
-        "tests-files/events"
+        Path::new("templates/ecommerce/events"),
+        &temp_dir.join("events")
     )?);
 
+    let migrations_dir = temp_dir.join("migrations");
+
     let migration_files =
-        std::fs::read_dir("tests-files/migrations")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(&migrations_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
     assert_eq!(migration_files.count(), 3);
 
+    let down_migrations_dir = migrations_dir.join("down");
+
     let down_migration_files =
-        std::fs::read_dir("tests-files/migrations/down")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(down_migrations_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
@@ -102,14 +111,12 @@ fn scaffold_ecommerce_template() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    fs_extra::dir::create("tests-files", false)?;
-    fs_extra::dir::create("tests-files/schemas", false)?;
+    fs_extra::dir::create(temp_dir.join("schemas"), false)?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("blog");
 
@@ -121,14 +128,12 @@ fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    fs_extra::dir::create("tests-files", false)?;
-    fs_extra::dir::create("tests-files/events", false)?;
+    fs_extra::dir::create(temp_dir.join("events"), false)?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("blog");
 
@@ -140,14 +145,12 @@ fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    fs_extra::dir::create("tests-files", false)?;
-    fs_extra::dir::create("tests-files/migrations", false)?;
+    fs_extra::dir::create(temp_dir.join("migrations"), false)?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("blog");
 
@@ -159,11 +162,10 @@ fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_fails_if_invalid_template_name() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold").arg("template").arg("invalid");
 

@@ -1,113 +1,83 @@
 use anyhow::Result;
 use include_dir::{include_dir, Dir};
-use serial_test::serial;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
 async fn load_files_from_empty_template() -> Result<()> {
-    clear_tests_files()?;
+    let configuration = SurrealdbConfiguration::default();
+    let db = create_surrealdb_client(&configuration).await?;
 
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    const EMPTY_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/empty");
 
-            const EMPTY_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/empty");
+    MigrationRunner::new(&db).load_files(&EMPTY_TEMPLATE);
 
-            MigrationRunner::new(&db).load_files(&EMPTY_TEMPLATE);
-
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn load_files_from_blog_template() -> Result<()> {
-    clear_tests_files()?;
+    let configuration = SurrealdbConfiguration::default();
+    let db = create_surrealdb_client(&configuration).await?;
 
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    const BLOG_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
 
-            const BLOG_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+    MigrationRunner::new(&db).load_files(&BLOG_TEMPLATE);
 
-            MigrationRunner::new(&db).load_files(&BLOG_TEMPLATE);
-
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn load_files_from_ecommerce_template() -> Result<()> {
-    clear_tests_files()?;
+    let configuration = SurrealdbConfiguration::default();
+    let db = create_surrealdb_client(&configuration).await?;
 
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    const ECOMMERCE_TEMPLATE: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/ecommerce");
 
-            const ECOMMERCE_TEMPLATE: Dir<'_> =
-                include_dir!("$CARGO_MANIFEST_DIR/templates/ecommerce");
+    MigrationRunner::new(&db).load_files(&ECOMMERCE_TEMPLATE);
 
-            MigrationRunner::new(&db).load_files(&ECOMMERCE_TEMPLATE);
-
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn validate_version_order_from_embedded_files() -> Result<()> {
-    clear_tests_files()?;
+    const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
 
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            MigrationRunner::new(&db)
-                .load_files(&EMBEDDED_DIR)
-                .validate_version_order()
-                .await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            Ok(())
-        })
-    })
-    .await
+    MigrationRunner::new(&db)
+        .load_files(&EMBEDDED_DIR)
+        .validate_version_order()
+        .await?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_migrations_from_embedded_files() -> Result<()> {
-    clear_tests_files()?;
+    const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
 
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            MigrationRunner::new(&db)
-                .load_files(&EMBEDDED_DIR)
-                .up()
-                .await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            Ok(())
-        })
-    })
-    .await
+    MigrationRunner::new(&db)
+        .load_files(&EMBEDDED_DIR)
+        .up()
+        .await?;
+
+    Ok(())
 }

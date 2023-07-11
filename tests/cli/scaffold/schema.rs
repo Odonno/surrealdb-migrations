@@ -1,15 +1,17 @@
 use anyhow::Result;
+use assert_fs::TempDir;
 use pretty_assertions::assert_eq;
-use serial_test::serial;
+use std::path::Path;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn scaffold_fails_from_empty_schema_file() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -25,11 +27,12 @@ fn scaffold_fails_from_empty_schema_file() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -45,11 +48,12 @@ fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -59,14 +63,14 @@ fn scaffold_from_create_table() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_schema = std::fs::read_to_string(schemas_dir.join("post.surql"))?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
@@ -79,18 +83,22 @@ DEFINE FIELD created_at ON post TYPE datetime;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_schema_file_but_preserve_casing() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -101,14 +109,14 @@ fn scaffold_from_schema_file_but_preserve_casing() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/Post.surql")?;
+    let post_schema = std::fs::read_to_string(schemas_dir.join("Post.surql"))?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE Post SCHEMALESS;
@@ -121,18 +129,22 @@ DEFINE FIELD CreatedAt ON Post TYPE datetime;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_many_types() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -142,14 +154,14 @@ fn scaffold_from_create_table_with_many_types() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let test_schema = std::fs::read_to_string("tests-files/schemas/test.surql")?;
+    let test_schema = std::fs::read_to_string(schemas_dir.join("test.surql"))?;
     assert_eq!(
         test_schema,
         "DEFINE TABLE test SCHEMALESS;
@@ -175,18 +187,22 @@ DEFINE FIELD variant ON test;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_multiple_table_with_relations() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -196,14 +212,14 @@ fn scaffold_from_create_multiple_table_with_relations() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 4);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_schema = std::fs::read_to_string(schemas_dir.join("post.surql"))?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
@@ -216,7 +232,7 @@ DEFINE FIELD created_at ON post TYPE datetime ASSERT $value != NONE;
 "
     );
 
-    let user_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
+    let user_schema = std::fs::read_to_string(schemas_dir.join("user.surql"))?;
     assert_eq!(
         user_schema,
         "DEFINE TABLE user SCHEMALESS;
@@ -231,7 +247,7 @@ DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
 "
     );
 
-    let comment_schema = std::fs::read_to_string("tests-files/schemas/comment.surql")?;
+    let comment_schema = std::fs::read_to_string(schemas_dir.join("comment.surql"))?;
     assert_eq!(
         comment_schema,
         "DEFINE TABLE comment SCHEMALESS;
@@ -244,18 +260,22 @@ DEFINE FIELD post ON comment TYPE record(post) ASSERT $value != NONE;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_unique_index() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -265,14 +285,14 @@ fn scaffold_from_create_table_with_unique_index() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let user_schema = std::fs::read_to_string("tests-files/schemas/user.surql")?;
+    let user_schema = std::fs::read_to_string(schemas_dir.join("user.surql"))?;
     assert_eq!(
         user_schema,
         "DEFINE TABLE user SCHEMALESS;
@@ -287,18 +307,22 @@ DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_multi_column_unique_index() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -308,16 +332,16 @@ fn scaffold_from_create_table_with_multi_column_unique_index() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let user_schema = std::fs::read_to_string("tests-files/schemas/vote.surql")?;
+    let vote_schema = std::fs::read_to_string(schemas_dir.join("vote.surql"))?;
     assert_eq!(
-        user_schema,
+        vote_schema,
         "DEFINE TABLE vote SCHEMALESS;
 
 DEFINE FIELD id ON vote ASSERT $value != NONE;
@@ -327,18 +351,22 @@ DEFINE INDEX Vote_Username_Movie_Unique ON vote COLUMNS username, movie UNIQUE;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_index() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -348,16 +376,16 @@ fn scaffold_from_create_table_with_index() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let user_schema = std::fs::read_to_string("tests-files/schemas/daily_sales.surql")?;
+    let daily_sales_schema = std::fs::read_to_string(schemas_dir.join("daily_sales.surql"))?;
     assert_eq!(
-        user_schema,
+        daily_sales_schema,
         "DEFINE TABLE daily_sales SCHEMALESS;
 
 DEFINE FIELD id ON daily_sales ASSERT $value != NONE;
@@ -367,18 +395,22 @@ DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_multi_column_index() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -388,16 +420,16 @@ fn scaffold_from_create_table_with_multi_column_index() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let user_schema = std::fs::read_to_string("tests-files/schemas/product.surql")?;
+    let product_schema = std::fs::read_to_string(schemas_dir.join("product.surql"))?;
     assert_eq!(
-        user_schema,
+        product_schema,
         "DEFINE TABLE product SCHEMALESS;
 
 DEFINE FIELD id ON product ASSERT $value != NONE;
@@ -408,18 +440,22 @@ DEFINE INDEX Vote_Name_Color_Size ON product COLUMNS name, color, size;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn scaffold_from_create_table_with_not_null_assert() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    copy_folder(Path::new("schema-files"), &temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("scaffold")
         .arg("schema")
@@ -429,14 +465,14 @@ fn scaffold_from_create_table_with_not_null_assert() -> Result<()> {
 
     cmd.assert().success();
 
-    assert!(is_file_exists(
-        "tests-files/schemas/script_migration.surql"
-    )?);
+    let schemas_dir = temp_dir.join("schemas");
 
-    let schema_files = std::fs::read_dir("tests-files/schemas")?;
+    assert!(schemas_dir.join("script_migration.surql").exists());
+
+    let schema_files = std::fs::read_dir(&schemas_dir)?;
     assert_eq!(schema_files.count(), 2);
 
-    let post_schema = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_schema = std::fs::read_to_string(schemas_dir.join("post.surql"))?;
     assert_eq!(
         post_schema,
         "DEFINE TABLE post SCHEMALESS;
@@ -449,14 +485,16 @@ DEFINE FIELD created_at ON post TYPE datetime ASSERT $value != NONE;
 "
     );
 
-    assert!(is_empty_folder("tests-files/events")?);
-    assert!(is_empty_folder("tests-files/migrations")?);
+    let events_dir = temp_dir.join("events");
+    assert!(is_empty_folder(&events_dir)?);
+
+    let migrations_dir = temp_dir.join("migrations");
+    assert!(is_empty_folder(&migrations_dir)?);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 #[ignore]
 fn scaffold_from_create_table_with_default_value() -> Result<()> {
     todo!();
