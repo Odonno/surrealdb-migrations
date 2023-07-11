@@ -1,90 +1,102 @@
 use anyhow::{ensure, Context, Result};
+use assert_fs::TempDir;
 use chrono::{DateTime, Local};
-use serial_test::serial;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
 async fn list_empty_migrations() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_empty_template()?;
-            apply_migrations()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_empty_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            let migrations_applied = MigrationRunner::new(&db).list().await?;
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            ensure!(migrations_applied.len() == 0);
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            Ok(())
-        })
-    })
-    .await
+    let db = create_surrealdb_client(&configuration).await?;
+
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+
+    let migrations_applied = runner.list().await?;
+
+    ensure!(migrations_applied.len() == 0);
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn list_blog_migrations() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            let now = Local::now();
+    let now = Local::now();
 
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            let migrations_applied = MigrationRunner::new(&db).list().await?;
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            ensure!(migrations_applied.len() == 3);
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            let date_prefix = now.format("%Y%m%d_%H%M").to_string();
+    let db = create_surrealdb_client(&configuration).await?;
 
-            let now_timestamp = now.timestamp();
-            let now_timestamp_range = (now_timestamp - 2)..(now_timestamp + 2);
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
 
-            let first_migration = migrations_applied
-                .get(0)
-                .context("Cannot get first migration")?;
+    let migrations_applied = runner.list().await?;
 
-            ensure!(first_migration.script_name == format!("{}01_AddAdminUser", date_prefix));
-            ensure!(now_timestamp_range.contains(
-                &DateTime::parse_from_rfc3339(&first_migration.executed_at)
-                    .map(|dt| dt.timestamp())
-                    .context("Cannot parse first migration execution date")?
-            ));
+    ensure!(migrations_applied.len() == 3);
 
-            let second_migration = migrations_applied
-                .get(1)
-                .context("Cannot get second migration")?;
+    let date_prefix = now.format("%Y%m%d_%H%M").to_string();
 
-            ensure!(second_migration.script_name == format!("{}02_AddPost", date_prefix));
-            ensure!(now_timestamp_range.contains(
-                &DateTime::parse_from_rfc3339(&second_migration.executed_at)
-                    .map(|dt| dt.timestamp())
-                    .context("Cannot parse second migration execution date")?
-            ));
+    let now_timestamp = now.timestamp();
+    let now_timestamp_range = (now_timestamp - 2)..(now_timestamp + 2);
 
-            let third_migration = migrations_applied
-                .get(2)
-                .context("Cannot get third migration")?;
+    let first_migration = migrations_applied
+        .get(0)
+        .context("Cannot get first migration")?;
 
-            ensure!(third_migration.script_name == format!("{}03_CommentPost", date_prefix));
-            ensure!(now_timestamp_range.contains(
-                &DateTime::parse_from_rfc3339(&third_migration.executed_at)
-                    .map(|dt| dt.timestamp())
-                    .context("Cannot parse third migration execution date")?
-            ));
+    ensure!(first_migration.script_name == format!("{}01_AddAdminUser", date_prefix));
+    ensure!(now_timestamp_range.contains(
+        &DateTime::parse_from_rfc3339(&first_migration.executed_at)
+            .map(|dt| dt.timestamp())
+            .context("Cannot parse first migration execution date")?
+    ));
 
-            Ok(())
-        })
-    })
-    .await
+    let second_migration = migrations_applied
+        .get(1)
+        .context("Cannot get second migration")?;
+
+    ensure!(second_migration.script_name == format!("{}02_AddPost", date_prefix));
+    ensure!(now_timestamp_range.contains(
+        &DateTime::parse_from_rfc3339(&second_migration.executed_at)
+            .map(|dt| dt.timestamp())
+            .context("Cannot parse second migration execution date")?
+    ));
+
+    let third_migration = migrations_applied
+        .get(2)
+        .context("Cannot get third migration")?;
+
+    ensure!(third_migration.script_name == format!("{}03_CommentPost", date_prefix));
+    ensure!(now_timestamp_range.contains(
+        &DateTime::parse_from_rfc3339(&third_migration.executed_at)
+            .map(|dt| dt.timestamp())
+            .context("Cannot parse third migration execution date")?
+    ));
+
+    Ok(())
 }

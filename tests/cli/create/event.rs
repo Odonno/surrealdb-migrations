@@ -1,17 +1,16 @@
 use anyhow::{ensure, Result};
+use assert_fs::TempDir;
 use pretty_assertions::assert_eq;
-use serial_test::serial;
-use std::path::Path;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn create_event_file() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("event")
@@ -21,7 +20,7 @@ fn create_event_file() -> Result<()> {
 
     cmd.assert().success();
 
-    let publish_post_file = std::fs::read_to_string("tests-files/events/publish_post.surql")?;
+    let publish_post_file = std::fs::read_to_string(temp_dir.join("events/publish_post.surql"))?;
 
     assert_eq!(
         publish_post_file,
@@ -39,11 +38,10 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 }
 
 #[test]
-#[serial]
 fn create_event_file_dry_run() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("event")
@@ -63,20 +61,20 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 );\n",
     );
 
-    let events_folder = Path::new("tests-files/events");
+    let events_folder = temp_dir.join("events");
     assert_eq!(events_folder.exists(), false);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_event_file_with_schemafull_table_from_config() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
-    set_config_value("core", "schema", "full")?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    add_migration_config_file_with_core_schema(&temp_dir, "full")?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("event")
@@ -86,7 +84,7 @@ fn create_event_file_with_schemafull_table_from_config() -> Result<()> {
 
     cmd.assert().success();
 
-    let publish_post_file = std::fs::read_to_string("tests-files/events/publish_post.surql")?;
+    let publish_post_file = std::fs::read_to_string(temp_dir.join("events/publish_post.surql"))?;
 
     ensure!(
         publish_post_file
@@ -100,19 +98,17 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 );",
     );
 
-    reset_config()?;
-
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_event_file_with_schemaless_table_from_invalid_config() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
-    set_config_value("core", "schema", "invalid")?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    add_migration_config_file_with_core_schema(&temp_dir, "invalid")?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("event")
@@ -122,7 +118,7 @@ fn create_event_file_with_schemaless_table_from_invalid_config() -> Result<()> {
 
     cmd.assert().success();
 
-    let publish_post_file = std::fs::read_to_string("tests-files/events/publish_post.surql")?;
+    let publish_post_file = std::fs::read_to_string(temp_dir.join("events/publish_post.surql"))?;
 
     ensure!(
         publish_post_file
@@ -136,18 +132,16 @@ DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
 );",
     );
 
-    reset_config()?;
-
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_event_file_with_schemafull_table_from_cli_arg() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("event")
@@ -158,7 +152,7 @@ fn create_event_file_with_schemafull_table_from_cli_arg() -> Result<()> {
 
     cmd.assert().success();
 
-    let publish_post_file = std::fs::read_to_string("tests-files/events/publish_post.surql")?;
+    let publish_post_file = std::fs::read_to_string(temp_dir.join("events/publish_post.surql"))?;
 
     assert_eq!(
         publish_post_file,

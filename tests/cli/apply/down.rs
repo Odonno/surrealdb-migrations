@@ -1,111 +1,106 @@
 use anyhow::{ensure, Result};
-use serial_test::serial;
+use assert_fs::TempDir;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
 async fn apply_revert_all_migrations() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            cmd.arg("apply").arg("--down").arg("0");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert().try_success().and_then(|assert| {
-                assert.try_stdout(
-                    "Reverting migration CommentPost...
+    cmd.arg("apply").arg("--down").arg("0");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Reverting migration CommentPost...
 Reverting migration AddPost...
 Reverting migration AddAdminUser...
 Migration files successfully executed!\n",
-                )
-            })?;
+        )
+    })?;
 
-            let is_table_empty = is_surreal_table_empty(None, "user").await?;
-            ensure!(is_table_empty, "'user' table should be empty");
+    let ns_db = Some(("test", db_name.as_str()));
 
-            let is_table_empty = is_surreal_table_empty(None, "post").await?;
-            ensure!(is_table_empty, "'post' table should be empty");
+    let is_table_empty = is_surreal_table_empty(ns_db, "user").await?;
+    ensure!(is_table_empty, "'user' table should be empty");
 
-            let is_table_empty = is_surreal_table_empty(None, "comment").await?;
-            ensure!(is_table_empty, "'comment' table should be empty");
+    let is_table_empty = is_surreal_table_empty(ns_db, "post").await?;
+    ensure!(is_table_empty, "'post' table should be empty");
 
-            Ok(())
-        })
-    })
-    .await
+    let is_table_empty = is_surreal_table_empty(ns_db, "comment").await?;
+    ensure!(is_table_empty, "'comment' table should be empty");
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_revert_to_first_migration() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let first_migration_name = get_first_migration_name()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            apply_migrations()?;
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
 
-            let mut cmd = create_cmd()?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            cmd.arg("apply").arg("--down").arg(first_migration_name);
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert().try_success().and_then(|assert| {
-                assert.try_stdout(
-                    "Reverting migration CommentPost...
+    cmd.arg("apply").arg("--down").arg(first_migration_name);
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Reverting migration CommentPost...
 Reverting migration AddPost...
 Migration files successfully executed!\n",
-                )
-            })?;
+        )
+    })?;
 
-            let is_table_empty = is_surreal_table_empty(None, "user").await?;
-            ensure!(!is_table_empty, "'user' table should not be empty");
+    let ns_db = Some(("test", db_name.as_str()));
 
-            let is_table_empty = is_surreal_table_empty(None, "post").await?;
-            ensure!(is_table_empty, "'post' table should be empty");
+    let is_table_empty = is_surreal_table_empty(ns_db, "user").await?;
+    ensure!(!is_table_empty, "'user' table should not be empty");
 
-            let is_table_empty = is_surreal_table_empty(None, "comment").await?;
-            ensure!(is_table_empty, "'comment' table should be empty");
+    let is_table_empty = is_surreal_table_empty(ns_db, "post").await?;
+    ensure!(is_table_empty, "'post' table should be empty");
 
-            Ok(())
-        })
-    })
-    .await
+    let is_table_empty = is_surreal_table_empty(ns_db, "comment").await?;
+    ensure!(is_table_empty, "'comment' table should be empty");
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_and_revert_on_empty_template() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            add_post_migration_file()?;
-            let first_migration_name = get_first_migration_name()?;
-            write_post_migration_down_file(&first_migration_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_empty_template(&temp_dir)?;
 
-            apply_migrations()?;
+    add_post_migration_file(&temp_dir)?;
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
+    write_post_migration_down_file(&temp_dir, &first_migration_name)?;
 
-            let mut cmd = create_cmd()?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            cmd.arg("apply").arg("--down").arg("0");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert().try_success().and_then(|assert| {
-                assert.try_stdout(
-                    "Reverting migration AddPost...
+    cmd.arg("apply").arg("--down").arg("0");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Reverting migration AddPost...
 Migration files successfully executed!\n",
-                )
-            })?;
+        )
+    })?;
 
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }

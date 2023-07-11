@@ -1,51 +1,59 @@
 use anyhow::Result;
+use assert_fs::TempDir;
 use serial_test::serial;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn diff_without_changes() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("test-branch")?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("diff").arg("test-branch");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "test-branch-without-changes")?;
 
-            cmd.assert()
-                .try_success()
-                .and_then(|assert| assert.try_stdout("No schema changes detected\n"))?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            Ok(())
-        })
-    })
-    .await
+    cmd.arg("branch")
+        .arg("diff")
+        .arg("test-branch-without-changes");
+
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout("No schema changes detected\n"))?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn diff_with_changes() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("test-branch")?;
-            add_category_schema_file()?;
-            apply_migrations_on_branch("test-branch")?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("diff").arg("test-branch");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "test-branch-with-changes")?;
+    add_category_schema_file(&temp_dir)?;
+    apply_migrations_on_branch(&temp_dir, "test-branch-with-changes")?;
 
-            cmd.assert().try_success().and_then(|assert| {
-                assert.try_stdout(
-                    "Schema changes detected:
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("branch")
+        .arg("diff")
+        .arg("test-branch-with-changes");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Schema changes detected:
 
 ### 1 tables created ###
 
@@ -54,32 +62,26 @@ async fn diff_with_changes() -> Result<()> {
 DEFINE TABLE category SCHEMALESS
 DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now()
 DEFINE FIELD name ON category TYPE string\n",
-                )
-            })?;
+        )
+    })?;
 
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn fails_if_branch_does_not_exist() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
 
-            cmd.arg("branch").arg("diff").arg("void");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_failure()
-                .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+    cmd.arg("branch").arg("diff").arg("void");
 
-            Ok(())
-        })
-    })
-    .await
+    cmd.assert()
+        .try_failure()
+        .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+
+    Ok(())
 }

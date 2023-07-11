@@ -1,18 +1,16 @@
-use std::path::Path;
-
 use anyhow::{ensure, Result};
+use assert_fs::TempDir;
 use pretty_assertions::assert_eq;
-use serial_test::serial;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn create_schema_file() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("schema")
@@ -22,7 +20,7 @@ fn create_schema_file() -> Result<()> {
 
     cmd.assert().success();
 
-    let post_file = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_file = std::fs::read_to_string(temp_dir.join("schemas/post.surql"))?;
 
     assert_eq!(
         post_file,
@@ -37,11 +35,10 @@ DEFINE FIELD published_at ON post;"
 }
 
 #[test]
-#[serial]
 fn create_schema_file_dry_run() -> Result<()> {
-    clear_tests_files()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("schema")
@@ -58,20 +55,20 @@ DEFINE FIELD title ON post;
 DEFINE FIELD published_at ON post;\n",
     );
 
-    let schemas_folder = Path::new("tests-files/schemas");
+    let schemas_folder = temp_dir.join("schemas");
     assert_eq!(schemas_folder.exists(), false);
 
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_schemafull_table_file_from_config() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
-    set_config_value("core", "schema", "full")?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    add_migration_config_file_with_core_schema(&temp_dir, "full")?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("schema")
@@ -81,7 +78,7 @@ fn create_schemafull_table_file_from_config() -> Result<()> {
 
     cmd.assert().success();
 
-    let post_file = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_file = std::fs::read_to_string(temp_dir.join("schemas/post.surql"))?;
 
     ensure!(
         post_file
@@ -92,19 +89,17 @@ DEFINE FIELD title ON post;
 DEFINE FIELD published_at ON post;"
     );
 
-    reset_config()?;
-
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_schemaless_table_file_from_invalid_config() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
-    set_config_value("core", "schema", "invalid")?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    add_migration_config_file_with_core_schema(&temp_dir, "invalid")?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("schema")
@@ -114,7 +109,7 @@ fn create_schemaless_table_file_from_invalid_config() -> Result<()> {
 
     cmd.assert().success();
 
-    let post_file = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_file = std::fs::read_to_string(temp_dir.join("schemas/post.surql"))?;
 
     ensure!(
         post_file
@@ -125,18 +120,16 @@ DEFINE FIELD title ON post;
 DEFINE FIELD published_at ON post;"
     );
 
-    reset_config()?;
-
     Ok(())
 }
 
 #[test]
-#[serial]
 fn create_schemafull_table_file_from_cli_arg() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("create")
         .arg("schema")
@@ -147,7 +140,7 @@ fn create_schemafull_table_file_from_cli_arg() -> Result<()> {
 
     cmd.assert().success();
 
-    let post_file = std::fs::read_to_string("tests-files/schemas/post.surql")?;
+    let post_file = std::fs::read_to_string(temp_dir.join("schemas/post.surql"))?;
 
     assert_eq!(
         post_file,

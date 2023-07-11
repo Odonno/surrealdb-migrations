@@ -1,138 +1,159 @@
 use anyhow::{ensure, Result};
+use assert_fs::TempDir;
 use regex::Regex;
-use serial_test::serial;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
 async fn ok_if_no_migration_file() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_empty_template(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            runner.validate_version_order().await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            Ok(())
-        })
-    })
-    .await
+    let db = create_surrealdb_client(&configuration).await?;
+
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+
+    runner.validate_version_order().await?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            runner.up().await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            runner.validate_version_order().await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            Ok(())
-        })
-    })
-    .await
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+
+    runner.up().await?;
+
+    runner.validate_version_order().await?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            let first_migration_name = get_first_migration_name()?;
-            runner.up_to(&first_migration_name).await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            runner.validate_version_order().await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            Ok(())
-        })
-    })
-    .await
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
+    runner.up_to(&first_migration_name).await?;
+
+    runner.validate_version_order().await?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            let first_migration_file = get_first_migration_file()?;
-            std::fs::remove_file(first_migration_file)?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name.to_string()),
+        ..Default::default()
+    };
 
-            runner.up().await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
 
-            let result = runner.validate_version_order().await;
+    let first_migration_file = get_first_migration_file(&temp_dir)?;
+    std::fs::remove_file(first_migration_file)?;
 
-            ensure!(result.is_err());
+    runner.up().await?;
 
-            let error_regex = Regex::new(
-                r"The following migrations have not been applied: \d+_\d+_AddAdminUser",
-            )?;
+    empty_folder(&temp_dir)?;
 
-            let error_str = result.unwrap_err().to_string();
-            let error_str = error_str.as_str();
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            ensure!(error_regex.is_match(error_str));
+    let result = runner.validate_version_order().await;
 
-            Ok(())
-        })
-    })
-    .await
+    ensure!(result.is_err());
+
+    let error_regex =
+        Regex::new(r"The following migrations have not been applied: \d+_\d+_AddAdminUser")?;
+
+    let error_str = result.unwrap_err().to_string();
+    let error_str = error_str.as_str();
+
+    ensure!(error_regex.is_match(error_str));
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn ok_if_migrations_applied_but_no_new_migration_with_inlined_down_files() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            inline_down_migration_files()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    inline_down_migration_files(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            runner.up().await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
 
-            runner.validate_version_order().await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            Ok(())
-        })
-    })
-    .await
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+
+    runner.up().await?;
+
+    runner.validate_version_order().await?;
+
+    Ok(())
 }

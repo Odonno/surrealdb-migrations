@@ -1,38 +1,39 @@
 use anyhow::{ensure, Result};
-use serial_test::serial;
+use assert_fs::TempDir;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn apply_initial_schema_changes() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        remove_folder("tests-files/migrations")?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("migrations"))?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Schema files successfully executed!
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Schema files successfully executed!
 Event files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_address(&temp_dir, "ws://localhost:12345")?;
+    scaffold_blog_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("apply");
 
@@ -47,210 +48,206 @@ Caused by:
 }
 
 #[test]
-#[serial]
 fn apply_new_schema_changes() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        empty_folder("tests-files/migrations")?;
-        apply_migrations()?;
-        add_category_schema_file()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("migrations"))?;
+    apply_migrations(&temp_dir, &db_name)?;
+    add_category_schema_file(&temp_dir)?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Schema files successfully executed!
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Schema files successfully executed!
 Event files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn apply_initial_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Executing migration AddAdminUser...
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Executing migration AddAdminUser...
 Executing migration AddPost...
 Executing migration CommentPost...
 Schema files successfully executed!
 Event files successfully executed!
 Migration files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn apply_new_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let first_migration_name = get_first_migration_name()?;
-        apply_migrations_up_to(&first_migration_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-        let mut cmd = create_cmd()?;
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
+    apply_migrations_up_to(&temp_dir, &db_name, &first_migration_name)?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Executing migration AddPost...
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Executing migration AddPost...
 Executing migration CommentPost...
 Schema files successfully executed!
 Event files successfully executed!
 Migration files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
-#[serial]
+#[ignore]
 fn apply_with_db_configuration() -> Result<()> {
-    run_with_surreal_instance_with_admin_user(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        empty_folder("tests-files/migrations")?;
+    // TODO : run this test with a second surreal instance (with different username/password)
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    empty_folder(&temp_dir.join("migrations"))?;
 
-        cmd.arg("apply")
-            .arg("--username")
-            .arg("admin")
-            .arg("--password")
-            .arg("admin")
-            .arg("--ns")
-            .arg("namespace")
-            .arg("--db")
-            .arg("database");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Schema files successfully executed!
+    cmd.arg("apply")
+        .arg("--username")
+        .arg("admin")
+        .arg("--password")
+        .arg("admin")
+        .arg("--ns")
+        .arg("root")
+        .arg("--db")
+        .arg(&db_name);
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Schema files successfully executed!
 Event files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        empty_folder("tests-files/migrations")?;
-        remove_folder("tests-files/events")?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    empty_folder(&temp_dir.join("migrations"))?;
+    remove_folder(&temp_dir.join("events"))?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert()
-            .try_success()
-            .and_then(|assert| assert.try_stdout("Schema files successfully executed!\n"))?;
+    cmd.arg("apply");
 
-        Ok(())
-    })
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout("Schema files successfully executed!\n"))?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            remove_folder("tests-files/migrations")?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("migrations"))?;
 
-            cmd.arg("apply").arg("--dry-run");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_success()
-                .and_then(|assert| assert.try_stdout(""))?;
+    cmd.arg("apply").arg("--dry-run");
 
-            let is_empty = is_surreal_db_empty(None, None).await?;
-            ensure!(is_empty, "SurrealDB should be empty");
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout(""))?;
 
-            Ok(())
-        })
-    })
-    .await
+    let is_empty = is_surreal_db_empty(None, Some(db_name)).await?;
+    ensure!(is_empty, "SurrealDB should be empty");
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_initial_migrations_in_dry_run() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            cmd.arg("apply").arg("--dry-run");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_success()
-                .and_then(|assert| assert.try_stdout(""))?;
+    cmd.arg("apply").arg("--dry-run");
 
-            let is_empty = is_surreal_db_empty(None, None).await?;
-            ensure!(is_empty, "SurrealDB should be empty");
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout(""))?;
 
-            Ok(())
-        })
-    })
-    .await
+    let is_empty = is_surreal_db_empty(None, Some(db_name)).await?;
+    ensure!(is_empty, "SurrealDB should be empty");
+
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn apply_with_inlined_down_files() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        inline_down_migration_files()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    inline_down_migration_files(&temp_dir)?;
 
-        cmd.arg("apply");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_success().and_then(|assert| {
-            assert.try_stdout(
-                "Executing migration AddAdminUser...
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Executing migration AddAdminUser...
 Executing migration AddPost...
 Executing migration CommentPost...
 Schema files successfully executed!
 Event files successfully executed!
 Migration files successfully executed!\n",
-            )
-        })?;
+        )
+    })?;
 
-        Ok(())
-    })
+    Ok(())
 }

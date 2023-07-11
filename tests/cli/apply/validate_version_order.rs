@@ -1,38 +1,39 @@
 use anyhow::Result;
-use serial_test::serial;
+use assert_fs::TempDir;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let first_migration_file = get_first_migration_file()?;
-        std::fs::remove_file(first_migration_file)?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-        apply_migrations()?;
+    let first_migration_file = get_first_migration_file(&temp_dir)?;
+    std::fs::remove_file(first_migration_file)?;
 
-        clear_tests_files()?;
-        scaffold_blog_template()?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-        let mut cmd = create_cmd()?;
+    empty_folder(&temp_dir)?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-        cmd.arg("apply").arg("--validate-version-order");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        let first_migration_name = get_first_migration_name()?;
+    cmd.arg("apply").arg("--validate-version-order");
 
-        let error = format!(
-            "Error: The following migrations have not been applied: {}\n",
-            first_migration_name
-        );
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
 
-        cmd.assert()
-            .try_failure()
-            .and_then(|assert| assert.try_stderr(error))?;
+    let error = format!(
+        "Error: The following migrations have not been applied: {}\n",
+        first_migration_name
+    );
 
-        Ok(())
-    })
+    cmd.assert()
+        .try_failure()
+        .and_then(|assert| assert.try_stderr(error))?;
+
+    Ok(())
 }

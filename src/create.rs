@@ -65,7 +65,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
 
     if !dry_run {
         if !folder_path.exists() {
-            return Err(anyhow!("Directory {} doesn't exist", dir_name));
+            ensures_folder_exists(&folder_path)?;
         }
 
         if file_path.exists() {

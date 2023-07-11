@@ -1,59 +1,66 @@
 use anyhow::{ensure, Result};
-use serial_test::serial;
+use assert_fs::TempDir;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
 async fn apply_revert_all_migrations() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            runner.up().await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name.to_string()),
+        ..Default::default()
+    };
 
-            runner.down("0").await?;
+    let db = create_surrealdb_client(&configuration).await?;
 
-            let migrations_applied = runner.list().await?;
-            ensure!(migrations_applied.len() == 0);
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
 
-            Ok(())
-        })
-    })
-    .await
+    runner.up().await?;
+
+    runner.down("0").await?;
+
+    let migrations_applied = runner.list().await?;
+    ensure!(migrations_applied.len() == 0);
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
 async fn apply_revert_to_first_migration() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let first_migration_name = get_first_migration_name()?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
 
-            let configuration = SurrealdbConfiguration::default();
-            let db = create_surrealdb_client(&configuration).await?;
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
 
-            let runner = MigrationRunner::new(&db);
+    let config_file_path = temp_dir.join(".surrealdb");
 
-            runner.up().await?;
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name.to_string()),
+        ..Default::default()
+    };
+    let db = create_surrealdb_client(&configuration).await?;
 
-            runner.down(&first_migration_name).await?;
+    let runner =
+        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
 
-            let migrations_applied = runner.list().await?;
-            ensure!(migrations_applied.len() == 1);
+    runner.up().await?;
 
-            Ok(())
-        })
-    })
-    .await
+    runner.down(&first_migration_name).await?;
+
+    let migrations_applied = runner.list().await?;
+    ensure!(migrations_applied.len() == 1);
+
+    Ok(())
 }
