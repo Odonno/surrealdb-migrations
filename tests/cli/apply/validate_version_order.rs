@@ -8,7 +8,7 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let first_migration_file = get_first_migration_file(&temp_dir)?;
@@ -17,7 +17,7 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
     apply_migrations(&temp_dir, &db_name)?;
 
     empty_folder(&temp_dir)?;
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let mut cmd = create_cmd(&temp_dir)?;

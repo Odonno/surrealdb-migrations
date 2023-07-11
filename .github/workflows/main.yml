@@ -9,19 +9,6 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
-    services:
-      db_root:
-        image: surrealdb/surrealdb:latest
-        ports:
-          - 8000:8000
-      db_admin:
-        image: surrealdb/surrealdb:latest
-        ports:
-          - 8001:8000
-        env:
-          DB_USER: admin
-          DB_PASSWORD: admin
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -31,6 +18,15 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+
+      - name: Download SurrealDB
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
+
+      - name: Run SurrealDB root
+        run: surreal start --user root --pass root memory &
+
+      - name: Run SurrealDB admin
+        run: surreal start --user admin --pass admin --bind 0.0.0.0:8001 memory &
 
       - name: Run check
         run: cargo check --all
@@ -51,19 +47,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    services:
-      db_root:
-        image: surrealdb/surrealdb:latest
-        ports:
-          - 8000:8000
-      db_admin:
-        image: surrealdb/surrealdb:latest
-        ports:
-          - 8001:8000
-        env:
-          DB_USER: admin
-          DB_PASSWORD: admin
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -73,6 +56,15 @@ jobs:
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+
+      - name: Download SurrealDB
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
+
+      - name: Run SurrealDB root
+        run: surreal start --user root --pass root memory &
+
+      - name: Run SurrealDB admin
+        run: surreal start --user admin --pass admin --bind 0.0.0.0:8001 memory &
 
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1

@@ -28,15 +28,37 @@ pub fn copy_folder(from: &Path, to: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn add_migration_config_file_with_db_name(path: &Path, db: &str) -> Result<()> {
+pub enum DbInstance {
+    Root,
+    Admin,
+}
+
+pub fn add_migration_config_file_with_db_name(
+    path: &Path,
+    db_instance: DbInstance,
+    db: &str,
+) -> Result<()> {
+    let username = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let password = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let port = match db_instance {
+        DbInstance::Root => "8000",
+        DbInstance::Admin => "8001",
+    };
+
     let content = format!(
         r#"[core]
     schema = "less"
 
 [db]
-    address = "ws://localhost:8000"
-    username = "root"
-    password = "root"
+    address = "ws://localhost:{port}"
+    username = "{username}"
+    password = "{password}"
     ns = "test"
     db = "{db}""#
     );
@@ -45,9 +67,26 @@ pub fn add_migration_config_file_with_db_name(path: &Path, db: &str) -> Result<(
 
     Ok(())
 }
-pub fn add_migration_config_file_with_db_name_in_dir(path: &Path, db: &str) -> Result<()> {
+pub fn add_migration_config_file_with_db_name_in_dir(
+    path: &Path,
+    db_instance: DbInstance,
+    db: &str,
+) -> Result<()> {
     let content_path = path.join(".surrealdb");
     let displayed_path = path.display();
+
+    let username = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let password = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let port = match db_instance {
+        DbInstance::Root => "8000",
+        DbInstance::Admin => "8001",
+    };
 
     let content = format!(
         r#"[core]
@@ -55,9 +94,9 @@ pub fn add_migration_config_file_with_db_name_in_dir(path: &Path, db: &str) -> R
     schema = "less"
 
 [db]
-    address = "ws://localhost:8000"
-    username = "root"
-    password = "root"
+    address = "ws://localhost:{port}"
+    username = "{username}"
+    password = "{password}"
     ns = "test"
     db = "{db}""#
     );

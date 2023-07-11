@@ -10,7 +10,7 @@ async fn ok_if_no_migration_file() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_empty_template(&temp_dir)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -35,7 +35,7 @@ async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -62,7 +62,7 @@ async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Res
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -90,7 +90,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -112,7 +112,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
 
     empty_folder(&temp_dir)?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let result = runner.validate_version_order().await;
@@ -135,7 +135,7 @@ async fn ok_if_migrations_applied_but_no_new_migration_with_inlined_down_files()
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name_in_dir(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     inline_down_migration_files(&temp_dir)?;
 

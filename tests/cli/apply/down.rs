@@ -8,7 +8,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     apply_migrations(&temp_dir, &db_name)?;
 
@@ -44,7 +44,7 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
@@ -82,7 +82,7 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_empty_template(&temp_dir)?;
 
     add_post_migration_file(&temp_dir)?;
