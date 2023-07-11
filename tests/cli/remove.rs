@@ -1,15 +1,15 @@
 use anyhow::Result;
-use serial_test::serial;
+use assert_fs::TempDir;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn remove_last_migration() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_blog_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("remove");
 
@@ -17,16 +17,20 @@ fn remove_last_migration() -> Result<()> {
         .success()
         .stdout("Migration 'CommentPost' successfully removed\n");
 
+    let migrations_dir = temp_dir.path().join("migrations");
+
     let migration_files =
-        std::fs::read_dir("tests-files/migrations")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(&migrations_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
 
     assert_eq!(migration_files.count(), 2);
 
+    let migrations_down_dir = migrations_dir.join("down");
+
     let down_migration_files =
-        std::fs::read_dir("tests-files/migrations/down")?.filter(|entry| match entry.as_ref() {
+        std::fs::read_dir(migrations_down_dir)?.filter(|entry| match entry.as_ref() {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
@@ -36,12 +40,12 @@ fn remove_last_migration() -> Result<()> {
 }
 
 #[test]
-#[serial]
 fn cannot_remove_if_no_migration_file_left() -> Result<()> {
-    clear_tests_files()?;
-    scaffold_empty_template()?;
+    let temp_dir = TempDir::new()?;
 
-    let mut cmd = create_cmd()?;
+    scaffold_empty_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("remove");
 

@@ -3,38 +3,125 @@ use std::{fs, path::Path};
 
 use super::create_cmd;
 
-pub fn clear_tests_files() -> Result<()> {
-    remove_folder("tests-files")?;
-    remove_folder("tests-files-alt")?;
-
-    Ok(())
-}
-
-pub fn empty_folder(folder: &str) -> Result<()> {
-    let files_dir = Path::new(folder);
-
-    if files_dir.exists() {
-        fs::remove_dir_all(files_dir)?;
-        fs::create_dir(files_dir)?;
+pub fn empty_folder(path: &Path) -> Result<()> {
+    if path.exists() {
+        fs::remove_dir_all(path)?;
+        fs::create_dir(path)?;
     }
 
     Ok(())
 }
 
-pub fn remove_folder(folder: &str) -> Result<()> {
-    let dir = Path::new(folder);
-
-    if dir.exists() {
-        fs::remove_dir_all(dir)?;
+pub fn remove_folder(path: &Path) -> Result<()> {
+    if path.exists() {
+        fs::remove_dir_all(path)?;
     }
 
     Ok(())
 }
 
-pub fn add_post_migration_file() -> Result<()> {
+pub fn copy_folder(from: &Path, to: &Path) -> Result<()> {
+    if from.exists() {
+        fs_extra::dir::copy(from, to, &fs_extra::dir::CopyOptions::new())?;
+    }
+
+    Ok(())
+}
+
+pub fn add_migration_config_file_with_db_name(path: &Path, db: &str) -> Result<()> {
+    let content = format!(
+        r#"[core]
+    schema = "less"
+
+[db]
+    address = "ws://localhost:8000"
+    username = "root"
+    password = "root"
+    ns = "test"
+    db = "{db}""#
+    );
+
+    fs::write(path.join(".surrealdb"), content)?;
+
+    Ok(())
+}
+pub fn add_migration_config_file_with_db_name_in_dir(path: &Path, db: &str) -> Result<()> {
+    let content_path = path.join(".surrealdb");
+    let displayed_path = path.display();
+
+    let content = format!(
+        r#"[core]
+    path = "{displayed_path}"
+    schema = "less"
+
+[db]
+    address = "ws://localhost:8000"
+    username = "root"
+    password = "root"
+    ns = "test"
+    db = "{db}""#
+    );
+
+    fs::write(content_path, content)?;
+
+    Ok(())
+}
+pub fn add_migration_config_file_with_ns_db(path: &Path, ns: &str, db: &str) -> Result<()> {
+    let content = format!(
+        r#"[core]
+    schema = "less"
+
+[db]
+    address = "ws://localhost:8000"
+    username = "root"
+    password = "root"
+    ns = "{ns}"
+    db = "{db}""#
+    );
+
+    fs::write(path.join(".surrealdb"), content)?;
+
+    Ok(())
+}
+pub fn add_migration_config_file_with_core_schema(path: &Path, schema: &str) -> Result<()> {
+    let content = format!(
+        r#"[core]
+    schema = "{schema}"
+
+[db]
+    address = "ws://localhost:8000"
+    username = "root"
+    password = "root"
+    ns = "test"
+    db = "test""#
+    );
+
+    fs::write(path.join(".surrealdb"), content)?;
+
+    Ok(())
+}
+pub fn add_migration_config_file_with_db_address(path: &Path, address: &str) -> Result<()> {
+    let content = format!(
+        r#"[core]
+    schema = "less"
+
+[db]
+    address = "{address}"
+    username = "root"
+    password = "root"
+    ns = "test"
+    db = "test""#
+    );
+
+    fs::write(path.join(".surrealdb"), content)?;
+
+    Ok(())
+}
+
+pub fn add_post_migration_file(path: &Path) -> Result<()> {
     let content = "CREATE post SET title = 'Hello world!', content = 'This is my first post!', author = user:admin;";
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(path)?;
     cmd.arg("create")
         .arg("migration")
         .arg("AddPost")
@@ -46,18 +133,20 @@ pub fn add_post_migration_file() -> Result<()> {
     Ok(())
 }
 
-pub fn write_post_migration_down_file(migration_name: &str) -> Result<()> {
+pub fn write_post_migration_down_file(path: &Path, migration_name: &str) -> Result<()> {
     let content = "DELETE post;";
-    let migration_down_file =
-        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+    let migration_down_file = path
+        .join("migrations")
+        .join("down")
+        .join(format!("{}.surql", migration_name));
 
     fs::write(migration_down_file, content)?;
 
     Ok(())
 }
 
-pub fn add_category_schema_file() -> Result<()> {
-    let schemas_files_dir = Path::new("tests-files/schemas");
+pub fn add_category_schema_file(path: &Path) -> Result<()> {
+    let schemas_files_dir = path.join("schemas");
 
     if schemas_files_dir.exists() {
         let schema_file = schemas_files_dir.join("category.surql");
@@ -72,12 +161,12 @@ DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();"
     Ok(())
 }
 
-pub fn add_category_migration_file() -> Result<()> {
+pub fn add_category_migration_file(path: &Path) -> Result<()> {
     let content = "CREATE category SET name = 'Technology';
 CREATE category SET name = 'Marketing';
 CREATE category SET name = 'Books';";
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(path)?;
     cmd.arg("create")
         .arg("migration")
         .arg("AddCategories")
@@ -89,18 +178,20 @@ CREATE category SET name = 'Books';";
     Ok(())
 }
 
-pub fn write_category_migration_down_file(migration_name: &str) -> Result<()> {
+pub fn write_category_migration_down_file(path: &Path, migration_name: &str) -> Result<()> {
     let content = "DELETE category;";
-    let migration_down_file =
-        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+    let migration_down_file = path
+        .join("migrations")
+        .join("down")
+        .join(format!("{}.surql", migration_name));
 
     fs::write(migration_down_file, content)?;
 
     Ok(())
 }
 
-pub fn add_archive_schema_file() -> Result<()> {
-    let schemas_files_dir = Path::new("tests-files/schemas");
+pub fn add_archive_schema_file(path: &Path) -> Result<()> {
+    let schemas_files_dir = path.join("schemas");
 
     if schemas_files_dir.exists() {
         let schema_file = schemas_files_dir.join("archive.surql");
@@ -117,11 +208,11 @@ DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();";
     Ok(())
 }
 
-pub fn add_archive_migration_file() -> Result<()> {
+pub fn add_archive_migration_file(path: &Path) -> Result<()> {
     let content =
         "CREATE archive SET name = '2022', from_date = '2022-01-01', to_date = '2022-12-31';";
 
-    let mut cmd = create_cmd()?;
+    let mut cmd = create_cmd(path)?;
     cmd.arg("create")
         .arg("migration")
         .arg("AddArchive")
@@ -133,19 +224,21 @@ pub fn add_archive_migration_file() -> Result<()> {
     Ok(())
 }
 
-pub fn write_archive_migration_down_file(migration_name: &str) -> Result<()> {
+pub fn write_archive_migration_down_file(path: &Path, migration_name: &str) -> Result<()> {
     let content = "DELETE archive;";
-    let migration_down_file =
-        Path::new("tests-files/migrations/down").join(format!("{}.surql", migration_name));
+    let migration_down_file = path
+        .join("migrations")
+        .join("down")
+        .join(format!("{}.surql", migration_name));
 
     fs::write(migration_down_file, content)?;
 
     Ok(())
 }
 
-pub fn inline_down_migration_files() -> Result<()> {
-    let migrations_files_dir = Path::new("tests-files/migrations");
-    let down_migrations_files_dir = Path::new("tests-files/migrations/down");
+pub fn inline_down_migration_files(path: &Path) -> Result<()> {
+    let migrations_files_dir = path.join("migrations");
+    let down_migrations_files_dir = migrations_files_dir.join("down");
 
     let down_migrations_files = down_migrations_files_dir
         .read_dir()?
@@ -175,7 +268,7 @@ pub fn inline_down_migration_files() -> Result<()> {
         )?;
     }
 
-    remove_folder("tests-files/migrations/down")?;
+    remove_folder(&down_migrations_files_dir)?;
 
     Ok(())
 }

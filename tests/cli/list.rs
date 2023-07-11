@@ -1,46 +1,48 @@
 use anyhow::Result;
+use assert_fs::TempDir;
 use chrono::Local;
-use serial_test::serial;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn list_empty_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_empty_template()?;
-        apply_migrations()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
-        cmd.arg("list");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_empty_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-        cmd.assert()
-            .try_success()
-            .and_then(|assert| assert.try_stdout("No migrations applied yet!\n"))?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        Ok(())
-    })
+    cmd.arg("list");
+
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout("No migrations applied yet!\n"))?;
+
+    Ok(())
 }
 
 #[test]
-#[serial]
 fn list_blog_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        let now = Local::now();
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        apply_migrations()?;
+    let now = Local::now();
 
-        let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-        cmd.arg("list").arg("--no-color");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        let date_prefix = now.format("%Y%m%d_%H%M").to_string();
+    cmd.arg("list").arg("--no-color");
 
-        let expected = format!(
-            " Name         | Executed at | File name                          
+    let date_prefix = now.format("%Y%m%d_%H%M").to_string();
+
+    let expected = format!(
+        " Name         | Executed at | File name                          
 --------------+-------------+------------------------------------
  AddAdminUser | just now    | {0}01_AddAdminUser.surql 
 --------------+-------------+------------------------------------
@@ -48,13 +50,12 @@ fn list_blog_migrations() -> Result<()> {
 --------------+-------------+------------------------------------
  CommentPost  | just now    | {0}03_CommentPost.surql  
 \n",
-            date_prefix
-        );
+        date_prefix
+    );
 
-        cmd.assert()
-            .try_success()
-            .and_then(|assert| assert.try_stdout(expected))?;
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout(expected))?;
 
-        Ok(())
-    })
+    Ok(())
 }

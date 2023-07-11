@@ -1,28 +1,32 @@
-use anyhow::{ensure, Result};
+use anyhow::Result;
+use assert_fs::TempDir;
 use regex::Regex;
 use serial_test::serial;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn display_branch_status() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("test-branch")?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("status").arg("test-branch");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "test-branch")?;
 
-            let output = cmd.assert().try_success()?.get_output().stdout.to_owned();
-            let output = String::from_utf8(output)?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            let regex = Regex::new(
-                r"## Branch status ##
+    cmd.arg("branch").arg("status").arg("test-branch");
+
+    let output = cmd.assert().try_success()?.get_output().stdout.to_owned();
+    let output = String::from_utf8(output)?;
+
+    let regex = Regex::new(&format!(
+        r"## Branch status ##
 Name: test-branch
 Namespace: branches
 Database: test-branch
@@ -30,38 +34,37 @@ Created at: (.+) \(just now\)
 
 ## Origin Branch ##
 Namespace: test
-Database: test\n",
-            )?;
+Database: {db_name}\n",
+    ))?;
 
-            let match_regex = regex.is_match(&output);
+    let match_regex = regex.is_match(&output);
+    assert!(match_regex, "Output does not match regex: {output}");
 
-            ensure!(match_regex, "Output does not match regex");
-
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn display_branch_status_using_alias() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("test-branch")?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("test-branch");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "test-branch")?;
 
-            let output = cmd.assert().try_success()?.get_output().stdout.to_owned();
-            let output = String::from_utf8(output)?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            let regex = Regex::new(
-                r"## Branch status ##
+    cmd.arg("branch").arg("test-branch");
+
+    let output = cmd.assert().try_success()?.get_output().stdout.to_owned();
+    let output = String::from_utf8(output)?;
+
+    let regex = Regex::new(&format!(
+        r"## Branch status ##
 Name: test-branch
 Namespace: branches
 Database: test-branch
@@ -69,36 +72,29 @@ Created at: (.+) \(just now\)
 
 ## Origin Branch ##
 Namespace: test
-Database: test\n",
-            )?;
+Database: {db_name}\n",
+    ))?;
 
-            let match_regex = regex.is_match(&output);
+    let match_regex = regex.is_match(&output);
+    assert!(match_regex, "Output does not match regex: {output}");
 
-            ensure!(match_regex, "Output does not match regex");
-
-            Ok(())
-        })
-    })
-    .await
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn fails_if_branch_does_not_exist() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
 
-            cmd.arg("branch").arg("status").arg("void");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_failure()
-                .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+    cmd.arg("branch").arg("status").arg("void");
 
-            Ok(())
-        })
-    })
-    .await
+    cmd.assert()
+        .try_failure()
+        .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+
+    Ok(())
 }

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use assert_fs::TempDir;
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -6,26 +7,25 @@ use crate::helpers::*;
 #[test]
 #[serial]
 fn apply_fails_if_both_up_and_down_args_provided() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
+    let temp_dir = TempDir::new()?;
 
-        let first_migration_name = get_first_migration_name()?;
+    scaffold_blog_template(&temp_dir)?;
 
-        let mut cmd = create_cmd()?;
+    let first_migration_name = get_first_migration_name(&temp_dir)?;
 
-        cmd.arg("apply")
-            .arg("--up")
-            .arg(&first_migration_name)
-            .arg("--down")
-            .arg(&first_migration_name);
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        cmd.assert().try_failure().and_then(|assert| {
-            assert.try_stderr(
-                "Error: You can\'t specify both `up` and `down` parameters at the same time\n",
-            )
-        })?;
+    cmd.arg("apply")
+        .arg("--up")
+        .arg(&first_migration_name)
+        .arg("--down")
+        .arg(&first_migration_name);
 
-        Ok(())
-    })
+    cmd.assert().try_failure().and_then(|assert| {
+        assert.try_stderr(
+            "Error: You can\'t specify both `up` and `down` parameters at the same time\n",
+        )
+    })?;
+
+    Ok(())
 }

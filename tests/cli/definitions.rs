@@ -1,151 +1,154 @@
 use anyhow::{ensure, Context, Result};
+use assert_fs::TempDir;
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
-use serial_test::serial;
-use std::{collections::HashSet, path::Path};
+use std::collections::HashSet;
 
 use crate::helpers::*;
 
 #[test]
-#[serial]
 fn initial_definition_on_initial_schema_changes() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        remove_folder("tests-files/migrations")?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-        let mut cmd = create_cmd()?;
+    let migrations_dir = temp_dir.join("migrations");
 
-        cmd.arg("apply");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&migrations_dir)?;
 
-        cmd.assert().try_success()?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-        let definitions_files =
-            std::fs::read_dir("tests-files/migrations/definitions")?.filter(|entry| {
-                match entry.as_ref() {
-                    Ok(entry) => entry.path().is_file(),
-                    Err(_) => false,
-                }
-            });
-        ensure!(definitions_files.count() == 1);
+    cmd.arg("apply");
 
-        const INITIAL_DEFINITION_FILE_PATH: &str =
-            "tests-files/migrations/definitions/_initial.json";
+    cmd.assert().try_success()?;
 
-        ensure!(Path::new(INITIAL_DEFINITION_FILE_PATH).exists());
+    let definitions_dir = migrations_dir.join("definitions");
 
-        let initial_migration_definition_str =
-            std::fs::read_to_string(INITIAL_DEFINITION_FILE_PATH)?;
-        let initial_migration_definition =
-            serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
-
-        ensure!(
-            initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string())
-        );
-
-        Ok(())
-    })
-}
-
-#[test]
-#[serial]
-fn initial_definition_on_initial_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-
-        let mut cmd = create_cmd()?;
-
-        cmd.arg("apply");
-
-        cmd.assert().try_success()?;
-
-        let definitions_files =
-            std::fs::read_dir("tests-files/migrations/definitions")?.filter(|entry| {
-                match entry.as_ref() {
-                    Ok(entry) => entry.path().is_file(),
-                    Err(_) => false,
-                }
-            });
-        ensure!(definitions_files.count() == 1);
-
-        ensure!(Path::new("tests-files/migrations/definitions/_initial.json").exists());
-
-        Ok(())
-    })
-}
-
-#[test]
-#[serial]
-fn create_new_definition_on_new_migrations() -> Result<()> {
-    run_with_surreal_instance(|| {
-        clear_tests_files()?;
-        scaffold_blog_template()?;
-        apply_migrations()?;
-        add_category_schema_file()?;
-        add_category_migration_file()?;
-
-        let mut cmd = create_cmd()?;
-
-        cmd.arg("apply");
-
-        cmd.assert().try_success()?;
-
-        let mut config = HashSet::new();
-        config.insert(DirEntryAttr::Name);
-        config.insert(DirEntryAttr::Path);
-        config.insert(DirEntryAttr::FullName);
-
-        let mut definitions_files =
-            fs_extra::dir::ls("tests-files/migrations/definitions", &config)
-                .context("Error listing definitions directory")?
-                .items;
-
-        definitions_files.sort_by(|a, b| {
-            let a = match a.get(&DirEntryAttr::Name) {
-                Some(DirEntryValue::String(value)) => Some(value),
-                _ => None,
-            };
-
-            let b = match b.get(&DirEntryAttr::Name) {
-                Some(DirEntryValue::String(value)) => Some(value),
-                _ => None,
-            };
-
-            b.cmp(&a)
+    let definitions_files =
+        std::fs::read_dir(&definitions_dir)?.filter(|entry| match entry.as_ref() {
+            Ok(entry) => entry.path().is_file(),
+            Err(_) => false,
         });
+    ensure!(definitions_files.count() == 1);
 
-        ensure!(definitions_files.len() == 2);
+    let initial_definition_file_path = definitions_dir.join("_initial.json");
 
-        let initial_definition_file = definitions_files
-            .first()
-            .context("No initial definition file found")?;
+    ensure!(initial_definition_file_path.exists());
 
-        let initial_definition_full_name =
-            match initial_definition_file.get(&DirEntryAttr::FullName) {
-                Some(DirEntryValue::String(value)) => Some(value),
-                _ => None,
-            };
+    let initial_migration_definition_str = std::fs::read_to_string(initial_definition_file_path)?;
+    let initial_migration_definition =
+        serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
 
-        ensure!(initial_definition_full_name == Some(&"_initial.json".to_string()));
+    ensure!(initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()));
 
-        let new_definition_file = definitions_files
-            .last()
-            .context("No new definition file found")?;
+    Ok(())
+}
 
-        let new_definition_path = match new_definition_file.get(&DirEntryAttr::Path) {
+#[test]
+fn initial_definition_on_initial_migrations() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    let migrations_dir = temp_dir.join("migrations");
+
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply");
+
+    cmd.assert().try_success()?;
+
+    let definitions_dir = migrations_dir.join("definitions");
+
+    let definitions_files =
+        std::fs::read_dir(&definitions_dir)?.filter(|entry| match entry.as_ref() {
+            Ok(entry) => entry.path().is_file(),
+            Err(_) => false,
+        });
+    ensure!(definitions_files.count() == 1);
+
+    let initial_definition_file_path = definitions_dir.join("_initial.json");
+
+    ensure!(initial_definition_file_path.exists());
+
+    Ok(())
+}
+
+#[test]
+fn create_new_definition_on_new_migrations() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    add_category_schema_file(&temp_dir)?;
+    add_category_migration_file(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply");
+
+    cmd.assert().try_success()?;
+
+    let mut config = HashSet::new();
+    config.insert(DirEntryAttr::Name);
+    config.insert(DirEntryAttr::Path);
+    config.insert(DirEntryAttr::FullName);
+
+    let migrations_dir = temp_dir.join("migrations");
+    let definitions_dir = migrations_dir.join("definitions");
+
+    let mut definitions_files = fs_extra::dir::ls(definitions_dir, &config)
+        .context("Error listing definitions directory")?
+        .items;
+
+    definitions_files.sort_by(|a, b| {
+        let a = match a.get(&DirEntryAttr::Name) {
             Some(DirEntryValue::String(value)) => Some(value),
             _ => None,
         };
 
-        let new_definition_file_content = match new_definition_path {
-            Some(path) => std::fs::read_to_string(path)?,
-            _ => "".to_string(),
+        let b = match b.get(&DirEntryAttr::Name) {
+            Some(DirEntryValue::String(value)) => Some(value),
+            _ => None,
         };
 
-        ensure!(!new_definition_file_content.is_empty());
+        b.cmp(&a)
+    });
 
-        Ok(())
-    })
+    ensure!(definitions_files.len() == 2);
+
+    let initial_definition_file = definitions_files
+        .first()
+        .context("No initial definition file found")?;
+
+    let initial_definition_full_name = match initial_definition_file.get(&DirEntryAttr::FullName) {
+        Some(DirEntryValue::String(value)) => Some(value),
+        _ => None,
+    };
+
+    ensure!(initial_definition_full_name == Some(&"_initial.json".to_string()));
+
+    let new_definition_file = definitions_files
+        .last()
+        .context("No new definition file found")?;
+
+    let new_definition_path = match new_definition_file.get(&DirEntryAttr::Path) {
+        Some(DirEntryValue::String(value)) => Some(value),
+        _ => None,
+    };
+
+    let new_definition_file_content = match new_definition_path {
+        Some(path) => std::fs::read_to_string(path)?,
+        _ => "".to_string(),
+    };
+
+    ensure!(!new_definition_file_content.is_empty());
+
+    Ok(())
 }
 
 const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user

@@ -1,64 +1,98 @@
 use anyhow::Result;
+use assert_fs::TempDir;
+use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 use serial_test::serial;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn list_existing_branches() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
+    remove_features_ns().await?;
 
-            create_branch("branch-1")?;
-            create_branch("branch-2")?;
-            create_branch("branch-3")?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            let mut cmd = create_cmd()?;
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            cmd.arg("branch").arg("list").arg("--no-color");
+    create_branch(&temp_dir, "branch-1")?;
+    create_branch(&temp_dir, "branch-2")?;
+    create_branch(&temp_dir, "branch-3")?;
 
-            let expected =
-                " Name     | NS (main) | DB (main) | NS (branch) | DB (branch) | Created at 
-----------+-----------+-----------+-------------+-------------+------------
- branch-1 | test      | test      | branches    | branch-1    | just now   
-----------+-----------+-----------+-------------+-------------+------------
- branch-2 | test      | test      | branches    | branch-2    | just now   
-----------+-----------+-----------+-------------+-------------+------------
- branch-3 | test      | test      | branches    | branch-3    | just now   
-\n";
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_success()
-                .and_then(|assert| assert.try_stdout(expected))?;
+    cmd.arg("branch").arg("list").arg("--no-color");
 
-            Ok(())
-        })
-    })
-    .await
+    let rows = vec![
+        vec![
+            "branch-1".cell(),
+            "test".cell(),
+            db_name.to_string().cell(),
+            "branches".cell(),
+            "branch-1".cell(),
+            "just now".cell(),
+        ],
+        vec![
+            "branch-2".cell(),
+            "test".cell(),
+            db_name.to_string().cell(),
+            "branches".cell(),
+            "branch-2".cell(),
+            "just now".cell(),
+        ],
+        vec![
+            "branch-3".cell(),
+            "test".cell(),
+            db_name.cell(),
+            "branches".cell(),
+            "branch-3".cell(),
+            "just now".cell(),
+        ],
+    ];
+
+    let table = rows
+        .table()
+        .title(vec![
+            "Name".cell().bold(true),
+            "NS (main)".cell().bold(true),
+            "DB (main)".cell().bold(true),
+            "NS (branch)".cell().bold(true),
+            "DB (branch)".cell().bold(true),
+            "Created at".cell().bold(true),
+        ])
+        .color_choice(ColorChoice::Never)
+        .border(Border::builder().build());
+
+    let expected = table.display()?.to_string();
+
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout(expected + "\n"))?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn list_with_no_existing_branch() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("list");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
-            cmd.assert()
-                .try_success()
-                .and_then(|assert| assert.try_stdout("There are no branch yet!\n"))?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            Ok(())
-        })
-    })
-    .await
+    cmd.arg("branch").arg("list");
+
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout("There are no branch yet!\n"))?;
+
+    Ok(())
 }

@@ -1,130 +1,127 @@
 use anyhow::{ensure, Result};
+use assert_fs::TempDir;
 use serial_test::serial;
 
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn remove_existing_branch() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("test-branch")?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("remove").arg("test-branch");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "test-branch")?;
 
-            cmd.assert().try_success().and_then(|assert| {
-                assert.try_stdout("Branch test-branch successfully removed\n")
-            })?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            // Check "branch" record does not exist in surrealdb
-            let branch: Option<Branch> = get_surrealdb_record(
-                "features".to_string(),
-                "branching".to_string(),
-                "branch".to_string(),
-                "test-branch".to_string(),
-            )
-            .await?;
+    cmd.arg("branch").arg("remove").arg("test-branch");
 
-            ensure!(branch.is_none(), "Branch record should not exist");
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout("Branch test-branch successfully removed\n"))?;
 
-            // Check database is removed from surrealdb
-            let is_empty = is_surreal_db_empty(
-                Some("branches".to_string()),
-                Some("test-branch".to_string()),
-            )
-            .await?;
+    // Check "branch" record does not exist in surrealdb
+    let branch: Option<Branch> = get_surrealdb_record(
+        "features".to_string(),
+        "branching".to_string(),
+        "branch".to_string(),
+        "test-branch".to_string(),
+    )
+    .await?;
 
-            ensure!(is_empty, "SurrealDB database should be empty");
+    ensure!(branch.is_none(), "Branch record should not exist");
 
-            // Check database is removed from surrealdb
-            let is_empty = is_surreal_db_empty(
-                Some("branches/origin".to_string()),
-                Some("test-branch".to_string()),
-            )
-            .await?;
+    // Check database is removed from surrealdb
+    let is_empty = is_surreal_db_empty(
+        Some("branches".to_string()),
+        Some("test-branch".to_string()),
+    )
+    .await?;
 
-            ensure!(is_empty, "SurrealDB database should be empty");
+    ensure!(is_empty, "SurrealDB database should be empty");
 
-            Ok(())
-        })
-    })
-    .await
+    // Check database is removed from surrealdb
+    let is_empty = is_surreal_db_empty(
+        Some("branches/origin".to_string()),
+        Some("test-branch".to_string()),
+    )
+    .await?;
+
+    ensure!(is_empty, "SurrealDB database should be empty");
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn fails_to_remove_if_branch_does_not_exist() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
 
-            cmd.arg("branch").arg("remove").arg("void");
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            cmd.assert()
-                .try_failure()
-                .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+    cmd.arg("branch").arg("remove").arg("void");
 
-            Ok(())
-        })
-    })
-    .await
+    cmd.assert()
+        .try_failure()
+        .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+
+    Ok(())
 }
 
 #[tokio::test]
-#[serial]
+#[serial("branches")]
 async fn prevent_branch_to_be_removed_if_used_by_another_branch() -> Result<()> {
-    run_with_surreal_instance_async(|| {
-        Box::pin(async {
-            clear_tests_files()?;
-            scaffold_blog_template()?;
-            apply_migrations()?;
-            create_branch("branch-1")?;
-            create_branch_from_ns_db("branch-2", ("branches", "branch-1"))?;
+    remove_features_ns().await?;
 
-            let mut cmd = create_cmd()?;
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-            cmd.arg("branch").arg("remove").arg("branch-1");
+    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    apply_migrations(&temp_dir, &db_name)?;
+    create_branch(&temp_dir, "branch-1")?;
+    create_branch_from_ns_db(&temp_dir, "branch-2", ("branches", "branch-1"))?;
 
-            cmd.assert().try_failure().and_then(|assert| {
-                assert.try_stderr("Error: Branch branch-1 is used by another branch\n")
-            })?;
+    let mut cmd = create_cmd(&temp_dir)?;
 
-            // Check "branch" record still exist in surrealdb
-            let branch: Option<Branch> = get_surrealdb_record(
-                "features".to_string(),
-                "branching".to_string(),
-                "branch".to_string(),
-                "branch-1".to_string(),
-            )
-            .await?;
+    cmd.arg("branch").arg("remove").arg("branch-1");
 
-            ensure!(branch.is_some(), "Branch record should still exist");
+    cmd.assert().try_failure().and_then(|assert| {
+        assert.try_stderr("Error: Branch branch-1 is used by another branch\n")
+    })?;
 
-            // Check database is still here in surrealdb
-            let is_empty =
-                is_surreal_db_empty(Some("branches".to_string()), Some("branch-1".to_string()))
-                    .await?;
+    // Check "branch" record still exist in surrealdb
+    let branch: Option<Branch> = get_surrealdb_record(
+        "features".to_string(),
+        "branching".to_string(),
+        "branch".to_string(),
+        "branch-1".to_string(),
+    )
+    .await?;
 
-            ensure!(!is_empty, "SurrealDB database should not be empty");
+    ensure!(branch.is_some(), "Branch record should still exist");
 
-            // Check database is still here in surrealdb
-            let is_empty = is_surreal_db_empty(
-                Some("branches/origin".to_string()),
-                Some("branch-1".to_string()),
-            )
-            .await?;
+    // Check database is still here in surrealdb
+    let is_empty =
+        is_surreal_db_empty(Some("branches".to_string()), Some("branch-1".to_string())).await?;
 
-            ensure!(!is_empty, "SurrealDB database should not be empty");
+    ensure!(!is_empty, "SurrealDB database should not be empty");
 
-            Ok(())
-        })
-    })
-    .await
+    // Check database is still here in surrealdb
+    let is_empty = is_surreal_db_empty(
+        Some("branches/origin".to_string()),
+        Some("branch-1".to_string()),
+    )
+    .await?;
+
+    ensure!(!is_empty, "SurrealDB database should not be empty");
+
+    Ok(())
 }
