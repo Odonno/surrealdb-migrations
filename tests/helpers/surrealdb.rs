@@ -55,7 +55,7 @@ pub async fn is_surreal_table_empty(ns_db: Option<(&str, &str)>, table: &str) ->
     Ok(records.is_empty())
 }
 
-pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
+pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de> + Send + Sync>(
     ns: String,
     db: String,
     table: String,
@@ -72,7 +72,7 @@ pub async fn get_surrealdb_records<T: for<'de> serde::de::Deserialize<'de>>(
     Ok(records)
 }
 
-pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de>>(
+pub async fn get_surrealdb_record<T: for<'de> serde::de::Deserialize<'de> + Send + Sync>(
     ns: String,
     db: String,
     table: String,
