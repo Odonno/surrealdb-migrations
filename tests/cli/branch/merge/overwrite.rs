@@ -12,7 +12,7 @@ async fn merge_existing_branch() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;

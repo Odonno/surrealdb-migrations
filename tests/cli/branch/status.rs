@@ -13,7 +13,7 @@ async fn display_branch_status() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     apply_migrations(&temp_dir, &db_name)?;
     create_branch(&temp_dir, "test-branch")?;
@@ -51,7 +51,7 @@ async fn display_branch_status_using_alias() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     apply_migrations(&temp_dir, &db_name)?;
     create_branch(&temp_dir, "test-branch")?;
