@@ -63,6 +63,21 @@ git clone git@github.com:[YOUR_FORK_HERE]/surrealdb-migrations.git
 cd surrealdb-migrations
 ```
 
+### Testing
+
+Unit testing is an important part of the software development lifecycle. Writing unit tests is not mandatory, but it is always a nice addition. If possible, please try to write unit tests on relatively small functions.
+
+Unit testing is important but this project requires a lot of integration/end-to-end testing to ensure the reliability of the CLI and the Rust crate. In order to write integration tests, you will need to run 2 local SurrealDB instances locally with the following specifications:
+
+- a local SurrealDB instance accessible on port `8000` with a root user having username `root` and password `root`
+- a second local SurrealDB instance accessible on port `8001` with a root user having username `admin` and password `admin`
+
+To avoid mistakes and remove the unnecessary steps to set up the requirements for the tests, there is a bash file inside the project that you can run before starting the tests:
+
+```
+./before-integration-tests.sh
+```
+
 ## Definition of Done
 
 You should always review your own PR first. For content changes, make sure that you:
