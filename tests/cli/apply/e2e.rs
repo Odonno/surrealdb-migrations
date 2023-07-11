@@ -12,13 +12,13 @@ fn replay_migrations_on_clean_db() -> Result<()> {
     {
         let db_name = generate_random_db_name()?;
 
-        add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+        add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
         apply_migrations(&temp_dir, &db_name)?;
     }
 
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -55,7 +55,7 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
@@ -238,7 +238,7 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
 
     {
         let db_name = generate_random_db_name()?;
-        add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+        add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
 
         let db_configuration = SurrealdbConfiguration {
             db: Some(db_name.to_string()),
@@ -314,7 +314,7 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
     }
 
     let db_name = generate_random_db_name()?;
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
 
     let db_configuration = SurrealdbConfiguration {
         db: Some(db_name.to_string()),
@@ -438,7 +438,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migr
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
@@ -501,7 +501,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_db_name(&temp_dir, &db_name)?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
