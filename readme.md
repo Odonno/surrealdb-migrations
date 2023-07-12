@@ -114,7 +114,7 @@ DEFINE TABLE publish_post SCHEMALESS;
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );
 ```

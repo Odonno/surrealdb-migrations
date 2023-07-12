@@ -146,7 +146,7 @@ fn generate_file_content(
 
 {2}
 
-DEFINE EVENT {0} ON TABLE {0} WHEN $before == NONE THEN (
+DEFINE EVENT {0} ON TABLE {0} WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
                 name, table_schema_design_str, field_definitions

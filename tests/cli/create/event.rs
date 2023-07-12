@@ -30,7 +30,7 @@ fn create_event_file() -> Result<()> {
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );",
     );
@@ -58,7 +58,7 @@ fn create_event_file_dry_run() -> Result<()> {
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );\n",
     );
@@ -95,7 +95,7 @@ fn create_event_file_with_schemafull_table_from_config() -> Result<()> {
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );",
     );
@@ -131,7 +131,7 @@ fn create_event_file_with_schemaless_table_from_invalid_config() -> Result<()> {
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );",
     );
@@ -167,7 +167,7 @@ fn create_event_file_with_schemafull_table_from_cli_arg() -> Result<()> {
 DEFINE FIELD post_id ON publish_post;
 DEFINE FIELD created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $before == NONE THEN (
+DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
     # TODO
 );",
     );
