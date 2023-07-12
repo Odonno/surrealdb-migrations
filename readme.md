@@ -21,7 +21,7 @@ cargo add surrealdb-migrations
 cargo install surrealdb-migrations
 ```
 
-- or inside a CI workflow, using a GitHub Action
+- or inside a CI workflow, using a [GitHub Action](https://github.com/marketplace/actions/surrealdb-migrations)
 
 Check [surrealdb-migrations](https://github.com/marketplace/actions/surrealdb-migrations) GitHub Action in the marketplace
 
