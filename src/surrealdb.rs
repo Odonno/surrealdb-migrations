@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::Root,
-    Connection, Surreal,
+    Connection, Response, Surreal,
 };
 
 use crate::{
@@ -103,13 +103,16 @@ pub async fn apply_in_transaction<C: Connection>(
     action: TransactionAction,
 ) -> Result<()> {
     let query = format_transaction(inner_query.to_owned(), &action);
-    let response = client.query(query).await?;
+    let response_result = client.query(query).await;
 
     match action {
         TransactionAction::Rollback => {
-            let first_error = response.check().err().context("Error on rollback")?;
-            let is_rollback_success = first_error.to_string()
-                == "The query was not executed due to a cancelled transaction";
+            let end_result = response_result.and_then(|response: Response| response.check());
+
+            let first_error = end_result.err().context("Error on rollback")?;
+            let is_rollback_success = first_error
+                .to_string()
+                .contains("The query was not executed due to a cancelled transaction");
 
             if is_rollback_success {
                 Ok(())
@@ -118,6 +121,7 @@ pub async fn apply_in_transaction<C: Connection>(
             }
         }
         TransactionAction::Commit => {
+            let response = response_result?;
             response.check()?;
             Ok(())
         }

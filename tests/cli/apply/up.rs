@@ -228,6 +228,55 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     .await
 }
 
+#[tokio::test]
+#[serial]
+async fn apply_initial_migrations_in_dry_run_should_fail() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_empty_template()?;
+            add_invalid_schema_file()?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("apply").arg("--dry-run");
+
+            cmd.assert().try_failure()?;
+
+            Ok(())
+        })
+    })
+    .await
+}
+
+#[tokio::test]
+#[serial]
+async fn apply_initial_migrations_in_dry_run_using_http_engine() -> Result<()> {
+    run_with_surreal_instance_async(|| {
+        Box::pin(async {
+            clear_tests_files()?;
+            scaffold_blog_template()?;
+
+            let mut cmd = create_cmd()?;
+
+            cmd.arg("apply")
+                .arg("--dry-run")
+                .arg("--address")
+                .arg("http://localhost:8000");
+
+            cmd.assert()
+                .try_success()
+                .and_then(|assert| assert.try_stdout(""))?;
+
+            let is_empty = is_surreal_db_empty(None, None).await?;
+            ensure!(is_empty, "SurrealDB should be empty");
+
+            Ok(())
+        })
+    })
+    .await
+}
+
 #[test]
 #[serial]
 fn apply_with_inlined_down_files() -> Result<()> {

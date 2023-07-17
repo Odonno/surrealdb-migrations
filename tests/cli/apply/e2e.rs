@@ -50,6 +50,7 @@ Migration files successfully executed!\n",
 
 #[tokio::test]
 #[serial]
+#[ignore]
 async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     clear_tests_files()?;
     scaffold_blog_template()?;

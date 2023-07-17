@@ -72,6 +72,19 @@ DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();"
     Ok(())
 }
 
+pub fn add_invalid_schema_file() -> Result<()> {
+    let schemas_files_dir = Path::new("tests-files/schemas");
+
+    if schemas_files_dir.exists() {
+        let schema_file = schemas_files_dir.join("table.surql");
+        const CONTENT: &str = "DEFINE TABLE table SCHEMANONE;";
+
+        fs::write(schema_file, CONTENT)?;
+    }
+
+    Ok(())
+}
+
 pub fn add_category_migration_file() -> Result<()> {
     let content = "CREATE category SET name = 'Technology';
 CREATE category SET name = 'Marketing';
