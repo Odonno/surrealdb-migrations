@@ -223,6 +223,45 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     Ok(())
 }
 
+#[tokio::test]
+async fn apply_initial_migrations_in_dry_run_should_fail() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+
+    scaffold_empty_template(&temp_dir)?;
+    add_invalid_schema_file(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply").arg("--dry-run");
+
+    cmd.assert().try_failure()?;
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn apply_initial_migrations_in_dry_run_using_http_engine() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+
+    scaffold_blog_template(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply")
+        .arg("--dry-run")
+        .arg("--address")
+        .arg("http://localhost:8000");
+
+    cmd.assert()
+        .try_success()
+        .and_then(|assert| assert.try_stdout(""))?;
+
+    let is_empty = is_surreal_db_empty(None, None).await?;
+    ensure!(is_empty, "SurrealDB should be empty");
+
+    Ok(())
+}
+
 #[test]
 fn apply_with_inlined_down_files() -> Result<()> {
     let temp_dir = TempDir::new()?;
