@@ -132,7 +132,9 @@ async fn sign_in(
             username: &username,
             password: &password,
         })
-        .await
+        .await?;
+
+    Ok(())
 }
 
 async fn set_namespace_and_database(
