@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use surrealdb::{
     engine::any::{connect, Any},
-    opt::auth::Root,
+    opt::auth::{Jwt, Root},
     Connection, Response, Surreal,
 };
 
@@ -55,7 +55,7 @@ async fn sign_in(
     password: Option<String>,
     db_config: &config::DbConfig,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> Result<Jwt, surrealdb::Error> {
     let username = username
         .or(db_config.username.to_owned())
         .unwrap_or("root".to_owned());
