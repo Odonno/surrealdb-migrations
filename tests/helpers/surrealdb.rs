@@ -112,7 +112,7 @@ pub async fn create_surrealdb_client(
 async fn create_surrealdb_connection(
     url: Option<String>,
     address: Option<String>,
-) -> Result<Surreal<Any>, surrealdb::Error> {
+) -> surrealdb::Result<Surreal<Any>> {
     let url = url.unwrap_or("localhost:8000".to_owned());
     let address = address.unwrap_or(format!("ws://{}", url));
 
@@ -123,7 +123,7 @@ async fn sign_in(
     username: Option<String>,
     password: Option<String>,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> surrealdb::Result<()> {
     let username = username.unwrap_or("root".to_owned());
     let password = password.unwrap_or("root".to_owned());
 
@@ -141,7 +141,7 @@ async fn set_namespace_and_database(
     ns: Option<String>,
     db: Option<String>,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> surrealdb::Result<()> {
     let ns = ns.unwrap_or("test".to_owned());
     let db = db.unwrap_or("test".to_owned());
 

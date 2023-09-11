@@ -38,7 +38,7 @@ async fn create_surrealdb_connection(
     url: Option<String>,
     address: Option<String>,
     db_config: &config::DbConfig,
-) -> Result<Surreal<Any>, surrealdb::Error> {
+) -> surrealdb::Result<Surreal<Any>> {
     let url = url
         .or(db_config.url.to_owned())
         .unwrap_or("localhost:8000".to_owned());
@@ -55,7 +55,7 @@ async fn sign_in(
     password: Option<String>,
     db_config: &config::DbConfig,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> surrealdb::Result<()> {
     let username = username
         .or(db_config.username.to_owned())
         .unwrap_or("root".to_owned());
@@ -78,7 +78,7 @@ async fn set_namespace_and_database(
     db: Option<String>,
     db_config: &config::DbConfig,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> surrealdb::Result<()> {
     let ns = ns.or(db_config.ns.to_owned()).unwrap_or("test".to_owned());
     let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
 
