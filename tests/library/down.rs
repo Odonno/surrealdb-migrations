@@ -21,8 +21,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
 
@@ -55,8 +54,7 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     };
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
 

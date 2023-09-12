@@ -1,5 +1,5 @@
 use color_eyre::eyre::{eyre, Result};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::{
     config::{self, retrieve_table_schema_design},
@@ -10,7 +10,7 @@ use crate::{
 pub struct CreateArgs<'a> {
     pub name: String,
     pub operation: CreateOperation,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub enum CreateOperation {
@@ -119,7 +119,7 @@ fn get_filename(operation: &CreateOperation, name: &String) -> String {
 }
 
 fn generate_file_content(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     operation: &CreateOperation,
     name: String,
 ) -> Result<String> {
@@ -159,7 +159,7 @@ DEFINE EVENT {0} ON TABLE {0} WHEN $event == \"CREATE\" THEN (
 }
 
 fn get_table_schema_design_str(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     schemafull: bool,
 ) -> Result<&'static str> {
     const SCHEMAFULL: &str = "SCHEMAFULL";

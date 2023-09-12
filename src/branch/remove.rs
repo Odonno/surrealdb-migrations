@@ -1,4 +1,5 @@
 use color_eyre::eyre::{eyre, Result};
+use std::path::Path;
 
 use crate::{
     branch::{
@@ -15,7 +16,7 @@ use crate::{
 pub struct RemoveBranchArgs<'a> {
     pub name: String,
     pub db_configuration: &'a SurrealdbConfiguration,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: RemoveBranchArgs<'_>) -> Result<()> {

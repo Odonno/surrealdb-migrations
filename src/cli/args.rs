@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs, ScaffoldAction};
@@ -12,7 +14,7 @@ pub struct Args {
     /// Path to the configuration file
     /// Default value is `.surrealdb`.
     #[clap(long, global = true)]
-    pub config_file: Option<String>,
+    pub config_file: Option<PathBuf>,
 }
 
 #[derive(Subcommand, Debug)]

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use color_eyre::eyre::{eyre, Result};
+use std::path::Path;
 
 use crate::{
     branch::{
@@ -13,7 +14,7 @@ use crate::{
 
 pub struct BranchStatusArgs<'a> {
     pub name: String,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: BranchStatusArgs<'_>) -> Result<()> {
