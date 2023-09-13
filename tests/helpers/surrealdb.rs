@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::collections::HashMap;
 use surrealdb::{
     engine::any::{connect, Any},
-    opt::auth::Root,
+    opt::auth::{Jwt, Root},
     sql::Thing,
     Surreal,
 };
@@ -123,7 +123,7 @@ async fn sign_in(
     username: Option<String>,
     password: Option<String>,
     client: &Surreal<Any>,
-) -> Result<(), surrealdb::Error> {
+) -> Result<Jwt, surrealdb::Error> {
     let username = username.unwrap_or("root".to_owned());
     let password = password.unwrap_or("root".to_owned());
 
