@@ -352,8 +352,11 @@ fn convert_ast_to_surrealdb_schema(
                     })
                     .collect::<Vec<_>>();
 
-                let index_name = match name.0.first() {
-                    Some(name) => name.value.to_string(),
+                let index_name = match name {
+                    Some(name) => match name.0.first() {
+                        Some(identifier) => identifier.value.to_string(),
+                        None => format!("{}_{}_index", table_name, field_names.join("_")),
+                    },
                     None => format!("{}_{}_index", table_name, field_names.join("_")),
                 };
 
