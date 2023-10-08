@@ -60,7 +60,7 @@ async fn diff_with_changes() -> Result<()> {
 ## category ##
 
 DEFINE TABLE category SCHEMALESS
-DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now()
+DEFINE FIELD created_at ON category TYPE datetime DEFAULT time::now()
 DEFINE FIELD name ON category TYPE string\n",
         )
     })?;

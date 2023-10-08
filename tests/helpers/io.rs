@@ -192,7 +192,7 @@ pub fn add_category_schema_file(path: &Path) -> Result<()> {
         const CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
 
 DEFINE FIELD name ON category TYPE string;
-DEFINE FIELD created_at ON category TYPE datetime VALUE $before OR time::now();";
+DEFINE FIELD created_at ON category TYPE datetime DEFAULT time::now();";
 
         fs::write(schema_file, CONTENT)?;
     }
@@ -252,7 +252,7 @@ pub fn add_archive_schema_file(path: &Path) -> Result<()> {
 DEFINE FIELD name ON archive TYPE string;
 DEFINE FIELD from_date ON archive TYPE datetime;
 DEFINE FIELD to_date ON archive TYPE datetime;
-DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();";
+DEFINE FIELD created_at ON archive TYPE datetime DEFAULT time::now();";
 
         fs::write(schema_file, CONTENT)?;
     }
@@ -262,7 +262,7 @@ DEFINE FIELD created_at ON archive TYPE datetime VALUE $before OR time::now();";
 
 pub fn add_archive_migration_file(path: &Path) -> Result<()> {
     let content =
-        "CREATE archive SET name = '2022', from_date = '2022-01-01', to_date = '2022-12-31';";
+        "CREATE archive SET name = '2022', from_date = '2022-01-01T00:00:00Z', to_date = '2022-12-31T00:00:00Z';";
 
     let mut cmd = create_cmd(path)?;
     cmd.arg("create")
