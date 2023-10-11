@@ -369,7 +369,7 @@ fn convert_ast_to_surrealdb_schema(
 
                 let line_definitions = tables
                     .entry(table_name)
-                    .or_insert(SurrealdbSchemaDefinition::new());
+                    .or_default();
                 line_definitions.push(line_definition);
             }
             _ => {}
