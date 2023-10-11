@@ -18,8 +18,8 @@ jobs:
             archive: tar.gz tar.xz tar.zst
           - target: x86_64-apple-darwin
             archive: zip
-          - target: wasm32-wasi
-            archive: zip
+          # - target: wasm32-wasi
+          #   archive: zip
 
     steps:
       - name: Checkout repository
