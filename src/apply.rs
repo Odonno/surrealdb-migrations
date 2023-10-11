@@ -177,34 +177,9 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
 
     ordered_files
         .iter()
-        .map(|file| file.get_content().unwrap_or(String::new()))
+        .map(|file| file.get_content().unwrap_or_default())
         .collect::<Vec<_>>()
         .join("\n")
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::io::create_surql_file;
-
-    use super::*;
-
-    #[test]
-    fn concat_empty_list_of_files() {
-        let result = concat_files_content(vec![]);
-        assert_eq!(result, "");
-    }
-
-    #[test]
-    fn concat_files_in_alphabetic_order() {
-        let files = vec![
-            create_surql_file("a.text", "Text of a file"),
-            create_surql_file("c.text", "Text of c file"),
-            create_surql_file("b.text", "Text of b file"),
-        ];
-
-        let result = concat_files_content(files);
-        assert_eq!(result, "Text of a file\nText of b file\nText of c file");
-    }
 }
 
 fn get_transaction_action(dry_run: bool) -> TransactionAction {
@@ -702,4 +677,29 @@ fn extract_define_event_statements(statements: Vec<Statement>) -> Vec<DefineEven
             _ => None,
         })
         .collect::<Vec<_>>()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io::create_surql_file;
+
+    use super::*;
+
+    #[test]
+    fn concat_empty_list_of_files() {
+        let result = concat_files_content(vec![]);
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn concat_files_in_alphabetic_order() {
+        let files = vec![
+            create_surql_file("a.text", "Text of a file"),
+            create_surql_file("c.text", "Text of c file"),
+            create_surql_file("b.text", "Text of b file"),
+        ];
+
+        let result = concat_files_content(files);
+        assert_eq!(result, "Text of a file\nText of b file\nText of c file");
+    }
 }

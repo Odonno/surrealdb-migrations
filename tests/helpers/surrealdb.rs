@@ -26,7 +26,7 @@ type SurrealdbTableDefinitions = HashMap<String, String>;
 pub async fn get_surrealdb_table_definitions(
     db_configuration: Option<SurrealdbConfiguration>,
 ) -> Result<SurrealdbTableDefinitions> {
-    let db_configuration = db_configuration.unwrap_or(SurrealdbConfiguration::default());
+    let db_configuration = db_configuration.unwrap_or_default();
     let client = create_surrealdb_client(&db_configuration).await?;
 
     let mut response = client.query("INFO FOR DB;").await?;
