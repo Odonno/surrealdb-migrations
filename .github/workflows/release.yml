@@ -39,6 +39,7 @@ jobs:
           RUSTTARGET: ${{ matrix.target }}
           ARCHIVE_TYPES: ${{ matrix.archive }}
           EXTRA_FILES: "readme.md LICENSE"
+          TOOLCHAIN_VERSION: stable
 
   publish:
     needs: release
