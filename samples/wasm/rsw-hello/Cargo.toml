@@ -15,12 +15,10 @@ default = ["console_error_panic_hook"]
 include_dir = "0.7.3"
 js-sys = "0.3.55"
 serde = { version = "1", features = ["derive"] }
-serde-wasm-bindgen = "0.5.0"
-surrealdb = { git = "https://github.com/surrealdb/surrealdb.git", branch = "main", features = [
-  "kv-indxdb",
-] }
+serde-wasm-bindgen = "0.6.0"
+surrealdb = { version = "1.0.0", features = ["kv-indxdb"] }
 surrealdb-migrations = { path = "../../.." }
-wasm-bindgen = { version = "0.2.63", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.87", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
