@@ -1,0 +1,10 @@
+{
+    "recommendations": [
+        "rust-lang.rust-analyzer",
+        "serayuzgur.crates",
+        "tamasfe.even-better-toml",
+        "mathe42.surrealql",
+        "github.vscode-github-actions",
+        "eamodio.gitlens"
+    ]
+}
