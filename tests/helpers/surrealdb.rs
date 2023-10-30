@@ -143,7 +143,13 @@ async fn set_namespace_and_database(
     let ns = ns.unwrap_or("test".to_owned());
     let db = db.unwrap_or("test".to_owned());
 
-    client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
+    client.query(format!("DEFINE NAMESPACE `{ns}`")).await?;
+    client.use_ns(ns.to_owned()).await?;
+
+    client.query(format!("DEFINE DATABASE `{db}`")).await?;
+    client.use_db(db.to_owned()).await?;
+
+    Ok(())
 }
 
 pub async fn remove_features_ns() -> Result<()> {
