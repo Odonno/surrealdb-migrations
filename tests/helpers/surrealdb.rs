@@ -37,14 +37,28 @@ pub async fn get_surrealdb_table_definitions(
     Ok(table_definitions)
 }
 
+pub async fn get_surrealdb_table_exists(
+    db_configuration:Option<SurrealdbConfiguration>, table: &str,
+)->Result<bool> {
+    let tables = get_surrealdb_table_definitions(db_configuration).await?;
+    Ok(tables.contains_key(table))
+}
+
+
 pub async fn is_surreal_table_empty(ns_db: Option<(&str, &str)>, table: &str) -> Result<bool> {
+
     let mut db_configuration = SurrealdbConfiguration::default();
     if let Some((ns, db)) = ns_db {
         db_configuration.ns = Some(ns.to_string());
         db_configuration.db = Some(db.to_string());
     }
 
+    if !get_surrealdb_table_exists(Some(db_configuration.clone()),table).await? {
+        return Ok(true)
+    }
+
     let client = create_surrealdb_client(&db_configuration).await?;
+
     let mut response = client
         .query("SELECT VALUE id FROM type::table($table);")
         .bind(("table", table))
