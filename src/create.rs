@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use std::path::PathBuf;
 
 use crate::{
@@ -69,7 +69,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
         }
 
         if file_path.exists() {
-            return Err(anyhow!("File {} already exists", filename));
+            return Err(eyre!("File {} already exists", filename));
         }
     }
 

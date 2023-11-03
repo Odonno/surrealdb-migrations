@@ -1,6 +1,6 @@
-use anyhow::Result;
 use assert_fs::TempDir;
 use chrono::Local;
+use color_eyre::eyre::Result;
 
 use crate::helpers::*;
 

@@ -1,4 +1,4 @@
-use anyhow::{ensure, Result};
+use color_eyre::eyre::{ensure, Result};
 use assert_fs::TempDir;
 use serial_test::serial;
 

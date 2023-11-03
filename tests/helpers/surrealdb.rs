@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use color_eyre::eyre::{ContextCompat, Result};
 use std::collections::HashMap;
 use surrealdb::{
     engine::any::{connect, Any},

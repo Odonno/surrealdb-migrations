@@ -1,5 +1,5 @@
-use anyhow::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 
 use crate::helpers::*;
 
@@ -43,9 +43,15 @@ Migration files successfully executed!\n",
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 1);
+    ensure!(
+        definitions_files.count() == 1,
+        "Wrong number of definitions files"
+    );
 
-    ensure!(definitions_dir.join("_initial.json").exists());
+    ensure!(
+        definitions_dir.join("_initial.json").exists(),
+        "Initial definition file should exist"
+    );
 
     Ok(())
 }
@@ -75,18 +81,30 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 1);
+    ensure!(
+        definitions_files.count() == 1,
+        "Wrong number of definitions files"
+    );
 
     let initial_definition_file_path = definitions_dir.join("_initial.json");
 
-    ensure!(initial_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Initial definition file should exist"
+    );
 
     let initial_migration_definition_str = std::fs::read_to_string(&initial_definition_file_path)?;
     let initial_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
 
-    ensure!(initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()));
-    ensure!(initial_migration_definition.events == Some(INITIAL_DEFINITION_EVENTS.to_string()));
+    ensure!(
+        initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()),
+        "Initial migration: wrong schemas"
+    );
+    ensure!(
+        initial_migration_definition.events == Some(INITIAL_DEFINITION_EVENTS.to_string()),
+        "Initial migration: wrong events"
+    );
 
     // Check data
     let ns_db = Some(("test", db_name.as_str()));
@@ -125,13 +143,22 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 2);
+    ensure!(
+        definitions_files.count() == 2,
+        "Wrong number of definitions files"
+    );
 
     let second_migration_definition_file_path =
         definitions_dir.join(format!("{second_migration_name}.json"));
 
-    ensure!(initial_definition_file_path.exists());
-    ensure!(second_migration_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Initial definition file should exist"
+    );
+    ensure!(
+        second_migration_definition_file_path.exists(),
+        "Second definition file should exist"
+    );
 
     let new_initial_migration_definition_str =
         std::fs::read_to_string(&initial_definition_file_path)?;
@@ -145,8 +172,14 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let second_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&second_migration_definition_str)?;
 
-    ensure!(second_migration_definition.schemas == Some(SECOND_MIGRATION_SCHEMAS.to_string()));
-    ensure!(second_migration_definition.events.is_none());
+    ensure!(
+        second_migration_definition.schemas == Some(SECOND_MIGRATION_SCHEMAS.to_string()),
+        "Second migration: wrong schemas"
+    );
+    ensure!(
+        second_migration_definition.events.is_none(),
+        "Second migration: wrong events"
+    );
 
     // Check data
     let is_table_empty = is_surreal_table_empty(ns_db, "post").await?;
@@ -183,14 +216,26 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 3);
+    ensure!(
+        definitions_files.count() == 3,
+        "Wrong number of definitions files"
+    );
 
     let third_migration_definition_file_path =
         definitions_dir.join(format!("{third_migration_name}.json"));
 
-    ensure!(initial_definition_file_path.exists());
-    ensure!(second_migration_definition_file_path.exists());
-    ensure!(third_migration_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Initial definition file should exist"
+    );
+    ensure!(
+        second_migration_definition_file_path.exists(),
+        "Second definition file should exist"
+    );
+    ensure!(
+        third_migration_definition_file_path.exists(),
+        "Third definition file should exist"
+    );
 
     let new_initial_migration_definition_str =
         std::fs::read_to_string(initial_definition_file_path)?;
@@ -204,8 +249,14 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let third_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&third_migration_definition_str)?;
 
-    ensure!(third_migration_definition.schemas == Some(THIRD_MIGRATION_SCHEMAS.to_string()));
-    ensure!(third_migration_definition.events.is_none());
+    ensure!(
+        third_migration_definition.schemas == Some(THIRD_MIGRATION_SCHEMAS.to_string()),
+        "Third migration: wrong schemas"
+    );
+    ensure!(
+        third_migration_definition.events.is_none(),
+        "Third migration: wrong events"
+    );
 
     // Check data
     let is_table_empty = is_surreal_table_empty(ns_db, "post").await?;
@@ -308,9 +359,18 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
         let third_migration_definition_file_path =
             definitions_dir.join(format!("{third_migration_name}.json"));
 
-        ensure!(initial_definition_file_path.exists());
-        ensure!(second_migration_definition_file_path.exists());
-        ensure!(third_migration_definition_file_path.exists());
+        ensure!(
+            initial_definition_file_path.exists(),
+            "Initial definition file should exist"
+        );
+        ensure!(
+            second_migration_definition_file_path.exists(),
+            "Second definition file should exist"
+        );
+        ensure!(
+            third_migration_definition_file_path.exists(),
+            "Third definition file should exist"
+        );
     }
 
     let db_name = generate_random_db_name()?;
@@ -425,9 +485,18 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
     let third_migration_definition_file_path =
         definitions_dir.join(format!("{third_migration_name}.json"));
 
-    ensure!(initial_definition_file_path.exists());
-    ensure!(second_migration_definition_file_path.exists());
-    ensure!(third_migration_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Initial definition file should exist"
+    );
+    ensure!(
+        second_migration_definition_file_path.exists(),
+        "Second definition file should exist"
+    );
+    ensure!(
+        third_migration_definition_file_path.exists(),
+        "Third definition file should exist"
+    );
 
     Ok(())
 }
@@ -491,7 +560,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migr
     };
 
     let table_definitions = get_surrealdb_table_definitions(Some(db_configuration)).await?;
-    ensure!(table_definitions.len() == 8);
+    ensure!(table_definitions.len() == 8, "Wrong number of tables");
 
     Ok(())
 }
@@ -554,7 +623,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
     };
 
     let table_definitions = get_surrealdb_table_definitions(Some(db_configuration)).await?;
-    ensure!(table_definitions.len() == 7);
+    ensure!(table_definitions.len() == 7, "Wrong number of tables");
 
     Ok(())
 }

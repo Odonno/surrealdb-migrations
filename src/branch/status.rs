@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
+use color_eyre::eyre::{eyre, Result};
 
 use crate::{
     branch::{
@@ -49,6 +49,6 @@ pub async fn main(args: BranchStatusArgs<'_>) -> Result<()> {
 
             Ok(())
         }
-        None => Err(anyhow!("Branch {} does not exist", name)),
+        None => Err(eyre!("Branch {} does not exist", name)),
     }
 }

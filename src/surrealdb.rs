@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::{Jwt, Root},
@@ -117,7 +117,7 @@ pub async fn apply_in_transaction<C: Connection>(
             if is_rollback_success {
                 Ok(())
             } else {
-                Err(anyhow!(first_error))
+                Err(eyre!(first_error))
             }
         }
         TransactionAction::Commit => {

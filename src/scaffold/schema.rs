@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use convert_case::{Case, Casing};
 use std::{collections::HashMap, ops::Deref};
 
@@ -95,11 +95,11 @@ fn scaffold_from_schema(
     let schema = convert_ast_to_surrealdb_schema(ast, preserve_casing)?;
 
     if schema.tables.is_empty() {
-        return Err(anyhow!("No table found in schema file."));
+        return Err(eyre!("No table found in schema file."));
     }
 
     if schema.tables.contains_key(SCRIPT_MIGRATION_TABLE_NAME) {
-        return Err(anyhow!(
+        return Err(eyre!(
             "The table '{}' is reserved for internal use.",
             SCRIPT_MIGRATION_TABLE_NAME
         ));
@@ -367,9 +367,7 @@ fn convert_ast_to_surrealdb_schema(
                         unique,
                     });
 
-                let line_definitions = tables
-                    .entry(table_name)
-                    .or_default();
+                let line_definitions = tables.entry(table_name).or_default();
                 line_definitions.push(line_definition);
             }
             _ => {}

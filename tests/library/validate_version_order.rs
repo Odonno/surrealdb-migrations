@@ -1,5 +1,5 @@
-use anyhow::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 use regex::Regex;
 use surrealdb_migrations::MigrationRunner;
 
@@ -117,7 +117,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
 
     let result = runner.validate_version_order().await;
 
-    ensure!(result.is_err());
+    ensure!(result.is_err(), "Expected validation to fail");
 
     let error_regex =
         Regex::new(r"The following migrations have not been applied: \d+_\d+_AddAdminUser")?;
@@ -125,7 +125,10 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
     let error_str = result.unwrap_err().to_string();
     let error_str = error_str.as_str();
 
-    ensure!(error_regex.is_match(error_str));
+    ensure!(
+        error_regex.is_match(error_str),
+        "Expected validation to fail"
+    );
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 
 use crate::{
     branch::constants::BRANCH_TABLE, cli::BranchMergeMode, input::SurrealdbConfiguration,
@@ -49,6 +49,6 @@ pub async fn main(args: MergeBranchArgs<'_>) -> Result<()> {
                 overwrite::main(args).await
             }
         },
-        None => Err(anyhow!("Branch {} does not exist", name)),
+        None => Err(eyre!("Branch {} does not exist", name)),
     }
 }

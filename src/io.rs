@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use include_dir::Dir;
 use std::{
@@ -602,7 +602,7 @@ pub fn get_current_definition(
 
     let initial_definition_str = match initial_definition_file {
         Some(initial_definition_file) => initial_definition_file.get_content().unwrap_or_default(),
-        None => return Err(anyhow!("Initial definition file not found")),
+        None => return Err(eyre!("Initial definition file not found")),
     };
 
     let initial_definition =
@@ -672,7 +672,11 @@ fn extract_initial_definition_content(
             };
 
             let initial_definition_filepath = definitions_path.join(INITIAL_DEFINITION_FILENAME);
-            let content = fs_extra::file::read_to_string(initial_definition_filepath)?;
+            let content =
+                fs_extra::file::read_to_string(&initial_definition_filepath).wrap_err(format!(
+                    "initial_definition_filepath not found at: {:?}",
+                    initial_definition_filepath,
+                ))?;
 
             Ok(content)
         }

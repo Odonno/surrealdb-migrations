@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use color_eyre::{eyre::eyre, Result};
 use std::path::Path;
 
 pub fn are_folders_equivalent(path_one: &Path, path_two: &Path) -> Result<bool> {
@@ -9,7 +9,7 @@ pub fn are_folders_equivalent(path_one: &Path, path_two: &Path) -> Result<bool> 
             let are_equivalent = !is_different;
             Ok(are_equivalent)
         }
-        Err(error) => Err(anyhow!("Cannot compare folders. {:?}", error)),
+        Err(error) => Err(eyre!("Cannot compare folders. {:?}", error)),
     }
 }
 

@@ -1,6 +1,5 @@
 use crate::surrealdb::create_surrealdb_client;
 
-use anyhow::{anyhow, Result};
 use apply::ApplyArgs;
 use branch::{
     diff::BranchDiffArgs, list::ListBranchArgs, merge::MergeBranchArgs, new::NewBranchArgs,
@@ -8,6 +7,8 @@ use branch::{
 };
 use clap::Parser;
 use cli::{Action, Args, BranchAction, CreateAction, ScaffoldAction};
+use color_eyre::eyre::eyre;
+use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 use list::ListArgs;
@@ -31,6 +32,7 @@ mod validate_version_order;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
     let args = Args::parse();
 
     let config_file = args.config_file.as_deref();
@@ -128,7 +130,7 @@ async fn main() -> Result<()> {
                         };
                         create::main(args)
                     }
-                    None => Err(anyhow!("No action specified for `create` command")),
+                    None => Err(eyre!("No action specified for `create` command")),
                 },
             }
         }
@@ -150,7 +152,7 @@ async fn main() -> Result<()> {
 
             let operation = match (up, down) {
                 (Some(_), Some(_)) => {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "You can't specify both `up` and `down` parameters at the same time"
                     ))
                 }
@@ -336,7 +338,7 @@ async fn main() -> Result<()> {
                         };
                         branch::diff::main(args).await
                     }
-                    None => Err(anyhow!("No action specified for `branch` command")),
+                    None => Err(eyre!("No action specified for `branch` command")),
                 },
             }
         }

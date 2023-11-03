@@ -1,4 +1,4 @@
-use anyhow::Result;
+use color_eyre::eyre::{Result};
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
