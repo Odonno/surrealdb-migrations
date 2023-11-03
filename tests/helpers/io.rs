@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use color_eyre::eyre::{ContextCompat, Result};
 use std::{fs, path::Path};
 
 use super::create_cmd;

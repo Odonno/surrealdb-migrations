@@ -1,5 +1,5 @@
-use anyhow::Result;
 use assert_fs::TempDir;
+use color_eyre::Result;
 use regex::Regex;
 use serial_test::serial;
 

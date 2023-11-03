@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -158,7 +158,7 @@ pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
             }
         }
         None => {
-            return Err(anyhow!("Branch {} does not exist", name));
+            return Err(eyre!("Branch {} does not exist", name));
         }
     }
 

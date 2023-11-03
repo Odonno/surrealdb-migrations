@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use std::path::Path;
 
 use crate::{
@@ -12,7 +12,7 @@ pub fn main(config_file: Option<&str>) -> Result<()> {
     let forward_migrations_files = io::extract_forward_migrations_files(config_file, None);
 
     if forward_migrations_files.is_empty() {
-        return Err(anyhow!("No migration files left"));
+        return Err(eyre!("No migration files left"));
     }
 
     let last_migration = forward_migrations_files

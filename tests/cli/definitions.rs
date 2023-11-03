@@ -1,5 +1,8 @@
-use anyhow::{ensure, Context, Result};
 use assert_fs::TempDir;
+use color_eyre::{
+    eyre::{ensure, ContextCompat, WrapErr},
+    Result,
+};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use std::collections::HashSet;
 
@@ -29,17 +32,26 @@ fn initial_definition_on_initial_schema_changes() -> Result<()> {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 1);
+    ensure!(
+        definitions_files.count() == 1,
+        "Expected only one definition file"
+    );
 
     let initial_definition_file_path = definitions_dir.join("_initial.json");
 
-    ensure!(initial_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Expected _initial.json file to exist"
+    );
 
     let initial_migration_definition_str = std::fs::read_to_string(initial_definition_file_path)?;
     let initial_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
 
-    ensure!(initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()));
+    ensure!(
+        initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()),
+        "Expected initial definition to be equal to the initial definition schema"
+    );
 
     Ok(())
 }
@@ -67,11 +79,17 @@ fn initial_definition_on_initial_migrations() -> Result<()> {
             Ok(entry) => entry.path().is_file(),
             Err(_) => false,
         });
-    ensure!(definitions_files.count() == 1);
+    ensure!(
+        definitions_files.count() == 1,
+        "Expected only one definition file"
+    );
 
     let initial_definition_file_path = definitions_dir.join("_initial.json");
 
-    ensure!(initial_definition_file_path.exists());
+    ensure!(
+        initial_definition_file_path.exists(),
+        "Expected _initial.json file to exist"
+    );
 
     Ok(())
 }
@@ -119,7 +137,10 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
         b.cmp(&a)
     });
 
-    ensure!(definitions_files.len() == 2);
+    ensure!(
+        definitions_files.len() == 2,
+        "Expected two definition files"
+    );
 
     let initial_definition_file = definitions_files
         .first()
@@ -130,7 +151,10 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
         _ => None,
     };
 
-    ensure!(initial_definition_full_name == Some(&"_initial.json".to_string()));
+    ensure!(
+        initial_definition_full_name == Some(&"_initial.json".to_string()),
+        "invalid initial definition file name"
+    );
 
     let new_definition_file = definitions_files
         .last()
@@ -146,7 +170,10 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
         _ => "".to_string(),
     };
 
-    ensure!(!new_definition_file_content.is_empty());
+    ensure!(
+        !new_definition_file_content.is_empty(),
+        "empty new definition file"
+    );
 
     Ok(())
 }

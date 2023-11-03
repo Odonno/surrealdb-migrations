@@ -1,5 +1,8 @@
-use anyhow::{anyhow, ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::{
+    eyre::{ensure, eyre},
+    Result,
+};
 use regex::Regex;
 use serial_test::serial;
 
@@ -130,9 +133,9 @@ db: (\S+)\n$",
 
     let branch_name = regex
         .captures(&output)
-        .ok_or_else(|| anyhow!("Output should match regex #1"))?
+        .ok_or_else(|| eyre!("Output should match regex #1"))?
         .get(1)
-        .ok_or_else(|| anyhow!("Output should match regex #2"))?
+        .ok_or_else(|| eyre!("Output should match regex #2"))?
         .as_str();
 
     // Check "branch" record exist in surrealdb

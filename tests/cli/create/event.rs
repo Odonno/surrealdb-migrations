@@ -1,5 +1,5 @@
-use anyhow::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 use pretty_assertions::assert_eq;
 
 use crate::helpers::*;
@@ -96,6 +96,7 @@ DEFINE FIELD created_at ON publish_post;
 DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
+        "invalid publish post file string"
     );
 
     Ok(())
@@ -130,6 +131,7 @@ DEFINE FIELD created_at ON publish_post;
 DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
+        "invalid publish post file string"
     );
 
     Ok(())

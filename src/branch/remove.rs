@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 
 use crate::{
     branch::{
@@ -32,7 +32,7 @@ pub async fn main(args: RemoveBranchArgs<'_>) -> Result<()> {
     let existing_branch_names = retrieve_existing_branch_names(&branching_feature_client).await?;
 
     if !existing_branch_names.contains(&name) {
-        return Err(anyhow!("Branch {} does not exist", name));
+        return Err(eyre!("Branch {} does not exist", name));
     }
 
     // Prevent branch to be removed if used by another branch
@@ -45,7 +45,7 @@ pub async fn main(args: RemoveBranchArgs<'_>) -> Result<()> {
     let number_of_dependent_branches = number_of_dependent_branches.unwrap_or(0);
 
     if number_of_dependent_branches > 0 {
-        return Err(anyhow!("Branch {} is used by another branch", name));
+        return Err(eyre!("Branch {} is used by another branch", name));
     }
 
     // Remove databases created for this branch

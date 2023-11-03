@@ -25,7 +25,7 @@
 //! # Get started
 //!
 //! ```rust,no_run
-//! # use anyhow::Result;
+//! # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
 //! use surrealdb_migrations::MigrationRunner;
 //! use surrealdb::engine::any::connect;
 //! use surrealdb::opt::auth::Root;
@@ -64,8 +64,8 @@ mod surrealdb;
 mod validate_version_order;
 
 use ::surrealdb::{Connection, Surreal};
-use anyhow::Result;
 use apply::ApplyArgs;
+use color_eyre::eyre::{Result};
 use include_dir::Dir;
 use models::ScriptMigration;
 use validate_version_order::ValidateVersionOrderArgs;
@@ -107,7 +107,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use include_dir::{include_dir, Dir};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
@@ -152,7 +152,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use include_dir::{include_dir, Dir};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
@@ -196,7 +196,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
@@ -236,7 +236,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
@@ -284,7 +284,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
@@ -332,7 +332,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;
@@ -376,7 +376,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ## Examples
     ///
     /// ```rust,no_run
-    /// # use anyhow::Result;
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
     /// use surrealdb_migrations::MigrationRunner;
     /// use surrealdb::engine::any::connect;
     /// use surrealdb::opt::auth::Root;

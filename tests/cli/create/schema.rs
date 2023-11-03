@@ -1,5 +1,5 @@
-use anyhow::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 use pretty_assertions::assert_eq;
 
 use crate::helpers::*;
@@ -86,7 +86,8 @@ fn create_schemafull_table_file_from_config() -> Result<()> {
 
 DEFINE FIELD name ON post;
 DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;"
+DEFINE FIELD published_at ON post;",
+        "Expected file contents to match"
     );
 
     Ok(())
@@ -117,7 +118,8 @@ fn create_schemaless_table_file_from_invalid_config() -> Result<()> {
 
 DEFINE FIELD name ON post;
 DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;"
+DEFINE FIELD published_at ON post;",
+        "Expected file contents to match"
     );
 
     Ok(())

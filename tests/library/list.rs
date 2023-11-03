@@ -1,6 +1,9 @@
-use anyhow::{ensure, Context, Result};
 use assert_fs::TempDir;
 use chrono::{DateTime, Local};
+use color_eyre::{
+    eyre::{ensure, Context, ContextCompat},
+    Result,
+};
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
@@ -28,7 +31,10 @@ async fn list_empty_migrations() -> Result<()> {
 
     let migrations_applied = runner.list().await?;
 
-    ensure!(migrations_applied.len() == 0);
+    ensure!(
+        migrations_applied.is_empty(),
+        "Expected no migrations to be applied"
+    );
 
     Ok(())
 }
@@ -58,7 +64,10 @@ async fn list_blog_migrations() -> Result<()> {
 
     let migrations_applied = runner.list().await?;
 
-    ensure!(migrations_applied.len() == 3);
+    ensure!(
+        migrations_applied.len() == 3,
+        "Expected 3 migrations to be applied"
+    );
 
     let date_prefix = now.format("%Y%m%d_%H%M").to_string();
 
@@ -69,34 +78,55 @@ async fn list_blog_migrations() -> Result<()> {
         .get(0)
         .context("Cannot get first migration")?;
 
-    ensure!(first_migration.script_name == format!("{}01_AddAdminUser", date_prefix));
-    ensure!(now_timestamp_range.contains(
-        &DateTime::parse_from_rfc3339(&first_migration.executed_at)
-            .map(|dt| dt.timestamp())
-            .context("Cannot parse first migration execution date")?
-    ));
+    ensure!(
+        first_migration.script_name == format!("{}01_AddAdminUser", date_prefix),
+        "Expected first migration script name to be {}01_AddAdminUser",
+        date_prefix
+    );
+    ensure!(
+        now_timestamp_range.contains(
+            &DateTime::parse_from_rfc3339(&first_migration.executed_at)
+                .map(|dt| dt.timestamp())
+                .context("Cannot parse first migration execution date")?
+        ),
+        "Expected first migration to be executed just now"
+    );
 
     let second_migration = migrations_applied
         .get(1)
         .context("Cannot get second migration")?;
 
-    ensure!(second_migration.script_name == format!("{}02_AddPost", date_prefix));
-    ensure!(now_timestamp_range.contains(
-        &DateTime::parse_from_rfc3339(&second_migration.executed_at)
-            .map(|dt| dt.timestamp())
-            .context("Cannot parse second migration execution date")?
-    ));
+    ensure!(
+        second_migration.script_name == format!("{}02_AddPost", date_prefix),
+        "Expected second migration script name to be {}02_AddPost",
+        date_prefix
+    );
+    ensure!(
+        now_timestamp_range.contains(
+            &DateTime::parse_from_rfc3339(&second_migration.executed_at)
+                .map(|dt| dt.timestamp())
+                .context("Cannot parse second migration execution date")?
+        ),
+        "Expected second migration to be executed just now"
+    );
 
     let third_migration = migrations_applied
         .get(2)
         .context("Cannot get third migration")?;
 
-    ensure!(third_migration.script_name == format!("{}03_CommentPost", date_prefix));
-    ensure!(now_timestamp_range.contains(
-        &DateTime::parse_from_rfc3339(&third_migration.executed_at)
-            .map(|dt| dt.timestamp())
-            .context("Cannot parse third migration execution date")?
-    ));
+    ensure!(
+        third_migration.script_name == format!("{}03_CommentPost", date_prefix),
+        "Expected third migration script name to be {}03_CommentPost",
+        date_prefix
+    );
+    ensure!(
+        now_timestamp_range.contains(
+            &DateTime::parse_from_rfc3339(&third_migration.executed_at)
+                .map(|dt| dt.timestamp())
+                .context("Cannot parse third migration execution date")?
+        ),
+        "Expected third migration to be executed just now"
+    );
 
     Ok(())
 }

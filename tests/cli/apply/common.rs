@@ -1,5 +1,5 @@
-use anyhow::Result;
 use assert_fs::TempDir;
+use color_eyre::eyre::Result;
 use serial_test::serial;
 
 use crate::helpers::*;

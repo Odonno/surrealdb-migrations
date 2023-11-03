@@ -1,5 +1,5 @@
 use ::surrealdb::{Connection, Surreal};
-use anyhow::{anyhow, Result};
+use color_eyre::eyre::{eyre, Result};
 use include_dir::Dir;
 
 use crate::{
@@ -54,7 +54,7 @@ pub async fn main<C: Connection>(args: ValidateVersionOrderArgs<'_, C>) -> Resul
             .map(|migration_file| migration_file.name.to_string())
             .collect::<Vec<_>>();
 
-        Err(anyhow!(
+        Err(eyre!(
             "The following migrations have not been applied: {}",
             migration_names.join(", ")
         ))

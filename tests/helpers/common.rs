@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
 use assert_cmd::Command;
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use names::{Generator, Name};
 use std::{
     fs, io,
@@ -114,12 +114,15 @@ pub fn get_third_migration_name(path: &Path) -> Result<String> {
     get_nth_migration_name(path, 2)
 }
 
-fn get_nth_migration_name(path: &Path, index: i8) -> std::result::Result<String, anyhow::Error> {
+fn get_nth_migration_name(
+    path: &Path,
+    index: i8,
+) -> std::result::Result<String, color_eyre::eyre::Error> {
     let migration_name = get_nth_migration_file(path, index)?
         .file_stem()
-        .ok_or_else(|| anyhow!("Could not get file stem"))?
+        .ok_or_else(|| eyre!("Could not get file stem"))?
         .to_str()
-        .ok_or_else(|| anyhow!("Could not convert file stem to str"))?
+        .ok_or_else(|| eyre!("Could not convert file stem to str"))?
         .to_owned();
 
     Ok(migration_name)
@@ -140,7 +143,7 @@ fn get_nth_migration_file(path: &Path, index: i8) -> Result<PathBuf> {
 
     let first_migration_file = migration_files
         .get(index as usize)
-        .ok_or_else(|| anyhow!("No migration files found"))?;
+        .ok_or_else(|| eyre!("No migration files found"))?;
 
     Ok(first_migration_file.to_path_buf())
 }

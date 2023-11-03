@@ -1,5 +1,5 @@
-use anyhow::Result;
 use assert_fs::TempDir;
+use color_eyre::Result;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;

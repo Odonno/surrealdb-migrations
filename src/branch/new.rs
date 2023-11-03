@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use names::{Generator, Name};
 use std::path::PathBuf;
@@ -130,7 +130,7 @@ fn fails_if_branch_already_exists(
 ) -> Result<()> {
     if let Some(name) = branch_name {
         if existing_branch_names.contains(&name) {
-            return Err(anyhow!("Branch name already exists"));
+            return Err(eyre!("Branch name already exists"));
         }
     }
 
@@ -221,7 +221,7 @@ async fn save_branch_in_database(
         .await?;
 
     if record.is_none() {
-        return Err(anyhow!("Cannot insert branch name into branch table"));
+        return Err(eyre!("Cannot insert branch name into branch table"));
     }
 
     Ok(())

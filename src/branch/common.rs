@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use anyhow::Result;
+use color_eyre::eyre::{Result};
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};

@@ -9,7 +9,7 @@ use ::surrealdb::{
     },
     Connection, Surreal,
 };
-use anyhow::{anyhow, Context, Result};
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::Dir;
 
 use crate::{
@@ -310,7 +310,7 @@ fn expect_migration_definitions_to_be_up_to_date(
         Ok(())
     } else {
         const ERROR_MESSAGE: &str = "The migration definitions are not up to date. Please run `surrealdb-migrations apply` on your local environment and publish definitions files.";
-        Err(anyhow!(ERROR_MESSAGE))
+        Err(eyre!(ERROR_MESSAGE))
     }
 }
 

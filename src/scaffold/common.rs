@@ -1,5 +1,5 @@
-use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Local};
+use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use std::{
     io::Write,
@@ -43,7 +43,7 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
 
 fn fails_if_folder_already_exists(dir_path: &Path, dir_name: &str) -> Result<()> {
     match dir_path.exists() {
-        true => Err(anyhow!("'{}' folder already exists.", dir_name)),
+        true => Err(eyre!("'{}' folder already exists.", dir_name)),
         false => Ok(()),
     }
 }

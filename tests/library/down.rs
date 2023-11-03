@@ -1,5 +1,5 @@
-use anyhow::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::{eyre::ensure, Result};
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
@@ -29,7 +29,10 @@ async fn apply_revert_all_migrations() -> Result<()> {
     runner.down("0").await?;
 
     let migrations_applied = runner.list().await?;
-    ensure!(migrations_applied.len() == 0);
+    ensure!(
+        migrations_applied.is_empty(),
+        "Expected no migrations to be applied"
+    );
 
     Ok(())
 }
@@ -60,7 +63,10 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     runner.down(&first_migration_name).await?;
 
     let migrations_applied = runner.list().await?;
-    ensure!(migrations_applied.len() == 1);
+    ensure!(
+        migrations_applied.len() == 1,
+        "Expected 1 migration to be applied"
+    );
 
     Ok(())
 }

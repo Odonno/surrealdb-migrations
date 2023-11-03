@@ -1,4 +1,4 @@
-use anyhow::Result;
+use color_eyre::Result;
 use include_dir::{include_dir, Dir};
 use surrealdb_migrations::MigrationRunner;
 
