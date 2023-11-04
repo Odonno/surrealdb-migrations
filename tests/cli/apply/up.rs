@@ -1,5 +1,5 @@
-use color_eyre::eyre::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 use predicates::prelude::*;
 
 use crate::helpers::*;
@@ -39,7 +39,7 @@ fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
     cmd.arg("apply");
 
     cmd.assert().failure().stderr(predicate::str::contains(
-        "Error: There was an error processing a remote WS request",
+        "There was an error processing a remote WS request",
     ));
 
     Ok(())

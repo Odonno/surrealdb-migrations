@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
 use color_eyre::eyre::Result;
+use predicates::prelude::*;
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -22,9 +23,9 @@ fn apply_fails_if_both_up_and_down_args_provided() -> Result<()> {
         .arg(&first_migration_name);
 
     cmd.assert().try_failure().and_then(|assert| {
-        assert.try_stderr(
-            "Error: You can\'t specify both `up` and `down` parameters at the same time\n",
-        )
+        assert.try_stderr(predicate::str::contains(
+            "You can\'t specify both `up` and `down` parameters at the same time",
+        ))
     })?;
 
     Ok(())

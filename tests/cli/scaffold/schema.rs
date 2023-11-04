@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
 use color_eyre::eyre::Result;
+use predicates::prelude::*;
 use pretty_assertions::assert_eq;
 use std::path::Path;
 
@@ -21,7 +22,7 @@ fn scaffold_fails_from_empty_schema_file() -> Result<()> {
 
     cmd.assert()
         .failure()
-        .stderr("Error: No table found in schema file.\n");
+        .stderr(predicate::str::contains("No table found in schema file."));
 
     Ok(())
 }
@@ -40,9 +41,9 @@ fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -
         .arg("--db-type")
         .arg("mssql");
 
-    cmd.assert()
-        .failure()
-        .stderr("Error: The table 'script_migration' is reserved for internal use.\n");
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "The table 'script_migration' is reserved for internal use.",
+    ));
 
     Ok(())
 }

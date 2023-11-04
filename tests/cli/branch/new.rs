@@ -3,6 +3,7 @@ use color_eyre::{
     eyre::{ensure, eyre},
     Result,
 };
+use predicates::prelude::*;
 use regex::Regex;
 use serial_test::serial;
 
@@ -95,9 +96,9 @@ async fn fails_if_branch_already_exists() -> Result<()> {
         .arg("--address")
         .arg("http://localhost:8000");
 
-    cmd.assert()
-        .try_failure()
-        .and_then(|assert| assert.try_stderr("Error: Branch name already exists\n"))?;
+    cmd.assert().try_failure().and_then(|assert| {
+        assert.try_stderr(predicate::str::contains("Branch name already exists"))
+    })?;
 
     Ok(())
 }

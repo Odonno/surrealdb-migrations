@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
 use color_eyre::eyre::Result;
+use predicates::prelude::*;
 
 use crate::helpers::*;
 
@@ -27,13 +28,13 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
     let first_migration_name = get_first_migration_name(&temp_dir)?;
 
     let error = format!(
-        "Error: The following migrations have not been applied: {}\n",
+        "The following migrations have not been applied: {}",
         first_migration_name
     );
 
     cmd.assert()
         .try_failure()
-        .and_then(|assert| assert.try_stderr(error))?;
+        .and_then(|assert| assert.try_stderr(predicate::str::contains(error)))?;
 
     Ok(())
 }

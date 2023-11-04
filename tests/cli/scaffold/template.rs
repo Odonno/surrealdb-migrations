@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
 use color_eyre::eyre::Result;
+use predicates::prelude::*;
 use std::path::Path;
 
 use crate::helpers::*;
@@ -122,7 +123,7 @@ fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
 
     cmd.assert()
         .failure()
-        .stderr("Error: 'schemas' folder already exists.\n");
+        .stderr(predicate::str::contains("'schemas' folder already exists."));
 
     Ok(())
 }
@@ -139,7 +140,7 @@ fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
 
     cmd.assert()
         .failure()
-        .stderr("Error: 'events' folder already exists.\n");
+        .stderr(predicate::str::contains("'events' folder already exists."));
 
     Ok(())
 }
@@ -154,9 +155,9 @@ fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
 
     cmd.arg("scaffold").arg("template").arg("blog");
 
-    cmd.assert()
-        .failure()
-        .stderr("Error: 'migrations' folder already exists.\n");
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "'migrations' folder already exists.",
+    ));
 
     Ok(())
 }

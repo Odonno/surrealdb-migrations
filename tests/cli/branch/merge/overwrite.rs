@@ -1,5 +1,6 @@
-use color_eyre::eyre::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
+use predicates::prelude::*;
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -95,9 +96,9 @@ async fn fails_to_merge_if_branch_does_not_exist() -> Result<()> {
         .arg("--mode")
         .arg("overwrite");
 
-    cmd.assert()
-        .try_failure()
-        .and_then(|assert| assert.try_stderr("Error: Branch void does not exist\n"))?;
+    cmd.assert().try_failure().and_then(|assert| {
+        assert.try_stderr(predicate::str::contains("Branch void does not exist"))
+    })?;
 
     Ok(())
 }

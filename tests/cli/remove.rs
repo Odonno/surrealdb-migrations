@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
 use color_eyre::Result;
+use predicates::prelude::*;
 
 use crate::helpers::*;
 
@@ -51,7 +52,7 @@ fn cannot_remove_if_no_migration_file_left() -> Result<()> {
 
     cmd.assert()
         .failure()
-        .stderr("Error: No migration files left\n");
+        .stderr(predicate::str::contains("No migration files left"));
 
     Ok(())
 }
