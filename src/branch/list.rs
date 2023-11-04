@@ -1,7 +1,8 @@
-use color_eyre::eyre::{Result};
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
+use color_eyre::eyre::Result;
+use std::path::Path;
 
 use crate::{
     branch::{
@@ -15,7 +16,7 @@ use crate::{
 pub struct ListBranchArgs<'a> {
     pub db_configuration: &'a SurrealdbConfiguration,
     pub no_color: bool,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: ListBranchArgs<'_>) -> Result<()> {

@@ -65,16 +65,17 @@ mod validate_version_order;
 
 use ::surrealdb::{Connection, Surreal};
 use apply::ApplyArgs;
-use color_eyre::eyre::{Result};
+use color_eyre::eyre::Result;
 use include_dir::Dir;
 use models::ScriptMigration;
+use std::path::Path;
 use validate_version_order::ValidateVersionOrderArgs;
 
 /// The main entry point for the library, used to apply migrations.
 pub struct MigrationRunner<'a, C: Connection> {
     db: &'a Surreal<C>,
     dir: Option<&'a Dir<'static>>,
-    config_file: Option<&'a str>,
+    config_file: Option<&'a Path>,
 }
 
 #[deprecated(
@@ -127,19 +128,18 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// db.use_ns("namespace").use_db("database").await?;
     ///
     /// let runner = MigrationRunner::new(&db)
-    ///     .use_config_file(".surrealdb")
+    ///     .use_config_file(&".surrealdb")
     ///     .up()
     ///     .await?;
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub fn use_config_file(&'_ self, config_file: &'a str) -> Self {
-        // TODO : handle Path and not just &str
+    pub fn use_config_file<P: AsRef<Path>>(self, config_file: &'a P) -> Self {
         MigrationRunner {
             db: self.db,
             dir: self.dir,
-            config_file: Some(config_file),
+            config_file: Some(config_file.as_ref()),
         }
     }
 

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use ::surrealdb::{Connection, Surreal};
 use color_eyre::eyre::{eyre, Result};
 use include_dir::Dir;
@@ -11,7 +13,7 @@ use crate::{
 pub struct ValidateVersionOrderArgs<'a, C: Connection> {
     pub db: &'a Surreal<C>,
     pub dir: Option<&'a Dir<'static>>,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main<C: Connection>(args: ValidateVersionOrderArgs<'_, C>) -> Result<()> {

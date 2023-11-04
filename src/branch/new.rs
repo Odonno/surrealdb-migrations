@@ -2,7 +2,7 @@ use chrono::Utc;
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use names::{Generator, Name};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
@@ -27,7 +27,7 @@ use super::{
 pub struct NewBranchArgs<'a> {
     pub name: Option<String>,
     pub db_configuration: &'a SurrealdbConfiguration,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
@@ -138,7 +138,7 @@ fn fails_if_branch_already_exists(
 }
 
 async fn export_original_branch_data_in_dump_file(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,
 ) -> Result<()> {
@@ -149,7 +149,7 @@ async fn export_original_branch_data_in_dump_file(
 }
 
 async fn replicate_database_into_branch(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     name: Option<String>,
     existing_branch_names: Vec<String>,
     db_configuration: &SurrealdbConfiguration,
@@ -190,7 +190,7 @@ fn generate_random_branch_name(existing_branch_names: Vec<String>) -> Result<Str
 }
 
 async fn import_branch_data_from_dump_file(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
     dump_file_path: PathBuf,

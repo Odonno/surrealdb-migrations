@@ -1,11 +1,13 @@
 use ini::Ini;
 use std::path::Path;
 
-pub fn load_config(config_file: Option<&str>) -> Option<Ini> {
-    let config_file_path = config_file.unwrap_or(".surrealdb");
-    let surrealdb_config_file = Path::new(&config_file_path);
+pub fn load_config(config_file: Option<&Path>) -> Option<Ini> {
+    let ini = match config_file {
+        Some(config_file) => Ini::load_from_file(config_file),
+        None => Ini::load_from_file(".surrealdb"),
+    };
 
-    Ini::load_from_file(surrealdb_config_file).ok()
+    ini.ok()
 }
 
 pub fn retrieve_config_value(config: &Ini, section: &str, key: &str) -> Option<String> {

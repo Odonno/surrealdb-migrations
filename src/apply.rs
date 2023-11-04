@@ -32,7 +32,7 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub display_logs: bool,
     pub dry_run: bool,
     pub validate_version_order: bool,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub enum ApplyOperation {
@@ -316,7 +316,7 @@ fn expect_migration_definitions_to_be_up_to_date(
 
 #[allow(clippy::too_many_arguments)]
 async fn apply_migrations<C: Connection>(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     migration_files_to_execute: Vec<SurqlFile>,
     last_migration_applied: Option<&ScriptMigration>,
@@ -434,7 +434,7 @@ CREATE {} SET script_name = '{}';",
 
 #[allow(clippy::too_many_arguments)]
 async fn revert_migrations<C: Connection>(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     migration_files_to_execute: Vec<SurqlFile>,
     migrations_applied: &[ScriptMigration],

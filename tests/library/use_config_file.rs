@@ -9,7 +9,7 @@ async fn use_config_file_fails_if_folder_does_not_exist() -> Result<()> {
     let db = create_surrealdb_client(&configuration).await?;
 
     let result = MigrationRunner::new(&db)
-        .use_config_file("/temp/void/.surrealdb")
+        .use_config_file(&"/temp/void/.surrealdb")
         .up()
         .await;
 

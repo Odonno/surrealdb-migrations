@@ -1,7 +1,8 @@
-use color_eyre::eyre::{Result};
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
+use color_eyre::eyre::Result;
+use std::path::Path;
 
 use crate::{
     common::get_migration_display_name,
@@ -12,7 +13,7 @@ use crate::{
 pub struct ListArgs<'a> {
     pub db_configuration: &'a SurrealdbConfiguration,
     pub no_color: bool,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: ListArgs<'_>) -> Result<()> {

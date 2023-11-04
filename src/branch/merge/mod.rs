@@ -1,4 +1,5 @@
 use color_eyre::eyre::{eyre, Result};
+use std::path::Path;
 
 use crate::{
     branch::constants::BRANCH_TABLE, cli::BranchMergeMode, input::SurrealdbConfiguration,
@@ -15,7 +16,7 @@ pub struct MergeBranchArgs<'a> {
     pub name: String,
     pub mode: BranchMergeMode,
     pub db_configuration: &'a SurrealdbConfiguration,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: MergeBranchArgs<'_>) -> Result<()> {

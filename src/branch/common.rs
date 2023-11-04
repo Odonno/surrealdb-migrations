@@ -1,4 +1,7 @@
-use std::{fs, path::PathBuf};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 use color_eyre::eyre::{Result};
 use surrealdb::{engine::any::Any, Surreal};
@@ -9,7 +12,7 @@ use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
 #[allow(deprecated)]
 pub async fn create_branching_feature_client(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
     const BRANCH_DATA_NS: &str = "features";
@@ -30,7 +33,7 @@ pub async fn create_branching_feature_client(
 
 #[allow(deprecated)]
 pub async fn create_branch_client(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
@@ -49,7 +52,7 @@ pub async fn create_branch_client(
 
 #[allow(deprecated)]
 pub async fn create_origin_branch_client(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     branch_name: &String,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
@@ -68,7 +71,7 @@ pub async fn create_origin_branch_client(
 
 #[allow(deprecated)]
 pub async fn create_main_branch_client(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
     branch: &Branch,
 ) -> Result<Surreal<Any>> {

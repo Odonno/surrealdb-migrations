@@ -22,7 +22,7 @@ pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
     }
 }
 
-pub fn can_use_filesystem(config_file: Option<&str>) -> Result<bool> {
+pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
     let folder_path = config::retrieve_folder_path(config_file);
     let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
         .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
@@ -55,7 +55,7 @@ pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
 }
 
 pub fn extract_schemas_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(SCHEMAS_DIR_NAME).to_path_buf();
@@ -63,7 +63,7 @@ pub fn extract_schemas_files(
 }
 
 pub fn extract_events_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(EVENTS_DIR_NAME).to_path_buf();
@@ -71,7 +71,7 @@ pub fn extract_events_files(
 }
 
 pub fn extract_forward_migrations_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
@@ -95,7 +95,7 @@ pub fn extract_forward_migrations_files(
 }
 
 pub fn extract_backward_migrations_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
@@ -124,7 +124,7 @@ pub fn extract_backward_migrations_files(
 }
 
 fn extract_surql_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     dir_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
@@ -201,7 +201,7 @@ fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
 }
 
 fn extract_surql_files_from_filesystem(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     dir_path: PathBuf,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
@@ -298,7 +298,7 @@ impl JsonDefinitionFile {
 }
 
 pub fn extract_json_definition_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     dir_path: &Path,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<JsonDefinitionFile>> {
@@ -340,7 +340,7 @@ fn extract_json_definition_files_from_embedded_dir(
 }
 
 fn extract_json_definition_files_from_filesystem(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     dir_path: &Path,
 ) -> Result<Vec<JsonDefinitionFile>> {
     let dir_path_str = dir_path.display().to_string();
@@ -388,7 +388,7 @@ fn extract_json_definition_files_from_filesystem(
 }
 
 pub fn create_definition_files(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     initial_definition_path: PathBuf,
     schema_definitions: String,
@@ -420,7 +420,7 @@ pub fn create_definition_files(
 }
 
 fn update_migration_definition_file(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     initial_definition_path: PathBuf,
     last_migration_file: &SurqlFile,
@@ -522,7 +522,7 @@ fn update_migration_definition_file(
 }
 
 fn create_initial_definition_file(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: &PathBuf,
     initial_definition_path: &PathBuf,
     schema_definitions: String,
@@ -588,7 +588,7 @@ pub fn apply_patch(text: String, diff: String) -> Result<String> {
 }
 
 pub fn get_current_definition(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     last_migration_applied: &ScriptMigration,
     embedded_dir: Option<&Dir<'static>>,
@@ -629,7 +629,7 @@ fn take_while_applied_or_before(
 }
 
 pub fn get_initial_definition(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<SchemaMigrationDefinition> {
@@ -641,7 +641,7 @@ pub fn get_initial_definition(
 }
 
 fn extract_initial_definition_content(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<String> {
@@ -684,7 +684,7 @@ fn extract_initial_definition_content(
 }
 
 pub fn get_migration_definition_diff(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     migration_name: String,
     embedded_dir: Option<&Dir<'static>>,
@@ -705,7 +705,7 @@ pub fn get_migration_definition_diff(
 }
 
 fn extract_definition_diff_content(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     definitions_path: PathBuf,
     migration_name: String,
     embedded_dir: Option<&Dir<'static>>,

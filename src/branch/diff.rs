@@ -1,7 +1,7 @@
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, path::Path};
 
 use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
 
@@ -13,7 +13,7 @@ use super::{
 pub struct BranchDiffArgs<'a> {
     pub name: String,
     pub db_configuration: &'a SurrealdbConfiguration,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
@@ -181,7 +181,7 @@ struct SurrealdbInfoForTableResponse {
 }
 
 async fn get_surrealdb_database_definition(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: SurrealdbConfiguration,
 ) -> Result<SurrealdbDatabaseDefinition> {
     let client = create_surrealdb_client(config_file, &db_configuration).await?;

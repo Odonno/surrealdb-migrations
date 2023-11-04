@@ -1,4 +1,5 @@
-use color_eyre::eyre::{Result};
+use color_eyre::eyre::Result;
+use std::path::Path;
 
 use crate::{cli::ScaffoldTemplate, config};
 
@@ -8,7 +9,7 @@ use super::common::{
 
 pub struct ScaffoldFromTemplateArgs<'a> {
     pub template: ScaffoldTemplate,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub fn main(args: ScaffoldFromTemplateArgs) -> Result<()> {

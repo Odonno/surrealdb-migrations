@@ -1,4 +1,5 @@
 use color_eyre::eyre::{eyre, ContextCompat, Result};
+use std::path::Path;
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::{Jwt, Root},
@@ -12,7 +13,7 @@ use crate::{
 
 #[allow(dead_code)]
 pub async fn create_surrealdb_client(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
     #[allow(deprecated)]

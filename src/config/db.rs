@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use super::common::{load_config, retrieve_config_value};
 
 #[allow(dead_code)]
@@ -11,7 +13,7 @@ pub struct DbConfig {
 }
 
 #[allow(dead_code)]
-pub fn retrieve_db_config(config_file: Option<&str>) -> DbConfig {
+pub fn retrieve_db_config(config_file: Option<&Path>) -> DbConfig {
     let config = load_config(config_file);
 
     if let Some(config) = config {

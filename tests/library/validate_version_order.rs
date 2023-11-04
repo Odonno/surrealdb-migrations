@@ -22,8 +22,7 @@ async fn ok_if_no_migration_file() -> Result<()> {
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.validate_version_order().await?;
 
@@ -47,8 +46,7 @@ async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
 
@@ -74,8 +72,7 @@ async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Res
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
     runner.up_to(&first_migration_name).await?;
@@ -102,8 +99,7 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     let first_migration_file = get_first_migration_file(&temp_dir)?;
     std::fs::remove_file(first_migration_file)?;
@@ -151,8 +147,7 @@ async fn ok_if_migrations_applied_but_no_new_migration_with_inlined_down_files()
 
     let db = create_surrealdb_client(&configuration).await?;
 
-    let runner =
-        MigrationRunner::new(&db).use_config_file(config_file_path.to_str().unwrap_or_default());
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
 

@@ -1,5 +1,5 @@
-use color_eyre::eyre::{Result};
-use std::path::PathBuf;
+use color_eyre::eyre::Result;
+use std::path::{Path, PathBuf};
 
 use crate::{
     branch::{
@@ -18,7 +18,7 @@ use crate::{
 pub struct MergeOverwriteBranchArgs<'a> {
     pub branch: Branch,
     pub db_configuration: &'a SurrealdbConfiguration,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub async fn main(args: MergeOverwriteBranchArgs<'_>) -> Result<()> {
@@ -53,7 +53,7 @@ pub async fn main(args: MergeOverwriteBranchArgs<'_>) -> Result<()> {
 }
 
 async fn apply_changes_to_main_branch(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
     branch: &Branch,
     dump_file_path: &PathBuf,

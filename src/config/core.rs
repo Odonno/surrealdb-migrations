@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use super::common::{load_config, retrieve_config_value};
 
 #[allow(dead_code)]
@@ -6,7 +8,7 @@ pub enum TableSchemaDesign {
     Schemaless,
 }
 
-pub fn retrieve_folder_path(config_file: Option<&str>) -> Option<String> {
+pub fn retrieve_folder_path(config_file: Option<&Path>) -> Option<String> {
     let config = load_config(config_file);
 
     if let Some(config) = config {
@@ -17,7 +19,7 @@ pub fn retrieve_folder_path(config_file: Option<&str>) -> Option<String> {
 }
 
 #[allow(dead_code)]
-pub fn retrieve_table_schema_design(config_file: Option<&str>) -> Option<TableSchemaDesign> {
+pub fn retrieve_table_schema_design(config_file: Option<&Path>) -> Option<TableSchemaDesign> {
     let config = load_config(config_file);
 
     let schema_str = if let Some(config) = config {

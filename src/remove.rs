@@ -8,7 +8,7 @@ use crate::{
     io::{self, SurqlFile},
 };
 
-pub fn main(config_file: Option<&str>) -> Result<()> {
+pub fn main(config_file: Option<&Path>) -> Result<()> {
     let forward_migrations_files = io::extract_forward_migrations_files(config_file, None);
 
     if forward_migrations_files.is_empty() {
@@ -33,7 +33,7 @@ pub fn main(config_file: Option<&str>) -> Result<()> {
     Ok(())
 }
 
-fn remove_migration_file(config_file: Option<&str>, last_migration: &SurqlFile) -> Result<()> {
+fn remove_migration_file(config_file: Option<&Path>, last_migration: &SurqlFile) -> Result<()> {
     let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
@@ -45,7 +45,7 @@ fn remove_migration_file(config_file: Option<&str>, last_migration: &SurqlFile) 
 }
 
 fn remove_definition_file_if_exists(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
     let folder_path = config::retrieve_folder_path(config_file);
@@ -63,7 +63,7 @@ fn remove_definition_file_if_exists(
 }
 
 fn remove_down_migration_file_if_exists(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
     remove_nested_down_migration_file_if_exists(config_file, last_migration)?;
@@ -73,7 +73,7 @@ fn remove_down_migration_file_if_exists(
 }
 
 fn remove_nested_down_migration_file_if_exists(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
     let folder_path = config::retrieve_folder_path(config_file);
@@ -91,7 +91,7 @@ fn remove_nested_down_migration_file_if_exists(
 }
 
 fn remove_inlined_down_migration_file_if_exists(
-    config_file: Option<&str>,
+    config_file: Option<&Path>,
     last_migration: &SurqlFile,
 ) -> Result<()> {
     let folder_path = config::retrieve_folder_path(config_file);

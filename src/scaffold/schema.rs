@@ -1,6 +1,6 @@
 use color_eyre::eyre::{eyre, Result};
 use convert_case::{Case, Casing};
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::HashMap, ops::Deref, path::Path};
 
 use crate::{
     cli::{ScaffoldSchemaDbType, ScaffoldTemplate},
@@ -17,7 +17,7 @@ pub struct ScaffoldFromSchemaArgs<'a> {
     pub schema: String,
     pub db_type: ScaffoldSchemaDbType,
     pub preserve_casing: bool,
-    pub config_file: Option<&'a str>,
+    pub config_file: Option<&'a Path>,
 }
 
 pub fn main(args: ScaffoldFromSchemaArgs) -> Result<()> {
