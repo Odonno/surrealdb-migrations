@@ -28,7 +28,7 @@ pub enum ScaffoldAction {
         /// Predefined template used to scaffold the project
         template: ScaffoldTemplate,
     },
-    /// Scaffold a new project from an existing SQL schema file
+    /// ** Preview ** Scaffold a new project from an existing SQL schema file
     Schema {
         /// Path to the SQL schema file
         schema: String,

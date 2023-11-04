@@ -35,7 +35,7 @@ pub enum Action {
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]
     List(ListArgs),
-    /// A set of commands for database branching
+    /// ** Preview ** A set of commands for database branching
     #[clap(aliases = vec!["b"])]
     Branch(BranchArgs),
 }
