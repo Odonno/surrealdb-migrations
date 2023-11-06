@@ -2,6 +2,7 @@ use color_eyre::eyre::{eyre, Result};
 use std::path::Path;
 
 use crate::{
+    surrealdb,
     branch::constants::BRANCH_TABLE, cli::BranchMergeMode, input::SurrealdbConfiguration,
     models::Branch,
 };
@@ -29,9 +30,14 @@ pub async fn main(args: MergeBranchArgs<'_>) -> Result<()> {
 
     let branching_feature_client =
         create_branching_feature_client(config_file, db_configuration).await?;
-    let branch: Option<Branch> = branching_feature_client
-        .select((BRANCH_TABLE, name.to_string()))
-        .await?;
+
+    let mut branch: Option<Branch> = None;
+
+    if surrealdb::get_surrealdb_table_exists(&branching_feature_client, BRANCH_TABLE).await? {
+        branch = branching_feature_client
+            .select((BRANCH_TABLE, name.to_string()))
+            .await?;
+    }
 
     match branch {
         Some(branch) => match mode {
