@@ -6,7 +6,11 @@ use std::{
 use color_eyre::eyre::{Result};
 use surrealdb::{engine::any::Any, Surreal};
 
-use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
+use crate::{
+    input::SurrealdbConfiguration,
+    models::Branch,
+    surrealdb::{ create_surrealdb_client, get_surrealdb_table_exists }
+};
 
 use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
@@ -86,6 +90,21 @@ pub async fn create_main_branch_client(
 
     let client = create_surrealdb_client(config_file, &main_branch_db_configuration).await?;
     Ok(client)
+}
+
+pub async fn get_branch_table(
+    branching_feature_client: &Surreal<Any>,
+    name: &String
+) -> Result<Option<Branch>> {
+
+    let mut branch: Option<Branch> = None;
+    if get_surrealdb_table_exists(branching_feature_client, BRANCH_TABLE).await? {
+        branch = branching_feature_client
+            .select((BRANCH_TABLE, name.to_string()))
+            .await?;
+    }
+
+    Ok(branch)
 }
 
 pub async fn retrieve_existing_branch_names(
