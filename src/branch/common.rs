@@ -97,14 +97,14 @@ pub async fn get_branch_table(
     name: &String
 ) -> Result<Option<Branch>> {
 
-    let mut branch: Option<Branch> = None;
     if get_surrealdb_table_exists(branching_feature_client, BRANCH_TABLE).await? {
-        branch = branching_feature_client
+        let branch = branching_feature_client
             .select((BRANCH_TABLE, name.to_string()))
             .await?;
+        Ok(branch)
+    } else {
+        Ok(None)
     }
-
-    Ok(branch)
 }
 
 pub async fn retrieve_existing_branch_names(
