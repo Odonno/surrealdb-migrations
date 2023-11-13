@@ -179,11 +179,10 @@ async fn create_new_branch_using_config_file() -> Result<()> {
     remove_features_ns().await?;
 
     let temp_dir = TempDir::new()?;
-    let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_ns_db(&temp_dir, "main", "main")?;
     scaffold_blog_template(&temp_dir)?;
-    apply_migrations(&temp_dir, &db_name)?;
+    apply_migrations(&temp_dir, "main")?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
