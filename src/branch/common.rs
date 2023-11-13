@@ -110,12 +110,18 @@ pub async fn get_branch_table(
 pub async fn retrieve_existing_branch_names(
     branching_feature_client: &Surreal<Any>,
 ) -> Result<Vec<String>> {
-    let existing_branch_names: Vec<String> = branching_feature_client
-        .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
-        .await?
-        .take(0)?;
 
-    Ok(existing_branch_names)
+    if get_surrealdb_table_exists(branching_feature_client, BRANCH_TABLE).await? {
+
+        let existing_branch_names: Vec<String> = branching_feature_client
+            .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
+            .await?
+            .take(0)?;
+
+        Ok(existing_branch_names)
+    } else {
+        Ok(vec![])
+    }
 }
 
 pub fn remove_dump_file(dump_file_path: &PathBuf) -> Result<()> {
