@@ -23,9 +23,9 @@ async fn merge_existing_branch() -> Result<()> {
 
     apply_migrations_on_branch(&temp_dir, "test-branch-merge-existing")?;
 
-    // Check no data exists in the main branch
+    // Check no post data exists in the main branch
     let posts: Vec<Post> =
-        get_surrealdb_records("test".to_string(), "test".to_string(), "post".to_string()).await?;
+        get_surrealdb_records("test".to_string(), db_name.to_string(), "post".to_string()).await?;
 
     ensure!(posts.is_empty(), "There should be no post");
 
