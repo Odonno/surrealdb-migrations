@@ -85,9 +85,9 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_empty_template(&temp_dir)?;
 
-    add_post_migration_file(&temp_dir)?;
+    add_simple_migration_file(&temp_dir)?;
     let first_migration_name = get_first_migration_name(&temp_dir)?;
-    write_post_migration_down_file(&temp_dir, &first_migration_name)?;
+    write_simple_migration_down_file(&temp_dir, &first_migration_name)?;
 
     apply_migrations(&temp_dir, &db_name)?;
 
@@ -97,7 +97,7 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
 
     cmd.assert().try_success().and_then(|assert| {
         assert.try_stdout(
-            "Reverting migration AddPost...
+            "Reverting migration AddTokenParam...
 Migration files successfully executed!\n",
         )
     })?;

@@ -6,8 +6,8 @@ use std::{collections::HashMap, path::Path};
 use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
 
 use super::{
-    common::create_branching_feature_client,
-    constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS},
+    common::{create_branching_feature_client, get_branch_table},
+    constants::{BRANCH_NS, ORIGIN_BRANCH_NS},
 };
 
 pub struct BranchDiffArgs<'a> {
@@ -25,9 +25,7 @@ pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
 
     let branching_feature_client =
         create_branching_feature_client(config_file, db_configuration).await?;
-    let branch: Option<Branch> = branching_feature_client
-        .select((BRANCH_TABLE, name.to_string()))
-        .await?;
+    let branch: Option<Branch> = get_branch_table(&branching_feature_client,&name).await?;
 
     match branch {
         Some(branch) => {

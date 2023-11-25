@@ -6,11 +6,13 @@ use std::path::Path;
 use crate::{
     branch::{
         common::create_branching_feature_client,
-        constants::{BRANCH_NS, BRANCH_TABLE},
+        constants::BRANCH_NS,
     },
     input::SurrealdbConfiguration,
     models::Branch,
 };
+
+use super::common::get_branch_table;
 
 pub struct BranchStatusArgs<'a> {
     pub name: String,
@@ -23,9 +25,7 @@ pub async fn main(args: BranchStatusArgs<'_>) -> Result<()> {
     let db_configuration = SurrealdbConfiguration::default();
     let branching_feature_client =
         create_branching_feature_client(config_file, &db_configuration).await?;
-    let branch: Option<Branch> = branching_feature_client
-        .select((BRANCH_TABLE, name.to_string()))
-        .await?;
+    let branch: Option<Branch> = get_branch_table(&branching_feature_client,&name).await?;
 
     match branch {
         Some(branch) => {

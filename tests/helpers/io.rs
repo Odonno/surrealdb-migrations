@@ -157,6 +157,33 @@ pub fn add_migration_config_file_with_db_address(path: &Path, address: &str) -> 
     Ok(())
 }
 
+pub fn add_simple_migration_file(path: &Path) -> Result<()> {
+    let content = "DEFINE PARAM $token VALUE 'xxxxxxxx';";
+
+    let mut cmd = create_cmd(path)?;
+    cmd.arg("create")
+        .arg("migration")
+        .arg("AddTokenParam")
+        .arg("--content")
+        .arg(content)
+        .arg("--down");
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
+pub fn write_simple_migration_down_file(path: &Path, migration_name: &str) -> Result<()> {
+    let content = "REMOVE PARAM $token;";
+    let migration_down_file = path
+        .join("migrations")
+        .join("down")
+        .join(format!("{}.surql", migration_name));
+
+    fs::write(migration_down_file, content)?;
+
+    Ok(())
+}
+
 pub fn add_post_migration_file(path: &Path) -> Result<()> {
     let content = "CREATE post SET title = 'Hello world!', content = 'This is my first post!', author = user:admin;";
 

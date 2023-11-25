@@ -6,7 +6,11 @@ use std::{
 use color_eyre::eyre::{Result};
 use surrealdb::{engine::any::Any, Surreal};
 
-use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
+use crate::{
+    input::SurrealdbConfiguration,
+    models::Branch,
+    surrealdb::{ create_surrealdb_client, get_surrealdb_table_exists }
+};
 
 use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
@@ -88,15 +92,36 @@ pub async fn create_main_branch_client(
     Ok(client)
 }
 
+pub async fn get_branch_table(
+    branching_feature_client: &Surreal<Any>,
+    name: &String
+) -> Result<Option<Branch>> {
+
+    if get_surrealdb_table_exists(branching_feature_client, BRANCH_TABLE).await? {
+        let branch = branching_feature_client
+            .select((BRANCH_TABLE, name.to_string()))
+            .await?;
+        Ok(branch)
+    } else {
+        Ok(None)
+    }
+}
+
 pub async fn retrieve_existing_branch_names(
     branching_feature_client: &Surreal<Any>,
 ) -> Result<Vec<String>> {
-    let existing_branch_names: Vec<String> = branching_feature_client
-        .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
-        .await?
-        .take(0)?;
 
-    Ok(existing_branch_names)
+    if get_surrealdb_table_exists(branching_feature_client, BRANCH_TABLE).await? {
+
+        let existing_branch_names: Vec<String> = branching_feature_client
+            .query(format!("SELECT VALUE name FROM {}", BRANCH_TABLE))
+            .await?
+            .take(0)?;
+
+        Ok(existing_branch_names)
+    } else {
+        Ok(vec![])
+    }
 }
 
 pub fn remove_dump_file(dump_file_path: &PathBuf) -> Result<()> {

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use std::path::Path;
 use surrealdb::{
@@ -81,16 +82,46 @@ async fn set_namespace_and_database(
     let ns = ns.or(db_config.ns.to_owned()).unwrap_or("test".to_owned());
     let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
 
-    client.use_ns(ns.to_owned()).use_db(db.to_owned()).await
+    client.query(format!("DEFINE NAMESPACE `{ns}`")).await?;
+    client.use_ns(ns.to_owned()).await?;
+
+    client.query(format!("DEFINE DATABASE `{db}`")).await?;
+    client.use_db(db.to_owned()).await?;
+
+    Ok(())
+}
+
+pub async fn get_surrealdb_table_exists<C: Connection>(
+    client: &Surreal<C>, table: &str,
+)->Result<bool> {
+    let tables = get_surrealdb_table_definitions(client).await?;
+    Ok(tables.contains_key(table))
+}
+
+type SurrealdbTableDefinitions = HashMap<String, String>;
+
+pub async fn get_surrealdb_table_definitions<C: Connection>(
+    client: &Surreal<C>
+) -> Result<SurrealdbTableDefinitions> {
+    let mut response = client.query("INFO FOR DB;").await?;
+
+    let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
+    let table_definitions = result.context("Failed to get table definitions")?;
+
+    Ok(table_definitions)
 }
 
 pub async fn list_script_migration_ordered_by_execution_date<C: Connection>(
     client: &Surreal<C>,
 ) -> Result<Vec<ScriptMigration>> {
-    let mut result = list_script_migration(client).await?;
-    result.sort_by_key(|m| m.executed_at.clone());
 
-    Ok(result)
+    if get_surrealdb_table_exists(client,SCRIPT_MIGRATION_TABLE_NAME).await? {
+        let mut result = list_script_migration(client).await?;
+        result.sort_by_key(|m| m.executed_at.clone());
+        Ok(result)
+    } else {
+        Ok(vec![])
+    }
 }
 
 async fn list_script_migration<C: Connection>(client: &Surreal<C>) -> Result<Vec<ScriptMigration>> {

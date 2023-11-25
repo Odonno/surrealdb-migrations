@@ -66,9 +66,6 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         false => display_logs,
     };
 
-    let migrations_applied =
-        surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
-
     let schemas_files = io::extract_schemas_files(config_file, dir)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
 
@@ -108,10 +105,13 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         )?;
     }
 
-    let last_migration_applied = migrations_applied.last();
-
     let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
     let backward_migrations_files = io::extract_backward_migrations_files(config_file, dir);
+
+    let migrations_applied =
+        surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
+
+    let last_migration_applied = migrations_applied.last();
 
     let migration_files_to_execute = get_migration_files_to_execute(
         forward_migrations_files,

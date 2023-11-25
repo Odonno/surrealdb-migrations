@@ -10,7 +10,7 @@ use crate::{
         constants::{BRANCH_NS, BRANCH_TABLE},
     },
     input::SurrealdbConfiguration,
-    models::Branch,
+    models::Branch, surrealdb::get_surrealdb_table_exists,
 };
 
 pub struct ListBranchArgs<'a> {
@@ -28,7 +28,12 @@ pub async fn main(args: ListBranchArgs<'_>) -> Result<()> {
 
     let branching_feature_client =
         create_branching_feature_client(config_file, db_configuration).await?;
-    let existing_branches: Vec<Branch> = branching_feature_client.select(BRANCH_TABLE).await?;
+    let branches_table_exists = get_surrealdb_table_exists(&branching_feature_client,BRANCH_TABLE).await?;
+    let existing_branches: Vec<Branch> = if branches_table_exists {
+        branching_feature_client.select(BRANCH_TABLE).await?
+    } else {
+        vec![]
+    };
 
     if existing_branches.is_empty() {
         println!("There are no branch yet!");
