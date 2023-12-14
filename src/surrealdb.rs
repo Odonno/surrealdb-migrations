@@ -1,10 +1,11 @@
-use std::collections::HashMap;
 use color_eyre::eyre::{eyre, ContextCompat, Result};
+use itertools::Itertools;
+use std::collections::HashMap;
 use std::path::Path;
 use surrealdb::{
     engine::any::{connect, Any},
     opt::auth::{Jwt, Root},
-    Connection, Response, Surreal,
+    Connection, Surreal,
 };
 
 use crate::{
@@ -92,8 +93,9 @@ async fn set_namespace_and_database(
 }
 
 pub async fn get_surrealdb_table_exists<C: Connection>(
-    client: &Surreal<C>, table: &str,
-)->Result<bool> {
+    client: &Surreal<C>,
+    table: &str,
+) -> Result<bool> {
     let tables = get_surrealdb_table_definitions(client).await?;
     Ok(tables.contains_key(table))
 }
@@ -101,7 +103,7 @@ pub async fn get_surrealdb_table_exists<C: Connection>(
 type SurrealdbTableDefinitions = HashMap<String, String>;
 
 pub async fn get_surrealdb_table_definitions<C: Connection>(
-    client: &Surreal<C>
+    client: &Surreal<C>,
 ) -> Result<SurrealdbTableDefinitions> {
     let mut response = client.query("INFO FOR DB;").await?;
 
@@ -114,8 +116,7 @@ pub async fn get_surrealdb_table_definitions<C: Connection>(
 pub async fn list_script_migration_ordered_by_execution_date<C: Connection>(
     client: &Surreal<C>,
 ) -> Result<Vec<ScriptMigration>> {
-
-    if get_surrealdb_table_exists(client,SCRIPT_MIGRATION_TABLE_NAME).await? {
+    if get_surrealdb_table_exists(client, SCRIPT_MIGRATION_TABLE_NAME).await? {
         let mut result = list_script_migration(client).await?;
         result.sort_by_key(|m| m.executed_at.clone());
         Ok(result)
@@ -139,7 +140,7 @@ pub async fn apply_in_transaction<C: Connection>(
 
     match action {
         TransactionAction::Rollback => {
-            let end_result = response_result.and_then(|response: Response| response.check());
+            let end_result = response_result.and_then(|response| response.check());
 
             let first_error = end_result.err().context("Error on rollback")?;
             let is_rollback_success = first_error
@@ -153,8 +154,37 @@ pub async fn apply_in_transaction<C: Connection>(
             }
         }
         TransactionAction::Commit => {
-            let response = response_result?;
-            response.check()?;
+            let mut response = response_result?;
+
+            let errors = response.take_errors();
+            if !errors.is_empty() {
+                const FAILED_TRANSACTION_ERROR: &str =
+                    "The query was not executed due to a failed transaction";
+
+                let is_failed_transaction = errors
+                    .values()
+                    .any(|e| e.to_string() == FAILED_TRANSACTION_ERROR);
+
+                let initial_error_messages = match is_failed_transaction {
+                    true => {
+                        vec![FAILED_TRANSACTION_ERROR.to_string()]
+                    }
+                    false => vec![],
+                };
+
+                let error_messages = errors
+                    .values()
+                    .map(|e| e.to_string())
+                    .filter(|e| e != FAILED_TRANSACTION_ERROR)
+                    .collect_vec();
+                let error_messages = initial_error_messages
+                    .into_iter()
+                    .chain(error_messages.into_iter())
+                    .collect_vec();
+
+                return Err(eyre!(error_messages.join("\n")));
+            }
+
             Ok(())
         }
     }
