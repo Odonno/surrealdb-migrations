@@ -1,6 +1,6 @@
 [package]
 name = "surrealdb-migrations"
-version = "1.0.0"
+version = "1.0.1"
 description = "An awesome SurrealDB migration tool, with a user-friendly CLI and a versatile Rust library that enables seamless integration into any project."
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
@@ -16,7 +16,7 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.31"
 chrono-human-duration = "0.1.1"
-clap = { version = "4.4.8", features = ["derive"] }
+clap = { version = "4.4.11", features = ["derive"] }
 cli-table = "0.4.7"
 color-eyre = "0.6.2"
 convert_case = "0.6.0"
@@ -29,9 +29,9 @@ regex = "1.10.2"
 rust-ini = "0.20.0"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
-sqlparser = "0.39.0"
-surrealdb = { version = "1.0.0", features = ["protocol-http"] }
-tokio = { version = "1.34.0", features = ["macros"] }
+sqlparser = "0.40.0"
+surrealdb = { version = "1.0.1", features = ["protocol-http"] }
+tokio = { version = "1.35.0", features = ["macros"] }
 
 [dev-dependencies]
 assert_cmd = "2.0.12"
