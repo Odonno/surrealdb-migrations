@@ -31,9 +31,14 @@ jobs:
       - name: Run check
         run: cargo check --all
 
-      - name: Run tests
-        run: cargo test
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
 
+      - name: Perform tests
+        continue-on-error: false
+        run: cargo nextest run
       - name: Run format
         run: |
           cargo check --all
