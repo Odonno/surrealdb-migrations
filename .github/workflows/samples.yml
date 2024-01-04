@@ -7,6 +7,12 @@ on:
       - "LICENSE"
       - "tests/**"
       - ".vscode/**"
+  pull_request:
+    paths-ignore:
+      - "**.md"
+      - "LICENSE"
+      - "tests/**"
+      - ".vscode/**"
 
 env:
   CARGO_TERM_COLOR: always
