@@ -4,10 +4,7 @@ use color_eyre::eyre::{eyre, Result};
 use std::path::Path;
 
 use crate::{
-    branch::{
-        common::create_branching_feature_client,
-        constants::BRANCH_NS,
-    },
+    branch::{common::create_branching_feature_client, constants::BRANCH_NS},
     input::SurrealdbConfiguration,
     models::Branch,
 };
@@ -25,15 +22,15 @@ pub async fn main(args: BranchStatusArgs<'_>) -> Result<()> {
     let db_configuration = SurrealdbConfiguration::default();
     let branching_feature_client =
         create_branching_feature_client(config_file, &db_configuration).await?;
-    let branch: Option<Branch> = get_branch_table(&branching_feature_client,&name).await?;
+    let branch: Option<Branch> = get_branch_table(&branching_feature_client, &name).await?;
 
     match branch {
         Some(branch) => {
             let now = Utc::now();
 
-            let parsed_created_at = DateTime::parse_from_rfc3339(&branch.created_at)?;
+            let parsed_created_at = DateTime::parse_from_rfc3339(&branch.created_at.to_rfc3339())?;
 
-            let display_created_at = parsed_created_at.format("%c");
+            let display_created_at = branch.created_at.format("%c");
 
             let since = now.signed_duration_since(parsed_created_at);
             let since = since.format_human().to_string();

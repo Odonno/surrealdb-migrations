@@ -179,10 +179,11 @@ async fn create_new_branch_using_config_file() -> Result<()> {
     remove_features_ns().await?;
 
     let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
 
-    add_migration_config_file_with_ns_db(&temp_dir, "main", "main")?;
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir)?;
-    apply_migrations(&temp_dir, "main")?;
+    apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -212,12 +213,12 @@ db: test-branch\n",
 
     ensure!(branch.is_some(), "Branch record should exist");
     ensure!(
-        branch.clone().unwrap().from_ns == "main",
-        "Origin branch ns should be main"
+        branch.clone().unwrap().from_ns == "test",
+        "Origin branch ns should be test"
     );
     ensure!(
-        branch.clone().unwrap().from_db == "main",
-        "Origin branch db should be main"
+        branch.clone().unwrap().from_db == db_name,
+        format!("Origin branch db should be {}", db_name)
     );
 
     // Check database is replicated in surrealdb

@@ -105,23 +105,6 @@ pub fn add_migration_config_file_with_db_name_in_dir(
 
     Ok(())
 }
-pub fn add_migration_config_file_with_ns_db(path: &Path, ns: &str, db: &str) -> Result<()> {
-    let content = format!(
-        r#"[core]
-    schema = "less"
-
-[db]
-    address = "ws://localhost:8000"
-    username = "root"
-    password = "root"
-    ns = "{ns}"
-    db = "{db}""#
-    );
-
-    fs::write(path.join(".surrealdb"), content)?;
-
-    Ok(())
-}
 pub fn add_migration_config_file_with_core_schema(path: &Path, schema: &str) -> Result<()> {
     let content = format!(
         r#"[core]

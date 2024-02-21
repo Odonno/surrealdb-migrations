@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use surrealdb::sql::Datetime;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ScriptMigration {
@@ -11,7 +12,7 @@ pub struct Branch {
     pub name: String,
     pub from_ns: String,
     pub from_db: String,
-    pub created_at: String,
+    pub created_at: Datetime,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

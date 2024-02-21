@@ -1,9 +1,8 @@
-use chrono::Utc;
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use names::{Generator, Name};
 use std::path::{Path, PathBuf};
-use surrealdb::{engine::any::Any, Surreal};
+use surrealdb::{engine::any::Any, sql::Datetime, Surreal};
 
 use crate::{
     branch::{
@@ -216,7 +215,7 @@ async fn save_branch_in_database(
             name: branch_name.to_string(),
             from_ns: db_configuration.ns.clone().unwrap_or("test".to_owned()),
             from_db: db_configuration.db.clone().unwrap_or("test".to_owned()),
-            created_at: Utc::now().to_rfc3339(),
+            created_at: Datetime::default(),
         })
         .await?;
 
