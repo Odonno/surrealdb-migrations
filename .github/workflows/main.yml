@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
+  SURREALDB_VERSION: v1.1.1
 
 jobs:
   ci:
@@ -20,7 +21,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --version $SURREALDB_VERSION
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory &
@@ -58,7 +59,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --nightly
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --version $SURREALDB_VERSION
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory &
