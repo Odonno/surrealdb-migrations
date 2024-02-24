@@ -6,7 +6,7 @@ use serial_test::serial;
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn diff_without_changes() -> Result<()> {
     remove_features_ns().await?;
 
@@ -32,7 +32,7 @@ async fn diff_without_changes() -> Result<()> {
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn diff_with_changes() -> Result<()> {
     remove_features_ns().await?;
 
@@ -70,7 +70,7 @@ DEFINE FIELD name ON category TYPE string PERMISSIONS FULL\n",
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn fails_if_branch_does_not_exist() -> Result<()> {
     remove_features_ns().await?;
 

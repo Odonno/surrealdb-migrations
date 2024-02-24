@@ -7,7 +7,7 @@ use serial_test::serial;
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn display_branch_status() -> Result<()> {
     remove_features_ns().await?;
 
@@ -45,7 +45,7 @@ Database: {db_name}\n",
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn display_branch_status_using_alias() -> Result<()> {
     remove_features_ns().await?;
 
@@ -83,7 +83,7 @@ Database: {db_name}\n",
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn fails_if_branch_does_not_exist() -> Result<()> {
     remove_features_ns().await?;
 

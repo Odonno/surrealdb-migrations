@@ -6,7 +6,7 @@ use serial_test::serial;
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn merge_existing_branch() -> Result<()> {
     remove_features_ns().await?;
 
@@ -82,7 +82,7 @@ async fn merge_existing_branch() -> Result<()> {
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn fails_to_merge_if_branch_does_not_exist() -> Result<()> {
     remove_features_ns().await?;
 

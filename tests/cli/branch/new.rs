@@ -10,7 +10,7 @@ use serial_test::serial;
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn create_new_branch() -> Result<()> {
     remove_features_ns().await?;
 
@@ -76,7 +76,7 @@ db: test-branch\n",
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn fails_if_branch_already_exists() -> Result<()> {
     remove_features_ns().await?;
 
@@ -104,7 +104,7 @@ async fn fails_if_branch_already_exists() -> Result<()> {
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn create_new_branch_with_random_name() -> Result<()> {
     remove_features_ns().await?;
 
@@ -174,7 +174,7 @@ db: (\S+)\n$",
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn create_new_branch_using_config_file() -> Result<()> {
     remove_features_ns().await?;
 

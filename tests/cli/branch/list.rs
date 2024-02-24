@@ -6,7 +6,7 @@ use serial_test::serial;
 use crate::helpers::*;
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn list_existing_branches() -> Result<()> {
     remove_features_ns().await?;
 
@@ -75,7 +75,7 @@ async fn list_existing_branches() -> Result<()> {
 }
 
 #[tokio::test]
-#[serial("branches")]
+#[serial(branches)]
 async fn list_with_no_existing_branch() -> Result<()> {
     remove_features_ns().await?;
 
