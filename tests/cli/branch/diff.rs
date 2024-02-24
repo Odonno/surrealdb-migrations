@@ -61,7 +61,7 @@ async fn diff_with_changes() -> Result<()> {
 ## category ##
 
 DEFINE TABLE category SCHEMALESS PERMISSIONS NONE
-DEFINE FIELD created_at ON category TYPE datetime DEFAULT time::now() PERMISSIONS FULL
+DEFINE FIELD created_at ON category TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL
 DEFINE FIELD name ON category TYPE string PERMISSIONS FULL\n",
         )
     })?;

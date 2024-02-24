@@ -4,7 +4,7 @@ DEFINE TABLE unpublish_post SCHEMALESS
         FOR update, delete NONE;
 
 DEFINE FIELD post_id ON unpublish_post TYPE record<post>;
-DEFINE FIELD created_at ON unpublish_post TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
 
 DEFINE EVENT unpublish_post ON TABLE unpublish_post WHEN $event == "CREATE" THEN (
     UPDATE post SET status = "DRAFT" WHERE id = $after.post_id

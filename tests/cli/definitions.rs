@@ -187,14 +187,14 @@ DEFINE TABLE comment SCHEMALESS
         FOR update, delete WHERE in = $auth.id;
 
 DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON comment TYPE datetime VALUE time::now() READONLY;
 DEFINE TABLE permission SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR create, update, delete NONE;
 
 DEFINE FIELD name ON permission TYPE string;
-DEFINE FIELD created_at ON permission TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON permission TYPE datetime VALUE time::now() READONLY;
 
 DEFINE INDEX unique_name ON permission COLUMNS name UNIQUE;
 DEFINE TABLE post SCHEMALESS
@@ -206,7 +206,7 @@ DEFINE TABLE post SCHEMALESS
 DEFINE FIELD title ON post TYPE string;
 DEFINE FIELD content ON post TYPE string;
 DEFINE FIELD author ON post TYPE record<user>;
-DEFINE FIELD created_at ON post TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON post TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
 DEFINE TABLE script_migration SCHEMAFULL
     PERMISSIONS
@@ -214,7 +214,7 @@ DEFINE TABLE script_migration SCHEMAFULL
         FOR create, update, delete NONE;
 
 DEFINE FIELD script_name ON script_migration TYPE string;
-DEFINE FIELD executed_at ON script_migration TYPE datetime DEFAULT time::now();
+DEFINE FIELD executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
 DEFINE TABLE user SCHEMAFULL
     PERMISSIONS
         FOR select FULL
@@ -224,7 +224,7 @@ DEFINE TABLE user SCHEMAFULL
 DEFINE FIELD username ON user TYPE string;
 DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
 DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime DEFAULT time::now();
+DEFINE FIELD registered_at ON user TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD avatar ON user TYPE option<string>;
 
 DEFINE FIELD permissions ON user TYPE array<record<permission>> 

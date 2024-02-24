@@ -202,7 +202,7 @@ pub fn add_category_schema_file(path: &Path) -> Result<()> {
         const CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
 
 DEFINE FIELD name ON category TYPE string;
-DEFINE FIELD created_at ON category TYPE datetime DEFAULT time::now();";
+DEFINE FIELD created_at ON category TYPE datetime VALUE time::now() READONLY;";
 
         fs::write(schema_file, CONTENT)?;
     }
@@ -262,7 +262,7 @@ pub fn add_archive_schema_file(path: &Path) -> Result<()> {
 DEFINE FIELD name ON archive TYPE string;
 DEFINE FIELD from_date ON archive TYPE datetime;
 DEFINE FIELD to_date ON archive TYPE datetime;
-DEFINE FIELD created_at ON archive TYPE datetime DEFAULT time::now();";
+DEFINE FIELD created_at ON archive TYPE datetime VALUE time::now() READONLY;";
 
         fs::write(schema_file, CONTENT)?;
     }

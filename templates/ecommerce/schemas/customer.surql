@@ -5,7 +5,7 @@ DEFINE TABLE customer SCHEMALESS
         FOR create, delete NONE;
 
 DEFINE FIELD name ON customer TYPE string;
-DEFINE FIELD email ON customer TYPE string;
+DEFINE FIELD email ON customer TYPE string ASSERT string::is::email($value);
 DEFINE FIELD password ON customer TYPE string;
 DEFINE FIELD addresses ON customer TYPE array<record<address>>;
 

@@ -7,4 +7,4 @@ DEFINE TABLE comment SCHEMALESS
         FOR update, delete WHERE in = $auth.id;
 
 DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON comment TYPE datetime VALUE time::now() READONLY;

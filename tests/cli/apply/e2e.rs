@@ -637,14 +637,14 @@ DEFINE TABLE comment SCHEMALESS
         FOR update, delete WHERE in = $auth.id;
 
 DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON comment TYPE datetime VALUE time::now() READONLY;
 DEFINE TABLE permission SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR create, update, delete NONE;
 
 DEFINE FIELD name ON permission TYPE string;
-DEFINE FIELD created_at ON permission TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON permission TYPE datetime VALUE time::now() READONLY;
 
 DEFINE INDEX unique_name ON permission COLUMNS name UNIQUE;
 DEFINE TABLE post SCHEMALESS
@@ -656,7 +656,7 @@ DEFINE TABLE post SCHEMALESS
 DEFINE FIELD title ON post TYPE string;
 DEFINE FIELD content ON post TYPE string;
 DEFINE FIELD author ON post TYPE record<user>;
-DEFINE FIELD created_at ON post TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON post TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
 DEFINE TABLE script_migration SCHEMAFULL
     PERMISSIONS
@@ -664,7 +664,7 @@ DEFINE TABLE script_migration SCHEMAFULL
         FOR create, update, delete NONE;
 
 DEFINE FIELD script_name ON script_migration TYPE string;
-DEFINE FIELD executed_at ON script_migration TYPE datetime DEFAULT time::now();
+DEFINE FIELD executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
 DEFINE TABLE user SCHEMAFULL
     PERMISSIONS
         FOR select FULL
@@ -674,7 +674,7 @@ DEFINE TABLE user SCHEMAFULL
 DEFINE FIELD username ON user TYPE string;
 DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
 DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime DEFAULT time::now();
+DEFINE FIELD registered_at ON user TYPE datetime VALUE time::now() READONLY;
 DEFINE FIELD avatar ON user TYPE option<string>;
 
 DEFINE FIELD permissions ON user TYPE array<record<permission>> 
@@ -705,7 +705,7 @@ const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE publish_post SCHEMALESS
         FOR update, delete NONE;
 
 DEFINE FIELD post_id ON publish_post TYPE record<post>;
-DEFINE FIELD created_at ON publish_post TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON publish_post TYPE datetime VALUE time::now() READONLY;
 
 DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     UPDATE post SET status = \"PUBLISHED\" WHERE id = $after.post_id
@@ -716,7 +716,7 @@ DEFINE TABLE unpublish_post SCHEMALESS
         FOR update, delete NONE;
 
 DEFINE FIELD post_id ON unpublish_post TYPE record<post>;
-DEFINE FIELD created_at ON unpublish_post TYPE datetime DEFAULT time::now();
+DEFINE FIELD created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
 
 DEFINE EVENT unpublish_post ON TABLE unpublish_post WHEN $event == \"CREATE\" THEN (
     UPDATE post SET status = \"DRAFT\" WHERE id = $after.post_id
@@ -728,7 +728,7 @@ const SECOND_MIGRATION_SCHEMAS: &str = "--- original
 +DEFINE TABLE category SCHEMALESS;
 +
 +DEFINE FIELD name ON category TYPE string;
-+DEFINE FIELD created_at ON category TYPE datetime DEFAULT time::now();
++DEFINE FIELD created_at ON category TYPE datetime VALUE time::now() READONLY;
  # in: user
  # out: post, comment
  DEFINE TABLE comment SCHEMALESS\n";
@@ -741,7 +741,7 @@ const THIRD_MIGRATION_SCHEMAS: &str = "--- original
 +DEFINE FIELD name ON archive TYPE string;
 +DEFINE FIELD from_date ON archive TYPE datetime;
 +DEFINE FIELD to_date ON archive TYPE datetime;
-+DEFINE FIELD created_at ON archive TYPE datetime DEFAULT time::now();
++DEFINE FIELD created_at ON archive TYPE datetime VALUE time::now() READONLY;
  DEFINE TABLE category SCHEMALESS;
 
  DEFINE FIELD name ON category TYPE string;\n";
