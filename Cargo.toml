@@ -29,7 +29,7 @@ regex = "1.10.2"
 rust-ini = "0.20.0"
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
-sqlparser = "0.40.0"
+sqlparser = "0.43.1"
 surrealdb = { version = "1.1.1", features = ["protocol-http"] }
 tokio = { version = "1.35.0", features = ["macros"] }
 
