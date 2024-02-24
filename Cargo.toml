@@ -14,30 +14,30 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.31"
+chrono = "0.4.34"
 chrono-human-duration = "0.1.1"
-clap = { version = "4.4.11", features = ["derive"] }
+clap = { version = "4.5.1", features = ["derive"] }
 cli-table = "0.4.7"
 color-eyre = "0.6.2"
 convert_case = "0.6.0"
 diffy = "0.3.0"
 fs_extra = "1.3.0"
 include_dir = "0.7.3"
-itertools = "0.12.0"
+itertools = "0.12.1"
 names = "0.14.0"
-regex = "1.10.2"
+regex = "1.10.3"
 rust-ini = "0.20.0"
-serde = { version = "1.0.193", features = ["derive"] }
-serde_json = "1.0.108"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.114"
 sqlparser = "0.43.1"
-surrealdb = { version = "1.1.1", features = ["protocol-http"] }
-tokio = { version = "1.35.0", features = ["macros"] }
+surrealdb = { version = "1.2.0", features = ["protocol-http"] }
+tokio = { version = "1.36.0", features = ["macros"] }
 
 [dev-dependencies]
-assert_cmd = "2.0.12"
-assert_fs = "1.0.13"
-dir-diff = "0.3.2"
-predicates = "3.0.4"
+assert_cmd = "2.0.14"
+assert_fs = "1.1.1"
+dir-diff = "0.3.3"
+predicates = "3.1.0"
 pretty_assertions = "1.4.0"
 serial_test = "3.0.0"
 tokio-test = "0.4.3"
