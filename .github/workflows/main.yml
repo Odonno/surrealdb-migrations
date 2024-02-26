@@ -82,6 +82,22 @@ jobs:
           name: code-coverage-report
           path: cobertura.xml
 
+  docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install stable toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build documentation
+        run: cargo doc
+
   cargo-deny:
     name: cargo-deny
     runs-on: ubuntu-latest
