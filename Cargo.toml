@@ -24,7 +24,7 @@ diffy = "0.3.0"
 fs_extra = "1.3.0"
 include_dir = "0.7.3"
 itertools = "0.12.1"
-names = "0.14.0"
+names = { version = "0.14.0", default-features = false }
 regex = "1.10.3"
 rust-ini = "0.20.0"
 serde = { version = "1.0.197", features = ["derive"] }
