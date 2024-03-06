@@ -112,6 +112,7 @@ allow = [
     "CC0-1.0",
     "BSD-3-Clause",
     "Zlib",
+    "BUSL-1.1"
 ]
 # List of explicitly disallowed licenses
 # See https://spdx.org/licenses/ for list of possible licenses
