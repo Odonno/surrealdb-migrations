@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env:
   CARGO_TERM_COLOR: always
-  SURREALDB_VERSION: v1.1.1
+  SURREALDB_VERSION: v1.2.2
 
 jobs:
   ci:
