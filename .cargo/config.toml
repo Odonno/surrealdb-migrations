@@ -4,3 +4,6 @@ rustdocflags = ["--cfg", "surrealdb_unstable"]
 
 [net]
 git-fetch-with-cli = true
+
+[alias] # command aliases
+t = "nextest run"
