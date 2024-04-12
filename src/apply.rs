@@ -627,11 +627,9 @@ fn get_rollback_statements(
         .collect::<Vec<_>>()
         .join("\n");
 
-    let all_statements = vec![
-        remove_table_statements,
+    let all_statements = [remove_table_statements,
         remove_fields_statements,
-        remove_events_statements,
-    ];
+        remove_events_statements];
     let all_statements = all_statements.join("\n");
 
     Ok(all_statements)
