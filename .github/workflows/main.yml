@@ -14,8 +14,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.74.0 toolchain
-        uses: dtolnay/rust-toolchain@1.74.0
+      - name: Install 1.77.0 toolchain
+        uses: dtolnay/rust-toolchain@1.77.0
         with:
           components: clippy, rustfmt
 
@@ -54,8 +54,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.74.0 toolchain
-        uses: dtolnay/rust-toolchain@1.74.0
+      - name: Install 1.77.0 toolchain
+        uses: dtolnay/rust-toolchain@1.77.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -91,8 +91,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.74.0 toolchain
-        uses: dtolnay/rust-toolchain@1.74.0
+      - name: Install 1.77.0 toolchain
+        uses: dtolnay/rust-toolchain@1.77.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
