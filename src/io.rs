@@ -191,7 +191,7 @@ fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
 
 fn get_embedded_file_is_file(full_name: &Option<String>) -> bool {
     match full_name {
-        Some(full_name) => full_name.ends_with(".surql"),
+        Some(full_name) => full_name.ends_with(".surql") || full_name.ends_with(".json"),
         None => false,
     }
 }
