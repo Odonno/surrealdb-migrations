@@ -81,3 +81,26 @@ async fn apply_migrations_from_embedded_files() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn apply_migrations_multiple_times_from_embedded_files() -> Result<()> {
+    const EMBEDDED_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/embedded-files");
+
+    let db_name = generate_random_db_name()?;
+
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
+
+    let db = create_surrealdb_client(&configuration).await?;
+
+    let runner = MigrationRunner::new(&db);
+    let runner = runner.load_files(&EMBEDDED_DIR);
+
+    runner.up().await?;
+    runner.up().await?;
+    runner.up().await?;
+
+    Ok(())
+}
