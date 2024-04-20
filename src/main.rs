@@ -30,8 +30,20 @@ mod scaffold;
 mod surrealdb;
 mod validate_version_order;
 
+
+#[cfg(target_arch = "wasm32")]
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<()> {
+    sub_main().await
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 #[tokio::main]
 async fn main() -> Result<()> {
+    sub_main().await
+}
+
+async fn sub_main() -> Result<()> {
     color_eyre::install()?;
     let args = Args::parse();
 
