@@ -44,3 +44,6 @@ tokio-test = "0.4.4"
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "surrealdb_unstable"]
+
+# [target.'cfg(target_arch = "wasm32")'.dependencies]
+# tokio = { version = "1.37.0", features = ["macros", "rt"] }

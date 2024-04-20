@@ -16,8 +16,8 @@ jobs:
             archive: zip
           - target: x86_64-unknown-linux-musl
             archive: tar.gz tar.xz tar.zst
-          - target: x86_64-apple-darwin
-            archive: zip
+          # - target: x86_64-apple-darwin
+          #   archive: zip
           # - target: wasm32-wasi
           #   archive: zip
 
@@ -32,9 +32,11 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.3
+        uses: rust-build/rust-build.action@v1.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUSTFLAGS: "--cfg surrealdb_unstable"
+          RUSTDOCFLAGS: "--cfg surrealdb_unstable"
         with:
           RUSTTARGET: ${{ matrix.target }}
           ARCHIVE_TYPES: ${{ matrix.archive }}

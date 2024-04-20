@@ -2,6 +2,8 @@ name: Samples Workflow
 
 on:
   push:
+    branches:
+      - main
     paths-ignore:
       - "**.md"
       - "LICENSE"
