@@ -1,10 +1,7 @@
 use color_eyre::eyre::{eyre, Result};
 use std::path::Path;
 
-use crate::{
-    cli::BranchMergeMode, input::SurrealdbConfiguration,
-    models::Branch,
-};
+use crate::{cli::BranchMergeMode, input::SurrealdbConfiguration, models::Branch};
 
 use self::overwrite::MergeOverwriteBranchArgs;
 
@@ -30,7 +27,7 @@ pub async fn main(args: MergeBranchArgs<'_>) -> Result<()> {
     let branching_feature_client =
         create_branching_feature_client(config_file, db_configuration).await?;
 
-    let branch: Option<Branch> = get_branch_table(&branching_feature_client,&name).await?;
+    let branch: Option<Branch> = get_branch_table(&branching_feature_client, &name).await?;
 
     match branch {
         Some(branch) => match mode {

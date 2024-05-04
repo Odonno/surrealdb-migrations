@@ -298,6 +298,25 @@ pub fn write_archive_migration_down_file(path: &Path, migration_name: &str) -> R
     Ok(())
 }
 
+pub fn add_jwks_schema_file(path: &Path) -> Result<()> {
+    let schemas_files_dir = path.join("schemas");
+
+    if schemas_files_dir.exists() {
+        let schema_file = schemas_files_dir.join("jwks.surql");
+        const CONTENT: &str = "DEFINE TOKEN token_name
+-- Use this token provider for database authorization
+ON DATABASE
+-- Specify the JWKS specification used to verify the token
+TYPE JWKS 
+-- Specify the URL where the JWKS object can be found
+VALUE \"https://example.com/.well-known/jwks.json\";";
+
+        fs::write(schema_file, CONTENT)?;
+    }
+
+    Ok(())
+}
+
 pub fn inline_down_migration_files(path: &Path) -> Result<()> {
     let migrations_files_dir = path.join("migrations");
     let down_migrations_files_dir = migrations_files_dir.join("down");

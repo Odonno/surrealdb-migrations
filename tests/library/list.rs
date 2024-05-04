@@ -72,7 +72,8 @@ async fn list_blog_migrations() -> Result<()> {
     let now_timestamp = now.timestamp();
     let now_timestamp_range = (now_timestamp - 2)..(now_timestamp + 2);
 
-    let first_migration = migrations_applied.first()
+    let first_migration = migrations_applied
+        .first()
         .context("Cannot get first migration")?;
 
     ensure!(

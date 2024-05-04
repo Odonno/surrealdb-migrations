@@ -1,5 +1,5 @@
-use color_eyre::eyre::{ensure, Result};
 use assert_fs::TempDir;
+use color_eyre::eyre::{ensure, Result};
 
 use crate::helpers::*;
 

@@ -30,7 +30,6 @@ mod scaffold;
 mod surrealdb;
 mod validate_version_order;
 
-
 #[cfg(target_arch = "wasm32")]
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
