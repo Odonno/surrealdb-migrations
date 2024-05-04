@@ -23,7 +23,7 @@ A clear and concise description of what you expected to happen.
 Please complete the following information and remove the unnecessary ones.
 
 - SurrealDB version: [e.g. 1.0.0-beta.9+20230402.5eafebd for linux on x86_64]
-- surrealdb-migration version: [e.g. 0.9.12]
+- surrealdb-migrations version: [e.g. 0.9.12]
 
 **Additional context**
 Add any other context about the problem here.
