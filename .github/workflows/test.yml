@@ -1,0 +1,28 @@
+name: Test Release Workflow
+
+on:
+  push:
+
+jobs:
+  release-exe:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install 1.77.0 toolchain
+        uses: dtolnay/rust-toolchain@1.77.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/surrealdb-migrations.exe
+          tag_name: v1.5.0
+          token: ${{ secrets.GITHUB_TOKEN }}

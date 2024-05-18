@@ -5,7 +5,7 @@ on:
     types: [created]
 
 jobs:
-  release:
+  release-binary:
     name: release ${{ matrix.target }}
     runs-on: ubuntu-latest
     strategy:
@@ -35,16 +35,36 @@ jobs:
         uses: rust-build/rust-build.action@v1.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUSTFLAGS: "--cfg surrealdb_unstable"
-          RUSTDOCFLAGS: "--cfg surrealdb_unstable"
         with:
           RUSTTARGET: ${{ matrix.target }}
           ARCHIVE_TYPES: ${{ matrix.archive }}
           EXTRA_FILES: "readme.md LICENSE"
           TOOLCHAIN_VERSION: stable
 
+  release-exe:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install 1.77.0 toolchain
+        uses: dtolnay/rust-toolchain@1.77.0
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/release/surrealdb-migrations.exe
+          token: ${{ secrets.GITHUB_TOKEN }}
+
   publish:
-    needs: release
+    needs: [release-binary, release-exe]
     runs-on: ubuntu-latest
 
     steps:
