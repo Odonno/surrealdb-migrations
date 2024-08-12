@@ -1,7 +1,7 @@
-DEFINE TABLE post SCHEMALESS;
+DEFINE TABLE OVERWRITE post SCHEMALESS;
 
-DEFINE FIELD title ON post TYPE string;
-DEFINE FIELD content ON post TYPE string;
-DEFINE FIELD author ON post TYPE record<user>;
-DEFINE FIELD created_at ON post TYPE datetime DEFAULT time::now();
-DEFINE FIELD status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
+DEFINE FIELD OVERWRITE title ON post TYPE string;
+DEFINE FIELD OVERWRITE content ON post TYPE string;
+DEFINE FIELD OVERWRITE author ON post TYPE record<user>;
+DEFINE FIELD OVERWRITE created_at ON post TYPE datetime DEFAULT time::now();
+DEFINE FIELD OVERWRITE status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];

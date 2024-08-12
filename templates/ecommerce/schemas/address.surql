@@ -1,11 +1,11 @@
-DEFINE TABLE address SCHEMALESS
+DEFINE TABLE OVERWRITE address SCHEMALESS
     PERMISSIONS
         FOR select, create, update, delete WHERE customer = $auth.id;
 
-DEFINE FIELD number ON address TYPE string;
-DEFINE FIELD street ON address TYPE string;
-DEFINE FIELD city ON address TYPE string;
-DEFINE FIELD state ON address TYPE option<string>;
-DEFINE FIELD zip_code ON address TYPE option<string>;
-DEFINE FIELD country ON address TYPE string;
-DEFINE FIELD customer ON address TYPE record<customer>;
+DEFINE FIELD OVERWRITE number ON address TYPE string;
+DEFINE FIELD OVERWRITE street ON address TYPE string;
+DEFINE FIELD OVERWRITE city ON address TYPE string;
+DEFINE FIELD OVERWRITE state ON address TYPE option<string>;
+DEFINE FIELD OVERWRITE zip_code ON address TYPE option<string>;
+DEFINE FIELD OVERWRITE country ON address TYPE string;
+DEFINE FIELD OVERWRITE customer ON address TYPE record<customer>;

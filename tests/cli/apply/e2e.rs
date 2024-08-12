@@ -630,60 +630,60 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
 
 const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
 # out: post, comment
-DEFINE TABLE comment SCHEMALESS
+DEFINE TABLE OVERWRITE comment SCHEMALESS
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions
         FOR update, delete WHERE in = $auth.id;
 
-DEFINE FIELD content ON comment TYPE string;
-DEFINE FIELD created_at ON comment TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE permission SCHEMAFULL
+DEFINE FIELD OVERWRITE content ON comment TYPE string;
+DEFINE FIELD OVERWRITE created_at ON comment TYPE datetime VALUE time::now() READONLY;
+DEFINE TABLE OVERWRITE permission SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR create, update, delete NONE;
 
-DEFINE FIELD name ON permission TYPE string;
-DEFINE FIELD created_at ON permission TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE name ON permission TYPE string;
+DEFINE FIELD OVERWRITE created_at ON permission TYPE datetime VALUE time::now() READONLY;
 
-DEFINE INDEX unique_name ON permission COLUMNS name UNIQUE;
-DEFINE TABLE post SCHEMALESS
+DEFINE INDEX OVERWRITE unique_name ON permission COLUMNS name UNIQUE;
+DEFINE TABLE OVERWRITE post SCHEMALESS
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_post IN $auth.permissions
         FOR update, delete WHERE author = $auth.id;
 
-DEFINE FIELD title ON post TYPE string;
-DEFINE FIELD content ON post TYPE string;
-DEFINE FIELD author ON post TYPE record<user>;
-DEFINE FIELD created_at ON post TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
-DEFINE TABLE script_migration SCHEMAFULL
+DEFINE FIELD OVERWRITE title ON post TYPE string;
+DEFINE FIELD OVERWRITE content ON post TYPE string;
+DEFINE FIELD OVERWRITE author ON post TYPE record<user>;
+DEFINE FIELD OVERWRITE created_at ON post TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
+DEFINE TABLE OVERWRITE script_migration SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR create, update, delete NONE;
 
-DEFINE FIELD script_name ON script_migration TYPE string;
-DEFINE FIELD executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE user SCHEMAFULL
+DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string;
+DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
+DEFINE TABLE OVERWRITE user SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR update WHERE id = $auth.id
         FOR create, delete NONE;
 
-DEFINE FIELD username ON user TYPE string;
-DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD avatar ON user TYPE option<string>;
+DEFINE FIELD OVERWRITE username ON user TYPE string;
+DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value);
+DEFINE FIELD OVERWRITE password ON user TYPE string;
+DEFINE FIELD OVERWRITE registered_at ON user TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE avatar ON user TYPE option<string>;
 
-DEFINE FIELD permissions ON user TYPE array<record<permission>> 
+DEFINE FIELD OVERWRITE permissions ON user TYPE array<record<permission>> 
     DEFAULT [permission:create_post, permission:create_comment];
 
-DEFINE INDEX unique_username ON user COLUMNS username UNIQUE;
-DEFINE INDEX unique_email ON user COLUMNS email UNIQUE;
+DEFINE INDEX OVERWRITE unique_username ON user COLUMNS username UNIQUE;
+DEFINE INDEX OVERWRITE unique_email ON user COLUMNS email UNIQUE;
 
-DEFINE SCOPE user_scope
+DEFINE SCOPE OVERWRITE user_scope
     SESSION 30d
     SIGNUP (
         CREATE user
@@ -699,49 +699,49 @@ DEFINE SCOPE user_scope
         WHERE username = $username AND crypto::argon2::compare(password, $password)
     );";
 
-const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE publish_post SCHEMALESS
+const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE OVERWRITE publish_post SCHEMALESS
     PERMISSIONS
         FOR select, create FULL
         FOR update, delete NONE;
 
-DEFINE FIELD post_id ON publish_post TYPE record<post>;
-DEFINE FIELD created_at ON publish_post TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE post_id ON publish_post TYPE record<post>;
+DEFINE FIELD OVERWRITE created_at ON publish_post TYPE datetime VALUE time::now() READONLY;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     UPDATE post SET status = \"PUBLISHED\" WHERE id = $after.post_id
 );
-DEFINE TABLE unpublish_post SCHEMALESS
+DEFINE TABLE OVERWRITE unpublish_post SCHEMALESS
     PERMISSIONS
         FOR select, create FULL
         FOR update, delete NONE;
 
-DEFINE FIELD post_id ON unpublish_post TYPE record<post>;
-DEFINE FIELD created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE post_id ON unpublish_post TYPE record<post>;
+DEFINE FIELD OVERWRITE created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
 
-DEFINE EVENT unpublish_post ON TABLE unpublish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE unpublish_post ON TABLE unpublish_post WHEN $event == \"CREATE\" THEN (
     UPDATE post SET status = \"DRAFT\" WHERE id = $after.post_id
 );";
 
 const SECOND_MIGRATION_SCHEMAS: &str = "--- original
 +++ modified
 @@ -1,3 +1,7 @@
-+DEFINE TABLE category SCHEMALESS;
++DEFINE TABLE OVERWRITE category SCHEMALESS;
 +
-+DEFINE FIELD name ON category TYPE string;
-+DEFINE FIELD created_at ON category TYPE datetime VALUE time::now() READONLY;
++DEFINE FIELD OVERWRITE name ON category TYPE string;
++DEFINE FIELD OVERWRITE created_at ON category TYPE datetime VALUE time::now() READONLY;
  # in: user
  # out: post, comment
- DEFINE TABLE comment SCHEMALESS\n";
+ DEFINE TABLE OVERWRITE comment SCHEMALESS\n";
 
 const THIRD_MIGRATION_SCHEMAS: &str = "--- original
 +++ modified
 @@ -1,3 +1,9 @@
-+DEFINE TABLE archive SCHEMALESS;
++DEFINE TABLE OVERWRITE archive SCHEMALESS;
 +
-+DEFINE FIELD name ON archive TYPE string;
-+DEFINE FIELD from_date ON archive TYPE datetime;
-+DEFINE FIELD to_date ON archive TYPE datetime;
-+DEFINE FIELD created_at ON archive TYPE datetime VALUE time::now() READONLY;
- DEFINE TABLE category SCHEMALESS;
++DEFINE FIELD OVERWRITE name ON archive TYPE string;
++DEFINE FIELD OVERWRITE from_date ON archive TYPE datetime;
++DEFINE FIELD OVERWRITE to_date ON archive TYPE datetime;
++DEFINE FIELD OVERWRITE created_at ON archive TYPE datetime VALUE time::now() READONLY;
+ DEFINE TABLE OVERWRITE category SCHEMALESS;
 
- DEFINE FIELD name ON category TYPE string;\n";
+ DEFINE FIELD OVERWRITE name ON category TYPE string;\n";

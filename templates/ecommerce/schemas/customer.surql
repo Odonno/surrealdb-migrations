@@ -1,17 +1,17 @@
-DEFINE TABLE customer SCHEMALESS
+DEFINE TABLE OVERWRITE customer SCHEMALESS
     PERMISSIONS
         FOR select FULL
         FOR update WHERE id = $auth.id
         FOR create, delete NONE;
 
-DEFINE FIELD name ON customer TYPE string;
-DEFINE FIELD email ON customer TYPE string ASSERT string::is::email($value);
-DEFINE FIELD password ON customer TYPE string;
-DEFINE FIELD addresses ON customer TYPE array<record<address>>;
+DEFINE FIELD OVERWRITE name ON customer TYPE string;
+DEFINE FIELD OVERWRITE email ON customer TYPE string ASSERT string::is::email($value);
+DEFINE FIELD OVERWRITE password ON customer TYPE string;
+DEFINE FIELD OVERWRITE addresses ON customer TYPE array<record<address>>;
 
-DEFINE INDEX unique_email ON customer COLUMNS email UNIQUE;
+DEFINE INDEX OVERWRITE unique_email ON customer COLUMNS email UNIQUE;
 
-DEFINE SCOPE customer_scope
+DEFINE SCOPE OVERWRITE customer_scope
     SESSION 30d
     SIGNUP (
         CREATE customer

@@ -199,10 +199,10 @@ pub fn add_category_schema_file(path: &Path) -> Result<()> {
 
     if schemas_files_dir.exists() {
         let schema_file = schemas_files_dir.join("category.surql");
-        const CONTENT: &str = "DEFINE TABLE category SCHEMALESS;
+        const CONTENT: &str = "DEFINE TABLE OVERWRITE category SCHEMALESS;
 
-DEFINE FIELD name ON category TYPE string;
-DEFINE FIELD created_at ON category TYPE datetime VALUE time::now() READONLY;";
+DEFINE FIELD OVERWRITE name ON category TYPE string;
+DEFINE FIELD OVERWRITE created_at ON category TYPE datetime VALUE time::now() READONLY;";
 
         fs::write(schema_file, CONTENT)?;
     }
@@ -257,12 +257,12 @@ pub fn add_archive_schema_file(path: &Path) -> Result<()> {
 
     if schemas_files_dir.exists() {
         let schema_file = schemas_files_dir.join("archive.surql");
-        const CONTENT: &str = "DEFINE TABLE archive SCHEMALESS;
+        const CONTENT: &str = "DEFINE TABLE OVERWRITE archive SCHEMALESS;
 
-DEFINE FIELD name ON archive TYPE string;
-DEFINE FIELD from_date ON archive TYPE datetime;
-DEFINE FIELD to_date ON archive TYPE datetime;
-DEFINE FIELD created_at ON archive TYPE datetime VALUE time::now() READONLY;";
+DEFINE FIELD OVERWRITE name ON archive TYPE string;
+DEFINE FIELD OVERWRITE from_date ON archive TYPE datetime;
+DEFINE FIELD OVERWRITE to_date ON archive TYPE datetime;
+DEFINE FIELD OVERWRITE created_at ON archive TYPE datetime VALUE time::now() READONLY;";
 
         fs::write(schema_file, CONTENT)?;
     }
@@ -272,7 +272,7 @@ DEFINE FIELD created_at ON archive TYPE datetime VALUE time::now() READONLY;";
 
 pub fn add_archive_migration_file(path: &Path) -> Result<()> {
     let content =
-        "CREATE archive SET name = '2022', from_date = '2022-01-01T00:00:00Z', to_date = '2022-12-31T00:00:00Z';";
+        "CREATE archive SET name = '2022', from_date = d'2022-01-01T00:00:00Z', to_date = d'2022-12-31T00:00:00Z';";
 
     let mut cmd = create_cmd(path)?;
     cmd.arg("create")
@@ -303,7 +303,7 @@ pub fn add_jwks_schema_file(path: &Path) -> Result<()> {
 
     if schemas_files_dir.exists() {
         let schema_file = schemas_files_dir.join("jwks.surql");
-        const CONTENT: &str = "DEFINE TOKEN token_name
+        const CONTENT: &str = "DEFINE TOKEN OVERWRITE token_name
 -- Use this token provider for database authorization
 ON DATABASE
 -- Specify the JWKS specification used to verify the token

@@ -1,22 +1,22 @@
-DEFINE TABLE user SCHEMAFULL
+DEFINE TABLE OVERWRITE user SCHEMAFULL
     PERMISSIONS
         FOR select FULL
         FOR update WHERE id = $auth.id
         FOR create, delete NONE;
 
-DEFINE FIELD username ON user TYPE string;
-DEFINE FIELD email ON user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD password ON user TYPE string;
-DEFINE FIELD registered_at ON user TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD avatar ON user TYPE option<string>;
+DEFINE FIELD OVERWRITE username ON user TYPE string;
+DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value);
+DEFINE FIELD OVERWRITE password ON user TYPE string;
+DEFINE FIELD OVERWRITE registered_at ON user TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE avatar ON user TYPE option<string>;
 
-DEFINE FIELD permissions ON user TYPE array<record<permission>> 
+DEFINE FIELD OVERWRITE permissions ON user TYPE array<record<permission>> 
     DEFAULT [permission:create_post, permission:create_comment];
 
-DEFINE INDEX unique_username ON user COLUMNS username UNIQUE;
-DEFINE INDEX unique_email ON user COLUMNS email UNIQUE;
+DEFINE INDEX OVERWRITE unique_username ON user COLUMNS username UNIQUE;
+DEFINE INDEX OVERWRITE unique_email ON user COLUMNS email UNIQUE;
 
-DEFINE SCOPE user_scope
+DEFINE SCOPE OVERWRITE user_scope
     SESSION 30d
     SIGNUP (
         CREATE user
