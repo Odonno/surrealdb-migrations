@@ -3694,7 +3694,7 @@ dependencies = [
 
 [[package]]
 name = "surrealdb-migrations"
-version = "1.5.0"
+version = "2.0.0-preview.1"
 dependencies = [
  "assert_cmd",
  "assert_fs",
