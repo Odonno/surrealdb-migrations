@@ -24,12 +24,12 @@ fn create_event_file() -> Result<()> {
 
     assert_eq!(
         publish_post_file,
-        "DEFINE TABLE publish_post SCHEMALESS;
+        "DEFINE TABLE OVERWRITE publish_post SCHEMALESS;
 
-DEFINE FIELD post_id ON publish_post;
-DEFINE FIELD created_at ON publish_post;
+DEFINE FIELD OVERWRITE post_id ON publish_post;
+DEFINE FIELD OVERWRITE created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
     );
@@ -51,12 +51,12 @@ fn create_event_file_dry_run() -> Result<()> {
         .arg("--dry-run");
 
     cmd.assert().success().stdout(
-        "DEFINE TABLE publish_post SCHEMALESS;
+        "DEFINE TABLE OVERWRITE publish_post SCHEMALESS;
 
-DEFINE FIELD post_id ON publish_post;
-DEFINE FIELD created_at ON publish_post;
+DEFINE FIELD OVERWRITE post_id ON publish_post;
+DEFINE FIELD OVERWRITE created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );\n",
     );
@@ -88,12 +88,12 @@ fn create_event_file_with_schemafull_table_from_config() -> Result<()> {
 
     ensure!(
         publish_post_file
-            == "DEFINE TABLE publish_post SCHEMAFULL;
+            == "DEFINE TABLE OVERWRITE publish_post SCHEMAFULL;
 
-DEFINE FIELD post_id ON publish_post;
-DEFINE FIELD created_at ON publish_post;
+DEFINE FIELD OVERWRITE post_id ON publish_post;
+DEFINE FIELD OVERWRITE created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
         "invalid publish post file string"
@@ -123,12 +123,12 @@ fn create_event_file_with_schemaless_table_from_invalid_config() -> Result<()> {
 
     ensure!(
         publish_post_file
-            == "DEFINE TABLE publish_post SCHEMALESS;
+            == "DEFINE TABLE OVERWRITE publish_post SCHEMALESS;
 
-DEFINE FIELD post_id ON publish_post;
-DEFINE FIELD created_at ON publish_post;
+DEFINE FIELD OVERWRITE post_id ON publish_post;
+DEFINE FIELD OVERWRITE created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
         "invalid publish post file string"
@@ -158,12 +158,12 @@ fn create_event_file_with_schemafull_table_from_cli_arg() -> Result<()> {
 
     assert_eq!(
         publish_post_file,
-        "DEFINE TABLE publish_post SCHEMAFULL;
+        "DEFINE TABLE OVERWRITE publish_post SCHEMAFULL;
 
-DEFINE FIELD post_id ON publish_post;
-DEFINE FIELD created_at ON publish_post;
+DEFINE FIELD OVERWRITE post_id ON publish_post;
+DEFINE FIELD OVERWRITE created_at ON publish_post;
 
-DEFINE EVENT publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
     );

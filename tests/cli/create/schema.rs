@@ -24,11 +24,11 @@ fn create_schema_file() -> Result<()> {
 
     assert_eq!(
         post_file,
-        "DEFINE TABLE post SCHEMALESS;
+        "DEFINE TABLE OVERWRITE post SCHEMALESS;
 
-DEFINE FIELD name ON post;
-DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;"
+DEFINE FIELD OVERWRITE name ON post;
+DEFINE FIELD OVERWRITE title ON post;
+DEFINE FIELD OVERWRITE published_at ON post;"
     );
 
     Ok(())
@@ -48,11 +48,11 @@ fn create_schema_file_dry_run() -> Result<()> {
         .arg("--dry-run");
 
     cmd.assert().success().stdout(
-        "DEFINE TABLE post SCHEMALESS;
+        "DEFINE TABLE OVERWRITE post SCHEMALESS;
 
-DEFINE FIELD name ON post;
-DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;\n",
+DEFINE FIELD OVERWRITE name ON post;
+DEFINE FIELD OVERWRITE title ON post;
+DEFINE FIELD OVERWRITE published_at ON post;\n",
     );
 
     let schemas_folder = temp_dir.join("schemas");
@@ -82,11 +82,11 @@ fn create_schemafull_table_file_from_config() -> Result<()> {
 
     ensure!(
         post_file
-            == "DEFINE TABLE post SCHEMAFULL;
+            == "DEFINE TABLE OVERWRITE post SCHEMAFULL;
 
-DEFINE FIELD name ON post;
-DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;",
+DEFINE FIELD OVERWRITE name ON post;
+DEFINE FIELD OVERWRITE title ON post;
+DEFINE FIELD OVERWRITE published_at ON post;",
         "Expected file contents to match"
     );
 
@@ -114,11 +114,11 @@ fn create_schemaless_table_file_from_invalid_config() -> Result<()> {
 
     ensure!(
         post_file
-            == "DEFINE TABLE post SCHEMALESS;
+            == "DEFINE TABLE OVERWRITE post SCHEMALESS;
 
-DEFINE FIELD name ON post;
-DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;",
+DEFINE FIELD OVERWRITE name ON post;
+DEFINE FIELD OVERWRITE title ON post;
+DEFINE FIELD OVERWRITE published_at ON post;",
         "Expected file contents to match"
     );
 
@@ -146,11 +146,11 @@ fn create_schemafull_table_file_from_cli_arg() -> Result<()> {
 
     assert_eq!(
         post_file,
-        "DEFINE TABLE post SCHEMAFULL;
+        "DEFINE TABLE OVERWRITE post SCHEMAFULL;
 
-DEFINE FIELD name ON post;
-DEFINE FIELD title ON post;
-DEFINE FIELD published_at ON post;"
+DEFINE FIELD OVERWRITE name ON post;
+DEFINE FIELD OVERWRITE title ON post;
+DEFINE FIELD OVERWRITE published_at ON post;"
     );
 
     Ok(())

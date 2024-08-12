@@ -130,7 +130,7 @@ fn generate_file_content(
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE {0} {1};
+                "DEFINE TABLE OVERWRITE {0} {1};
 
 {2}",
                 name, table_schema_design_str, field_definitions
@@ -142,11 +142,11 @@ fn generate_file_content(
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE {0} {1};
+                "DEFINE TABLE OVERWRITE {0} {1};
 
 {2}
 
-DEFINE EVENT {0} ON TABLE {0} WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE {0} ON TABLE {0} WHEN $event == \"CREATE\" THEN (
     # TODO
 );",
                 name, table_schema_design_str, field_definitions
@@ -185,10 +185,10 @@ fn generate_field_definitions(fields: &Option<Vec<String>>, name: String) -> Str
     match fields {
         Some(fields) => fields
             .iter()
-            .map(|field| format!("DEFINE FIELD {} ON {};", field, name))
+            .map(|field| format!("DEFINE FIELD OVERWRITE {} ON {};", field, name))
             .collect::<Vec<String>>()
             .join("\n"),
-        None => format!("# DEFINE FIELD field ON {};", name),
+        None => format!("# DEFINE FIELD OVERWRITE field ON {};", name),
     }
 }
 
