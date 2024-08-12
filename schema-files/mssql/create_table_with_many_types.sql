@@ -16,5 +16,5 @@ CREATE TABLE Test (
     [DateTime] DATETIME,
     [Timestamp] TIMESTAMP,
     [Json] JSON,
-    [Variant] SQL_VARIANT,
+    [Variant] SQL_VARIANT
 )

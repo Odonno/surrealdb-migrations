@@ -3,5 +3,5 @@ CREATE TABLE Post (
     [Title] NVARCHAR(255) NOT NULL,
     [Content] TEXT NOT NULL,
     [Status] NVARCHAR(50) NOT NULL,
-    [CreatedAt] DATETIME NOT NULL,
+    [CreatedAt] DATETIME NOT NULL
 )

@@ -3,7 +3,7 @@ CREATE TABLE Post (
     [Title] NVARCHAR(255) NOT NULL,
     [Content] TEXT NOT NULL,
     [Status] NVARCHAR(50) NOT NULL,
-    [CreatedAt] DATETIME NOT NULL,
+    [CreatedAt] DATETIME NOT NULL
 );
 
 CREATE TABLE User (
@@ -11,7 +11,7 @@ CREATE TABLE User (
     [Username] NVARCHAR(255) NOT NULL UNIQUE,
     [Email] NVARCHAR(255) NOT NULL UNIQUE,
     [Password] NVARCHAR(255) NOT NULL,
-    [RegisteredAt] DATETIME NOT NULL,
+    [RegisteredAt] DATETIME NOT NULL
 );
 
 CREATE TABLE Comment (
@@ -21,5 +21,5 @@ CREATE TABLE Comment (
     [User] UNIQUEIDENTIFIER NOT NULL,
     [Post] UNIQUEIDENTIFIER NOT NULL,
     FOREIGN KEY (User) REFERENCES User(Id),
-    FOREIGN KEY (Post) REFERENCES Post(Id),
+    FOREIGN KEY (Post) REFERENCES Post(Id)
 );

@@ -1,7 +1,7 @@
 CREATE TABLE DailySales (
     [Id] UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
     [Value] DECIMAL(10, 2) NOT NULL,
-    [Date] DATE NOT NULL,
+    [Date] DATE NOT NULL
 );
 
 CREATE INDEX IX_DailySales_Sales ON DailySales (Date);

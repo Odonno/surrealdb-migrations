@@ -196,12 +196,15 @@ fn convert_ast_to_surrealdb_schema(
 
     for statement in ast {
         match statement {
-            sqlparser::ast::Statement::CreateTable {
-                name,
-                columns,
-                constraints,
-                ..
-            } => {
+            sqlparser::ast::Statement::CreateTable(create_table) => {
+                let sqlparser::ast::CreateTable {
+                    name,
+                    columns,
+                    constraints,
+                    ..
+                } = create_table;
+                //let sqlparser::ast::Table { table_name, .. } = table;
+
                 let mut line_definitions = SurrealdbSchemaDefinition::new();
 
                 let table_name = name.to_string();
@@ -320,13 +323,15 @@ fn convert_ast_to_surrealdb_schema(
 
                 tables.insert(table_name, line_definitions);
             }
-            sqlparser::ast::Statement::CreateIndex {
-                name,
-                table_name,
-                columns,
-                unique,
-                ..
-            } => {
+            sqlparser::ast::Statement::CreateIndex(create_index) => {
+                let sqlparser::ast::CreateIndex {
+                    name,
+                    table_name,
+                    columns,
+                    unique,
+                    ..
+                } = create_index;
+
                 let table_name = match table_name.0.first() {
                     Some(table_name) => table_name.value.to_string(),
                     None => {
