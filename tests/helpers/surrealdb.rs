@@ -45,7 +45,10 @@ pub async fn get_surrealdb_table_exists(
     Ok(tables.contains_key(table))
 }
 
-pub async fn is_surreal_table_empty(ns_db: Option<(&str, &str)>, table: &str) -> Result<bool> {
+pub async fn is_surreal_table_empty(
+    ns_db: Option<(&str, &str)>,
+    table: &'static str,
+) -> Result<bool> {
     let mut db_configuration = SurrealdbConfiguration::default();
     if let Some((ns, db)) = ns_db {
         db_configuration.ns = Some(ns.to_string());

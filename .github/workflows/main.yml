@@ -17,8 +17,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.77.0 toolchain
-        uses: dtolnay/rust-toolchain@1.77.0
+      - name: Install 1.80.0 toolchain
+        uses: dtolnay/rust-toolchain@1.80.0
         with:
           components: clippy, rustfmt
 
@@ -26,7 +26,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --alpha
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --beta
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory &
@@ -57,14 +57,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.77.0 toolchain
-        uses: dtolnay/rust-toolchain@1.77.0
+      - name: Install 1.80.0 toolchain
+        uses: dtolnay/rust-toolchain@1.80.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --alpha
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --beta
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory &
@@ -94,8 +94,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.77.0 toolchain
-        uses: dtolnay/rust-toolchain@1.77.0
+      - name: Install 1.80.0 toolchain
+        uses: dtolnay/rust-toolchain@1.80.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
