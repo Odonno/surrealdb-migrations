@@ -11,19 +11,25 @@ This project can be used:
 
 - as a Rust library
 
-```
+```bash
 cargo add surrealdb-migrations
 ```
 
 - or as a CLI
 
-```
+```bash
 cargo install surrealdb-migrations
 ```
 
 - or inside a CI workflow, using a [GitHub Action](https://github.com/marketplace/actions/surrealdb-migrations)
 
 Check [surrealdb-migrations](https://github.com/marketplace/actions/surrealdb-migrations) GitHub Action in the marketplace
+
+- or even as an `initContainer` via a [Docker image](https://hub.docker.com/r/dbottiau/surrealdb-migrations)
+
+```bash
+docker pull dbottiau/surrealdb-migrations:latest
+```
 
 ## The philosophy
 
