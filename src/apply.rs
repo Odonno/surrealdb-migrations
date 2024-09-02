@@ -69,10 +69,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     let schemas_files = io::extract_schemas_files(config_file, dir)?;
     let schema_definitions = extract_schema_definitions(schemas_files);
 
-    let events_files = match io::extract_events_files(config_file, dir).ok() {
-        Some(files) => files,
-        None => vec![],
-    };
+    let events_files = io::extract_events_files(config_file, dir)
+        .ok()
+        .unwrap_or_default();
     let event_definitions = extract_event_definitions(events_files);
 
     const DEFINITIONS_FOLDER: &str = "migrations/definitions";
