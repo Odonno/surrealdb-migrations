@@ -3610,10 +3610,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
-name = "surrealdb-beta"
+name = "surrealdb"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2276d69c8a53443469d196a9491801abe1ee30cd44b9802be33cbc6758d21973"
+checksum = "54a327b352feacd0e724399dcb6a673acd6fb2a88e0dc9c3fed7758d97dceef1"
 dependencies = [
  "arrayvec",
  "async-channel",
@@ -3623,7 +3623,6 @@ dependencies = [
  "futures",
  "geo",
  "indexmap 2.2.6",
- "once_cell",
  "path-clean",
  "pharos",
  "reblessive",
@@ -3637,7 +3636,7 @@ dependencies = [
  "serde",
  "serde-content",
  "serde_json",
- "surrealdb-core-beta",
+ "surrealdb-core",
  "thiserror",
  "tokio",
  "tokio-tungstenite",
@@ -3652,10 +3651,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "surrealdb-core-beta"
+name = "surrealdb-core"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d62a06ba0d009e892540fc7d10a356677b0492b884ec225fcc4e27c2182c7ce8"
+checksum = "80433611bdf00df5ff59d52a708b60ac23598db3e3f9460cde625ea925c8f776"
 dependencies = [
  "addr",
  "ahash 0.8.11",
@@ -3694,7 +3693,6 @@ dependencies = [
  "num-traits",
  "num_cpus",
  "object_store",
- "once_cell",
  "pbkdf2",
  "pharos",
  "phf",
@@ -3771,7 +3769,7 @@ dependencies = [
  "serde_json",
  "serial_test",
  "sqlparser",
- "surrealdb-beta",
+ "surrealdb",
  "tokio",
  "tokio-test",
 ]
