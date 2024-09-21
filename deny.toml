@@ -110,6 +110,7 @@ allow = [
     "ISC",
     "Unicode-DFS-2016",
     "CC0-1.0",
+	"BSD-2-Clause",
     "BSD-3-Clause",
     "Zlib",
     "BUSL-1.1"
