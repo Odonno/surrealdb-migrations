@@ -4,10 +4,6 @@ on:
   release:
     types: [created]
 
-env:
-  IMAGE_NAME: dbottiau/surrealdb-migrations
-  BUILDX_NO_DEFAULT_ATTESTATIONS: 1
-
 jobs:
   release-binary:
     name: release ${{ matrix.target }}
