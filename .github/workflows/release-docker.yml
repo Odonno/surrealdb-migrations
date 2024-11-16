@@ -9,7 +9,7 @@ env:
   BUILDX_NO_DEFAULT_ATTESTATIONS: 1
 
 jobs:
-  build:
+  docker-build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -66,10 +66,10 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  merge:
+  docker-merge:
     runs-on: ubuntu-latest
     needs:
-      - build
+      - docker-build
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
