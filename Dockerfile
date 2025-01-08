@@ -1,4 +1,4 @@
-FROM clux/muslrust:1.80.1-stable as builder
+FROM clux/muslrust:1.81.0-stable as builder
 WORKDIR /volume
 ADD src src
 ADD templates templates
