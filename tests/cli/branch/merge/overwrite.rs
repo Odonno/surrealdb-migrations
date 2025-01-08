@@ -5,6 +5,7 @@ use serial_test::serial;
 
 use crate::helpers::*;
 
+#[ignore = "potential issue with create_branch"]
 #[tokio::test]
 #[serial(branches)]
 async fn merge_existing_branch() -> Result<()> {

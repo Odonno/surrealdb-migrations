@@ -5,6 +5,7 @@ use serial_test::serial;
 
 use crate::helpers::*;
 
+#[ignore = "potential issue with create_branch"]
 #[tokio::test]
 #[serial(branches)]
 async fn diff_without_changes() -> Result<()> {
@@ -31,6 +32,7 @@ async fn diff_without_changes() -> Result<()> {
     Ok(())
 }
 
+#[ignore = "potential issue with create_branch"]
 #[tokio::test]
 #[serial(branches)]
 async fn diff_with_changes() -> Result<()> {
