@@ -17,7 +17,7 @@ edition = "2021"
 chrono = "0.4.39"
 chrono-human-duration = "0.1.1"
 clap = { version = "4.5.23", features = ["derive"] }
-cli-table = "=0.4.9"
+cli-table = "=0.4.7"
 color-eyre = "0.6.3"
 convert_case = "0.6.0"
 diffy = "0.4.0"
