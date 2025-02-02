@@ -159,6 +159,7 @@ async fn sub_main() -> Result<()> {
                 password,
                 dry_run,
                 validate_version_order,
+                output,
             } = apply_args;
 
             let operation = match (up, down) {
@@ -188,6 +189,7 @@ async fn sub_main() -> Result<()> {
                 dry_run,
                 validate_version_order,
                 config_file,
+                output,
             };
             apply::main(args).await
         }

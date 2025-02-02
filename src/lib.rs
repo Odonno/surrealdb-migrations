@@ -271,6 +271,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dry_run: false,
             validate_version_order: false,
             config_file: self.config_file,
+            output: false,
         };
         apply::main(args).await
     }
@@ -319,6 +320,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dry_run: false,
             validate_version_order: false,
             config_file: self.config_file,
+            output: false,
         };
         apply::main(args).await
     }
@@ -367,6 +369,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dry_run: false,
             validate_version_order: false,
             config_file: self.config_file,
+            output: false,
         };
         apply::main(args).await
     }

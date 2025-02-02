@@ -33,6 +33,7 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub dry_run: bool,
     pub validate_version_order: bool,
     pub config_file: Option<&'a Path>,
+    pub output: bool,
 }
 
 pub enum ApplyOperation {
@@ -50,6 +51,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         dry_run,
         validate_version_order,
         config_file,
+        output,
     } = args;
 
     if validate_version_order {
@@ -136,6 +138,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                 client,
                 dry_run,
                 dir,
+                output,
             )
             .await?;
         }
@@ -149,6 +152,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                 client,
                 dry_run,
                 dir,
+                output,
             )
             .await?;
         }
@@ -323,6 +327,7 @@ async fn apply_migrations<C: Connection>(
     client: &Surreal<C>,
     dry_run: bool,
     embedded_dir: Option<&Dir<'static>>,
+    output: bool,
 ) -> Result<()> {
     let mut has_applied_schemas = false;
     let mut has_applied_events = false;
@@ -348,6 +353,11 @@ async fn apply_migrations<C: Connection>(
 {}",
             schemas_statements, events_statements,
         );
+
+        if output {
+            println!("-- Initial schema and event definitions --");
+            println!("{}", query);
+        }
 
         let transaction_action = get_transaction_action(dry_run);
         surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
@@ -400,6 +410,12 @@ CREATE {} SET script_name = '{}';",
             migration_file.name
         );
 
+        if output {
+            let migration_display_name = get_migration_display_name(&migration_file.name);
+            println!("-- Apply migration for {} --", migration_display_name);
+            println!("{}", query);
+        }
+
         if display_logs {
             let migration_display_name = get_migration_display_name(&migration_file.name);
             println!("Executing migration {}...", migration_display_name);
@@ -441,6 +457,7 @@ async fn revert_migrations<C: Connection>(
     client: &Surreal<C>,
     dry_run: bool,
     embedded_dir: Option<&Dir<'static>>,
+    output: bool,
 ) -> Result<()> {
     let last_migration_applied = migrations_applied.last();
 
@@ -517,6 +534,12 @@ DELETE {} WHERE script_name = '{}';",
             SCRIPT_MIGRATION_TABLE_NAME,
             migration_file.name
         );
+
+        if output {
+            let migration_display_name = get_migration_display_name(&migration_file.name);
+            println!("-- Revert migration for {} --", migration_display_name);
+            println!("{}", query);
+        }
 
         if display_logs {
             let migration_display_name = get_migration_display_name(&migration_file.name);

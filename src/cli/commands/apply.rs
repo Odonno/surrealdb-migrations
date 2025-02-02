@@ -41,4 +41,7 @@ pub struct ApplyArgs {
     /// gaps in the migrations history.
     #[clap(long)]
     pub validate_version_order: bool,
+    /// Output the surql statements to the console.
+    #[clap(short, long, requires = "dry_run")]
+    pub output: bool,
 }
