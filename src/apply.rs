@@ -1,11 +1,15 @@
-use std::path::{Path, PathBuf};
+use std::{
+    cmp::Ordering,
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use ::surrealdb::{
     sql::{
         statements::{
             DefineEventStatement, DefineFieldStatement, DefineStatement, DefineTableStatement,
         },
-        Statement,
+        Query, Statement,
     },
     Connection, Surreal,
 };
@@ -176,13 +180,51 @@ fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
 
 fn concat_files_content(files: Vec<SurqlFile>) -> String {
     let mut ordered_files = files;
-    ordered_files.sort_by(|a, b| a.name.cmp(&b.name));
+    ordered_files.sort_by(|a, b| {
+        let a_query =
+            ::surrealdb::sql::parse(&a.get_content().unwrap_or_default()).unwrap_or_default();
+        let b_query =
+            ::surrealdb::sql::parse(&b.get_content().unwrap_or_default()).unwrap_or_default();
+
+        // 💡 ensures computed tables are created after the tables they depend
+        if consume_table(&a_query, &b_query) {
+            return Ordering::Greater;
+        }
+        if consume_table(&b_query, &a_query) {
+            return Ordering::Less;
+        }
+
+        a.name.cmp(&b.name)
+    });
 
     ordered_files
         .iter()
         .map(|file| file.get_content().unwrap_or_default())
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn consume_table(query1: &Query, query2: &Query) -> bool {
+    let query2_table_names = query2
+        .0
+         .0
+        .iter()
+        .filter_map(|statement| match statement {
+            Statement::Define(DefineStatement::Table(table)) => Some(&table.name.0),
+            _ => None,
+        })
+        .collect::<HashSet<_>>();
+
+    query1.0 .0.iter().any(|statement| match statement {
+        Statement::Define(DefineStatement::Table(table)) => match &table.view {
+            Some(view) => {
+                let dependent_tables = view.what.0.iter().map(|t| &t.0).collect::<HashSet<_>>();
+                query2_table_names.intersection(&dependent_tables).count() > 0
+            }
+            None => false,
+        },
+        _ => false,
+    })
 }
 
 fn get_transaction_action(dry_run: bool) -> TransactionAction {

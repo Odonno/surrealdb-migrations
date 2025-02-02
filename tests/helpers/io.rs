@@ -317,6 +317,22 @@ VALUE \"https://example.com/.well-known/jwks.json\";";
     Ok(())
 }
 
+pub fn add_computed_schema_file(path: &Path) -> Result<()> {
+    let schemas_files_dir = path.join("schemas");
+
+    if schemas_files_dir.exists() {
+        let schema_file = schemas_files_dir.join("computed.surql");
+        const CONTENT: &str = "DEFINE TABLE OVERWRITE computed AS
+    SELECT title, content, status, author
+    FROM post
+    GROUP BY author;";
+
+        fs::write(schema_file, CONTENT)?;
+    }
+
+    Ok(())
+}
+
 pub fn inline_down_migration_files(path: &Path) -> Result<()> {
     let migrations_files_dir = path.join("migrations");
     let down_migrations_files_dir = migrations_files_dir.join("down");

@@ -371,3 +371,27 @@ fn apply_and_output_new_migrations() -> Result<()> {
 
     Ok(())
 }
+
+#[test]
+fn apply_should_run_computed_table_last() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("migrations"))?;
+    add_computed_schema_file(&temp_dir)?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply");
+
+    cmd.assert().try_success().and_then(|assert| {
+        assert.try_stdout(
+            "Schema files successfully executed!
+Event files successfully executed!\n",
+        )
+    })?;
+
+    Ok(())
+}
