@@ -1,9 +1,3 @@
-use std::{
-    cmp::Ordering,
-    collections::HashSet,
-    path::{Path, PathBuf},
-};
-
 use ::surrealdb::{
     sql::{
         statements::{
@@ -15,6 +9,12 @@ use ::surrealdb::{
 };
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::Dir;
+use itertools::Itertools;
+use std::{
+    cmp::Ordering,
+    collections::HashSet,
+    path::{Path, PathBuf},
+};
 
 use crate::{
     common::get_migration_display_name,
@@ -179,52 +179,104 @@ fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
 }
 
 fn concat_files_content(files: Vec<SurqlFile>) -> String {
-    let mut ordered_files = files;
-    ordered_files.sort_by(|a, b| {
-        let a_query =
-            ::surrealdb::sql::parse(&a.get_content().unwrap_or_default()).unwrap_or_default();
-        let b_query =
-            ::surrealdb::sql::parse(&b.get_content().unwrap_or_default()).unwrap_or_default();
+    let files_with_content_and_query = files
+        .into_iter()
+        .map(|file| {
+            let content = file.get_content().unwrap_or_default();
+            let query = ::surrealdb::sql::parse(&content).unwrap_or_default();
+            (file, content, query)
+        })
+        .collect::<Vec<_>>();
 
-        // 💡 ensures computed tables are created after the tables they depend
-        if consume_table(&a_query, &b_query) {
-            return Ordering::Greater;
-        }
-        if consume_table(&b_query, &a_query) {
-            return Ordering::Less;
-        }
-
-        a.name.cmp(&b.name)
-    });
-
-    ordered_files
+    let all_tables = files_with_content_and_query
         .iter()
-        .map(|file| file.get_content().unwrap_or_default())
+        .map(|(_, _, query)| query)
+        .flat_map(extract_table_names)
+        .collect::<HashSet<_>>();
+
+    files_with_content_and_query
+        .into_iter()
+        .sorted_by(|a, b| {
+            let a_query = &a.2;
+            let b_query = &b.2;
+
+            // 💡 ensures computed tables are created after the tables they depend
+            if consumes_table(a_query, b_query) {
+                return Ordering::Greater;
+            }
+            if consumes_table(b_query, a_query) {
+                return Ordering::Less;
+            }
+
+            match (
+                consumes_any_table(a_query, &all_tables),
+                consumes_any_table(b_query, &all_tables),
+            ) {
+                (true, false) => Ordering::Greater,
+                (false, true) => Ordering::Less,
+                _ => a.0.name.cmp(&b.0.name),
+            }
+        })
+        .map(|(_, content, _)| content)
         .collect::<Vec<_>>()
         .join("\n")
 }
 
-fn consume_table(query1: &Query, query2: &Query) -> bool {
-    let query2_table_names = query2
+fn consumes_table(query1: &Query, query2: &Query) -> bool {
+    let query2_table_names = extract_table_names(query2);
+    let consumed_table_names = extract_consumed_table_names(query1);
+
+    consumed_table_names
+        .intersection(&query2_table_names)
+        .count()
+        > 0
+}
+
+fn consumes_any_table(query: &Query, all_tables: &HashSet<String>) -> bool {
+    let consumed_table_names = extract_consumed_table_names(query);
+
+    let query_table_names = extract_table_names(query);
+    let other_table_names = all_tables
+        .difference(&query_table_names)
+        .cloned()
+        .collect::<HashSet<_>>();
+
+    other_table_names
+        .intersection(&consumed_table_names)
+        .count()
+        > 0
+}
+
+fn extract_table_names(query: &Query) -> HashSet<String> {
+    query
         .0
          .0
         .iter()
         .filter_map(|statement| match statement {
-            Statement::Define(DefineStatement::Table(table)) => Some(&table.name.0),
+            Statement::Define(DefineStatement::Table(table)) => Some(table.name.0.clone()),
             _ => None,
         })
-        .collect::<HashSet<_>>();
+        .collect()
+}
 
-    query1.0 .0.iter().any(|statement| match statement {
-        Statement::Define(DefineStatement::Table(table)) => match &table.view {
-            Some(view) => {
-                let dependent_tables = view.what.0.iter().map(|t| &t.0).collect::<HashSet<_>>();
-                query2_table_names.intersection(&dependent_tables).count() > 0
-            }
-            None => false,
-        },
-        _ => false,
-    })
+fn extract_consumed_table_names(query: &Query) -> HashSet<String> {
+    query
+        .0
+         .0
+        .iter()
+        .filter_map(|statement| match statement {
+            Statement::Define(DefineStatement::Table(table)) => match &table.view {
+                Some(view) => {
+                    let dependent_tables = view.what.0.iter().map(|t| &t.0).collect::<HashSet<_>>();
+                    Some(dependent_tables)
+                }
+                None => None,
+            },
+            _ => None,
+        })
+        .flatten()
+        .cloned()
+        .collect()
 }
 
 fn get_transaction_action(dry_run: bool) -> TransactionAction {
