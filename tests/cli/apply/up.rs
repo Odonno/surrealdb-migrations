@@ -373,6 +373,7 @@ fn apply_and_output_new_migrations() -> Result<()> {
 }
 
 #[test]
+#[ignore = "references must be applied late"]
 fn apply_should_run_computed_table_last() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;

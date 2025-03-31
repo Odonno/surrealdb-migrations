@@ -4,7 +4,11 @@ use std::collections::HashMap;
 use std::path::Path;
 use surrealdb::{
     engine::any::{connect, Any},
-    opt::auth::{Jwt, Root},
+    opt::{
+        auth::{Jwt, Root},
+        capabilities::Capabilities,
+        Config,
+    },
     Connection, Surreal,
 };
 
@@ -50,7 +54,10 @@ async fn create_surrealdb_connection(
         .or(db_config.address.to_owned())
         .unwrap_or(format!("ws://{}", url));
 
-    connect(address).await
+    let config =
+        Config::new().capabilities(Capabilities::all().with_all_experimental_features_allowed());
+
+    connect((address, config)).await
 }
 
 async fn sign_in(

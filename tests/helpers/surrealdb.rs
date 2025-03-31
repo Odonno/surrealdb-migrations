@@ -2,7 +2,11 @@ use color_eyre::eyre::{ContextCompat, Result};
 use std::collections::HashMap;
 use surrealdb::{
     engine::any::{connect, Any},
-    opt::auth::{Jwt, Root},
+    opt::{
+        auth::{Jwt, Root},
+        capabilities::Capabilities,
+        Config,
+    },
     sql::Thing,
     Surreal,
 };
@@ -132,7 +136,10 @@ async fn create_surrealdb_connection(
     let url = url.unwrap_or("localhost:8000".to_owned());
     let address = address.unwrap_or(format!("ws://{}", url));
 
-    connect(address).await
+    let config =
+        Config::new().capabilities(Capabilities::all().with_all_experimental_features_allowed());
+
+    connect((address, config)).await
 }
 
 async fn sign_in(

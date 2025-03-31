@@ -668,7 +668,11 @@ fn get_rollback_statements(
     let next_statements = match next_statements_str.is_empty() {
         true => vec![],
         false => {
-            let next_statements = ::surrealdb::sql::parse(next_statements_str)?;
+            let next_statements = ::surrealdb::syn::parse_with_capabilities(
+                next_statements_str,
+                &::surrealdb::dbs::Capabilities::all()
+                    .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
+            )?;
             next_statements.0 .0
         }
     };
@@ -676,7 +680,11 @@ fn get_rollback_statements(
     let previous_statements = match previous_statements_str.is_empty() {
         true => vec![],
         false => {
-            let previous_statements = ::surrealdb::sql::parse(previous_statements_str)?;
+            let previous_statements = ::surrealdb::syn::parse_with_capabilities(
+                previous_statements_str,
+                &::surrealdb::dbs::Capabilities::all()
+                    .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
+            )?;
             previous_statements.0 .0
         }
     };
