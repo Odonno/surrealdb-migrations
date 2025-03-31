@@ -203,7 +203,6 @@ fn convert_ast_to_surrealdb_schema(
                     constraints,
                     ..
                 } = create_table;
-                //let sqlparser::ast::Table { table_name, .. } = table;
 
                 let mut line_definitions = SurrealdbSchemaDefinition::new();
 

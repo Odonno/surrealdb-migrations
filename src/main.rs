@@ -6,12 +6,15 @@ use branch::{
     remove::RemoveBranchArgs, status::BranchStatusArgs,
 };
 use clap::Parser;
-use cli::{Action, Args, BranchAction, CreateAction, ScaffoldAction};
+#[cfg(feature = "scaffold")]
+use cli::ScaffoldAction;
+use cli::{Action, Args, BranchAction, CreateAction};
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 use list::ListArgs;
+#[cfg(feature = "scaffold")]
 use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
 
 mod apply;
@@ -26,6 +29,7 @@ mod io;
 mod list;
 mod models;
 mod remove;
+#[cfg(feature = "scaffold")]
 mod scaffold;
 mod surrealdb;
 mod validate_version_order;
@@ -49,6 +53,7 @@ async fn sub_main() -> Result<()> {
     let config_file = args.config_file.as_deref();
 
     match args.command {
+        #[cfg(feature = "scaffold")]
         Action::Scaffold { command } => match command {
             ScaffoldAction::Template { template } => {
                 let args = ScaffoldFromTemplateArgs {

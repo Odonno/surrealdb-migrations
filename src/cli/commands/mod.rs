@@ -8,4 +8,6 @@ pub use self::apply::*;
 pub use self::branch::*;
 pub use self::create::*;
 pub use self::list::*;
+
+#[cfg(feature = "scaffold")]
 pub use self::scaffold::*;

@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs, ScaffoldAction};
+#[cfg(feature = "scaffold")]
+use super::ScaffoldAction;
+use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs};
 
 #[derive(Parser, Debug)]
 #[clap(name = "surrealdb-migrations", version, author = "Odonno")]
@@ -19,6 +21,7 @@ pub struct Args {
 
 #[derive(Subcommand, Debug)]
 pub enum Action {
+    #[cfg(feature = "scaffold")]
     /// Scaffold a new SurrealDB project (with migrations)
     #[clap(aliases = vec!["s"])]
     Scaffold {

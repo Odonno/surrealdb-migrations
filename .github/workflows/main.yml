@@ -38,7 +38,7 @@ jobs:
         run: cargo check --all
 
       - name: Run tests
-        run: cargo test
+        run: cargo test --all-features
 
       - name: Run format
         run: |
