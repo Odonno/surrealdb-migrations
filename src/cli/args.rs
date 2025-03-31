@@ -4,7 +4,9 @@ use clap::{Parser, Subcommand};
 
 #[cfg(feature = "scaffold")]
 use super::ScaffoldAction;
-use super::{ApplyArgs, BranchArgs, CreateArgs, ListArgs};
+#[cfg(feature = "branching")]
+use super::BranchArgs;
+use super::{ApplyArgs, CreateArgs, ListArgs};
 
 #[derive(Parser, Debug)]
 #[clap(name = "surrealdb-migrations", version, author = "Odonno")]
@@ -40,6 +42,7 @@ pub enum Action {
     /// List all migrations applied to the database
     #[clap(aliases = vec!["ls"])]
     List(ListArgs),
+    #[cfg(feature = "branching")]
     /// ** Preview ** A set of commands for database branching
     #[clap(aliases = vec!["b"])]
     Branch(BranchArgs),

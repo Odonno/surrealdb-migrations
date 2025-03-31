@@ -1,6 +1,7 @@
 use crate::surrealdb::create_surrealdb_client;
 
 use apply::ApplyArgs;
+#[cfg(feature = "branching")]
 use branch::{
     diff::BranchDiffArgs, list::ListBranchArgs, merge::MergeBranchArgs, new::NewBranchArgs,
     remove::RemoveBranchArgs, status::BranchStatusArgs,
@@ -8,7 +9,9 @@ use branch::{
 use clap::Parser;
 #[cfg(feature = "scaffold")]
 use cli::ScaffoldAction;
-use cli::{Action, Args, BranchAction, CreateAction};
+#[cfg(feature = "branching")]
+use cli::BranchAction;
+use cli::{Action, Args, CreateAction};
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
@@ -18,6 +21,7 @@ use list::ListArgs;
 use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
 
 mod apply;
+#[cfg(feature = "branching")]
 mod branch;
 mod cli;
 mod common;
@@ -225,6 +229,7 @@ async fn sub_main() -> Result<()> {
             };
             list::main(args).await
         }
+        #[cfg(feature = "branching")]
         #[allow(deprecated)]
         Action::Branch(branch_args) => {
             let cli::BranchArgs { command, name } = branch_args;
