@@ -40,6 +40,7 @@ jobs:
           ARCHIVE_TYPES: ${{ matrix.archive }}
           EXTRA_FILES: "readme.md LICENSE"
           TOOLCHAIN_VERSION: stable
+          EXTRA_COMMAND_FLAGS: "--all-features"
 
   release-exe:
     runs-on: windows-latest
@@ -55,7 +56,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build release
-        run: cargo build --release
+        run: cargo build --release --all-features
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
