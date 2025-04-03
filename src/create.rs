@@ -3,7 +3,10 @@ use std::path::{Path, PathBuf};
 
 use crate::{
     config::{self, retrieve_table_schema_design},
-    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{
+        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
+        SURQL_FILE_EXTENSION,
+    },
     io,
 };
 
@@ -104,15 +107,16 @@ pub fn main(args: CreateArgs) -> Result<()> {
 
 fn get_filename(operation: &CreateOperation, name: &String) -> String {
     match operation {
-        CreateOperation::Schema(_) => format!("{}.surql", name),
-        CreateOperation::Event(_) => format!("{}.surql", name),
+        CreateOperation::Schema(_) => format!("{}{}", name, SURQL_FILE_EXTENSION),
+        CreateOperation::Event(_) => format!("{}{}", name, SURQL_FILE_EXTENSION),
         CreateOperation::Migration(_) => {
             let now = chrono::Local::now();
             format!(
-                "{}_{}_{}.surql",
+                "{}_{}_{}{}",
                 now.format("%Y%m%d"),
                 now.format("%H%M%S"),
-                name
+                name,
+                SURQL_FILE_EXTENSION
             )
         }
     }

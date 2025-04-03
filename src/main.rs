@@ -7,10 +7,10 @@ use branch::{
     remove::RemoveBranchArgs, status::BranchStatusArgs,
 };
 use clap::Parser;
-#[cfg(feature = "scaffold")]
-use cli::ScaffoldAction;
 #[cfg(feature = "branching")]
 use cli::BranchAction;
+#[cfg(feature = "scaffold")]
+use cli::ScaffoldAction;
 use cli::{Action, Args, CreateAction};
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::Result;

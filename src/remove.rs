@@ -4,7 +4,7 @@ use std::path::Path;
 use crate::{
     common::get_migration_display_name,
     config,
-    constants::{DOWN_MIGRATIONS_DIR_NAME, MIGRATIONS_DIR_NAME},
+    constants::{DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, MIGRATIONS_DIR_NAME},
     io::{self, SurqlFile},
 };
 
@@ -97,8 +97,10 @@ fn remove_inlined_down_migration_file_if_exists(
     let folder_path = config::retrieve_folder_path(config_file);
     let migrations_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
 
-    let inlined_down_migration_file_path =
-        Path::new(&migrations_path).join(format!("{}.down.surql", last_migration.name));
+    let inlined_down_migration_file_path = Path::new(&migrations_path).join(format!(
+        "{}{}",
+        last_migration.name, DOWN_SURQL_FILE_EXTENSION
+    ));
 
     if inlined_down_migration_file_path.exists() {
         std::fs::remove_file(inlined_down_migration_file_path)?;

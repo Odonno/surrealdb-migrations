@@ -12,6 +12,14 @@ pub fn empty_folder(path: &Path) -> Result<()> {
     Ok(())
 }
 
+pub fn create_folder(path: &Path) -> Result<()> {
+    if !path.exists() {
+        fs::create_dir(path)?;
+    }
+
+    Ok(())
+}
+
 pub fn remove_folder(path: &Path) -> Result<()> {
     if path.exists() {
         fs::remove_dir_all(path)?;
@@ -23,6 +31,14 @@ pub fn remove_folder(path: &Path) -> Result<()> {
 pub fn copy_folder(from: &Path, to: &Path) -> Result<()> {
     if from.exists() {
         fs_extra::dir::copy(from, to, &fs_extra::dir::CopyOptions::new())?;
+    }
+
+    Ok(())
+}
+
+pub fn move_file(from: &Path, to: &Path) -> Result<()> {
+    if from.exists() && from.is_file() {
+        fs_extra::file::move_file(from, to, &fs_extra::file::CopyOptions::new())?;
     }
 
     Ok(())

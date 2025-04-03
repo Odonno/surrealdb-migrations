@@ -9,8 +9,8 @@ use std::{
 use crate::{
     config,
     constants::{
-        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
-        SCRIPT_MIGRATION_TABLE_NAME,
+        DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, EVENTS_DIR_NAME, JSON_FILE_EXTENSION,
+        MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION,
     },
     models::{DefinitionDiff, SchemaMigrationDefinition, ScriptMigration},
 };
@@ -24,8 +24,10 @@ pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
 
 pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
     let folder_path = config::retrieve_folder_path(config_file);
-    let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME)
-        .join(format!("{}.surql", SCRIPT_MIGRATION_TABLE_NAME));
+    let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME).join(format!(
+        "{}{}",
+        SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION
+    ));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
 
     let can_use_filesystem = script_migration_file_try_exists.unwrap_or(false);
@@ -35,7 +37,9 @@ pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
 
 pub struct SurqlFile {
     pub name: String,
+    #[allow(dead_code)]
     pub full_name: String,
+    pub is_down_file: bool,
     content: Box<dyn Fn() -> Option<String> + Send + Sync>,
 }
 
@@ -50,6 +54,7 @@ pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
     SurqlFile {
         name: full_name.to_string(),
         full_name: full_name.to_string(),
+        is_down_file: true,
         content: Box::new(move || Some(content.to_string())),
     }
 }
@@ -59,7 +64,7 @@ pub fn extract_schemas_files(
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(SCHEMAS_DIR_NAME).to_path_buf();
-    extract_surql_files(config_file, dir_path, embedded_dir)
+    extract_surql_files(config_file, dir_path, embedded_dir, false)
 }
 
 pub fn extract_events_files(
@@ -67,27 +72,26 @@ pub fn extract_events_files(
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(EVENTS_DIR_NAME).to_path_buf();
-    extract_surql_files(config_file, dir_path, embedded_dir)
+    extract_surql_files(config_file, dir_path, embedded_dir, false)
 }
 
+// TODO : refactor extract_forward_migrations_files/extract_backward_migrations_files
 pub fn extract_forward_migrations_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let root_migrations_files = extract_surql_files(config_file, root_migrations_dir, embedded_dir)
-        .ok()
-        .unwrap_or_default();
+    let root_migrations_files =
+        extract_surql_files(config_file, root_migrations_dir, embedded_dir, true)
+            .ok()
+            .unwrap_or_default();
 
-    let root_forward_migrations_files = root_migrations_files
+    let root_migrations_files = root_migrations_files
         .into_iter()
-        .filter(|file| {
-            let is_down_file = is_down_file(file);
-            !is_down_file
-        })
+        .filter(|file| !file.is_down_file)
         .collect::<Vec<_>>();
 
-    let forward_migrations_files = root_forward_migrations_files;
+    let forward_migrations_files = root_migrations_files;
 
     get_sorted_migrations_files(forward_migrations_files)
 }
@@ -97,22 +101,17 @@ pub fn extract_backward_migrations_files(
     embedded_dir: Option<&Dir<'static>>,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let root_migrations_files = extract_surql_files(config_file, root_migrations_dir, embedded_dir)
-        .ok()
-        .unwrap_or_default();
+    let root_migrations_files =
+        extract_surql_files(config_file, root_migrations_dir, embedded_dir, true)
+            .ok()
+            .unwrap_or_default();
 
-    let root_backward_migrations_files = root_migrations_files
+    let root_migrations_files = root_migrations_files
         .into_iter()
-        .filter(|file| file.name.ends_with(".down.surql"))
+        .filter(|file| file.is_down_file)
         .collect::<Vec<_>>();
 
-    let down_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).join(DOWN_MIGRATIONS_DIR_NAME);
-    let down_migrations_files = extract_surql_files(config_file, down_migrations_dir, embedded_dir)
-        .ok()
-        .unwrap_or_default();
-
-    let mut backward_migrations_files = root_backward_migrations_files;
-    backward_migrations_files.extend(down_migrations_files);
+    let backward_migrations_files = root_migrations_files;
 
     get_sorted_migrations_files(backward_migrations_files)
 }
@@ -121,16 +120,18 @@ fn extract_surql_files(
     config_file: Option<&Path>,
     dir_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
+    is_migration_folder: bool,
 ) -> Result<Vec<SurqlFile>> {
     match embedded_dir {
-        Some(dir) => extract_surql_files_from_embedded_dir(dir_path, dir),
-        None => extract_surql_files_from_filesystem(config_file, dir_path),
+        Some(dir) => extract_surql_files_from_embedded_dir(dir_path, dir, is_migration_folder),
+        None => extract_surql_files_from_filesystem(config_file, dir_path, is_migration_folder),
     }
 }
 
 fn extract_surql_files_from_embedded_dir(
     dir_path: PathBuf,
     dir: &Dir<'static>,
+    is_migration_folder: bool,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
@@ -147,11 +148,19 @@ fn extract_surql_files_from_embedded_dir(
 
             match (is_file, name, full_name) {
                 (false, ..) => None,
-                (_, Some(name), Some(full_name)) => Some(SurqlFile {
-                    name,
-                    full_name,
-                    content: Box::new(move || get_embedded_file_content(f)),
-                }),
+                (_, Some(name), Some(full_name)) => {
+                    let path_str = f.path().to_str().unwrap_or_default();
+                    let is_down_file = full_name.ends_with(DOWN_SURQL_FILE_EXTENSION)
+                        || (is_migration_folder
+                            && path_str.contains(&format!("{}/", DOWN_MIGRATIONS_DIR_NAME)));
+
+                    Some(SurqlFile {
+                        name,
+                        full_name,
+                        is_down_file,
+                        content: Box::new(move || get_embedded_file_content(f)),
+                    })
+                }
                 _ => None,
             }
         })
@@ -185,7 +194,9 @@ fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
 
 fn get_embedded_file_is_file(full_name: &Option<String>) -> bool {
     match full_name {
-        Some(full_name) => full_name.ends_with(".surql") || full_name.ends_with(".json"),
+        Some(full_name) => {
+            full_name.ends_with(SURQL_FILE_EXTENSION) || full_name.ends_with(JSON_FILE_EXTENSION)
+        }
         None => false,
     }
 }
@@ -197,6 +208,7 @@ fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
 fn extract_surql_files_from_filesystem(
     config_file: Option<&Path>,
     dir_path: PathBuf,
+    is_migration_folder: bool,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
@@ -207,38 +219,69 @@ fn extract_surql_files_from_filesystem(
     config.insert(DirEntryAttr::Name);
     config.insert(DirEntryAttr::Path);
     config.insert(DirEntryAttr::IsFile);
+    config.insert(DirEntryAttr::IsDir);
     config.insert(DirEntryAttr::FullName);
 
-    let files = fs_extra::dir::ls(dir_path, &config)
-        .context(format!("Error listing {} directory", dir_path_str))?
-        .items;
+    nested_extract_surql_files_from_filesystem(dir_path, &config, is_migration_folder)
+        .context(format!("Error listing {} directory", dir_path_str))
+}
 
-    let files = files
-        .iter()
-        .filter_map(|f| {
-            let is_file = extract_boolean_dir_entry_value(f, DirEntryAttr::IsFile);
-            let name = extract_string_dir_entry_value(f, DirEntryAttr::Name);
-            let full_name = extract_string_dir_entry_value(f, DirEntryAttr::FullName);
-            let path = extract_string_dir_entry_value(f, DirEntryAttr::Path);
+fn nested_extract_surql_files_from_filesystem(
+    dir_path: PathBuf,
+    config: &HashSet<DirEntryAttr>,
+    is_migration_folder: bool,
+) -> Option<Vec<SurqlFile>> {
+    let Ok(file_result) = fs_extra::dir::ls(dir_path, config) else {
+        return None;
+    };
 
-            match (is_file, name, full_name, path) {
-                (None, ..) => None,
-                (Some(false), ..) => None,
-                (_, Some(name), Some(full_name), Some(path)) => {
-                    let path = path.clone();
+    Some(
+        file_result
+            .items
+            .iter()
+            .flat_map(|f| {
+                let is_dir =
+                    extract_boolean_dir_entry_value(f, DirEntryAttr::IsDir).unwrap_or(&false);
+                let Some(path) = extract_string_dir_entry_value(f, DirEntryAttr::Path) else {
+                    return vec![];
+                };
 
-                    Some(SurqlFile {
-                        name: name.to_string(),
-                        full_name: full_name.to_string(),
-                        content: Box::new(move || fs_extra::file::read_to_string(&path).ok()),
-                    })
+                if *is_dir {
+                    return nested_extract_surql_files_from_filesystem(
+                        path.into(),
+                        config,
+                        is_migration_folder,
+                    )
+                    .unwrap_or_default();
                 }
-                _ => None,
-            }
-        })
-        .collect::<Vec<_>>();
 
-    Ok(files)
+                let is_file =
+                    extract_boolean_dir_entry_value(f, DirEntryAttr::IsFile).unwrap_or(&false);
+                let name = extract_string_dir_entry_value(f, DirEntryAttr::Name);
+                let full_name = extract_string_dir_entry_value(f, DirEntryAttr::FullName);
+
+                match (is_file, name, full_name, path) {
+                    (false, ..) => vec![],
+                    (true, Some(name), Some(full_name), path)
+                        if full_name.ends_with(SURQL_FILE_EXTENSION) =>
+                    {
+                        let is_down_file = full_name.ends_with(DOWN_SURQL_FILE_EXTENSION)
+                            || (is_migration_folder
+                                && path.contains(&format!("{}/", DOWN_MIGRATIONS_DIR_NAME)));
+                        let path: String = path.clone();
+
+                        vec![SurqlFile {
+                            name: name.to_string(),
+                            full_name: full_name.to_string(),
+                            is_down_file,
+                            content: Box::new(move || fs_extra::file::read_to_string(&path).ok()),
+                        }]
+                    }
+                    _ => vec![],
+                }
+            })
+            .collect::<Vec<_>>(),
+    )
 }
 
 fn extract_boolean_dir_entry_value(
@@ -259,10 +302,6 @@ fn extract_string_dir_entry_value(
         return Some(value);
     }
     None
-}
-
-fn is_down_file(file: &SurqlFile) -> bool {
-    file.full_name.ends_with(".down.surql")
 }
 
 fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {

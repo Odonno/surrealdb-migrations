@@ -396,3 +396,37 @@ Event files successfully executed!\n",
 
     Ok(())
 }
+
+#[test]
+fn apply_with_recursive_schema_folders() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("events"))?;
+    remove_folder(&temp_dir.join("migrations"))?;
+    add_category_schema_file(&temp_dir)?;
+
+    let schemas_path = &temp_dir.join("schemas");
+    let v2_path = schemas_path.join("v2");
+    let file_name = "category.surql";
+
+    create_folder(&v2_path)?;
+    move_file(&schemas_path.join(file_name), &v2_path.join(file_name))?;
+
+    let mut cmd = create_cmd(&temp_dir)?;
+
+    cmd.arg("apply").arg("--dry-run").arg("--output");
+
+    cmd.assert().try_success().map(|assert| {
+        let out = String::from_utf8_lossy(&assert.get_output().stdout);
+
+        let settings = Settings::new();
+        settings.bind(|| {
+            assert_snapshot!(out);
+        });
+    })?;
+
+    Ok(())
+}

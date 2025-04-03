@@ -6,6 +6,7 @@ use std::path::Path;
 
 use crate::{
     common::get_migration_display_name,
+    constants::SURQL_FILE_EXTENSION,
     input::SurrealdbConfiguration,
     surrealdb::{create_surrealdb_client, list_script_migration_ordered_by_execution_date},
 };
@@ -45,7 +46,7 @@ pub async fn main(args: ListArgs<'_>) -> Result<()> {
                     Err(_) => "N/A".to_string(),
                 };
 
-                let file_name = m.script_name.clone() + ".surql";
+                let file_name = m.script_name.clone() + SURQL_FILE_EXTENSION;
 
                 vec![display_name.cell(), since.cell(), file_name.cell()]
             })

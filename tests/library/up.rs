@@ -188,3 +188,37 @@ async fn apply_with_inlined_down_files() -> Result<()> {
 
     Ok(())
 }
+
+#[tokio::test]
+async fn apply_with_recursive_schema_folders() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
+    scaffold_blog_template(&temp_dir)?;
+    remove_folder(&temp_dir.join("events"))?;
+    remove_folder(&temp_dir.join("migrations"))?;
+    add_category_schema_file(&temp_dir)?;
+
+    let schemas_path = &temp_dir.join("schemas");
+    let v2_path = schemas_path.join("v2");
+    let file_name = "category.surql";
+
+    create_folder(&v2_path)?;
+    move_file(&schemas_path.join(file_name), &v2_path.join(file_name))?;
+
+    let config_file_path = temp_dir.join(".surrealdb");
+
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
+
+    let db = create_surrealdb_client(&configuration).await?;
+
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
+
+    runner.up().await?;
+
+    Ok(())
+}

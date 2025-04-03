@@ -2,10 +2,10 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 
-#[cfg(feature = "scaffold")]
-use super::ScaffoldAction;
 #[cfg(feature = "branching")]
 use super::BranchArgs;
+#[cfg(feature = "scaffold")]
+use super::ScaffoldAction;
 use super::{ApplyArgs, CreateArgs, ListArgs};
 
 #[derive(Parser, Debug)]

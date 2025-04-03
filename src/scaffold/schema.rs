@@ -5,7 +5,7 @@ use std::{collections::HashMap, ops::Deref, path::Path};
 use crate::{
     cli::{ScaffoldSchemaDbType, ScaffoldTemplate},
     config,
-    constants::{SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME},
+    constants::{SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION},
     io,
 };
 
@@ -110,7 +110,7 @@ fn scaffold_from_schema(
     let schemas_dir_path = io::concat_path(&folder_path, SCHEMAS_DIR_NAME);
 
     for (table_name, line_definitions) in schema.tables {
-        let filename = format!("{}.surql", table_name);
+        let filename = format!("{}{}", table_name, SURQL_FILE_EXTENSION);
 
         let mut table_definition_str = String::new();
 
