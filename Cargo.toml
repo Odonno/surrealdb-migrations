@@ -52,3 +52,10 @@ scaffold = ["dep:convert_case", "dep:names", "dep:regex", "dep:sqlparser"]
 [profile.dev.package]
 insta.opt-level = 3
 similar.opt-level = 3
+
+[profile.release]
+lto = true
+strip = true
+opt-level = 'z'
+panic = 'abort'
+codegen-units = 1
