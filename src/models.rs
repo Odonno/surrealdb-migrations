@@ -26,3 +26,8 @@ pub struct DefinitionDiff {
     pub schemas: Option<String>,
     pub events: Option<String>,
 }
+
+pub enum MigrationDirection {
+    Forward,
+    Backward,
+}

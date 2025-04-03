@@ -24,7 +24,7 @@ use crate::{
         extract_json_definition_files, filter_except_initial_definition, get_current_definition,
         get_initial_definition, get_migration_definition_diff, SurqlFile,
     },
-    models::{SchemaMigrationDefinition, ScriptMigration},
+    models::{MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{self, TransactionAction},
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
@@ -110,8 +110,10 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         )?;
     }
 
-    let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
-    let backward_migrations_files = io::extract_backward_migrations_files(config_file, dir);
+    let forward_migrations_files =
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward);
+    let backward_migrations_files =
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Backward);
 
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
@@ -163,11 +165,6 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     }
 
     Ok(())
-}
-
-enum MigrationDirection {
-    Forward,
-    Backward,
 }
 
 fn extract_schema_definitions(schemas_files: Vec<SurqlFile>) -> String {

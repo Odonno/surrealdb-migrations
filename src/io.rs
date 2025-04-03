@@ -12,7 +12,7 @@ use crate::{
         DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, EVENTS_DIR_NAME, JSON_FILE_EXTENSION,
         MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION,
     },
-    models::{DefinitionDiff, SchemaMigrationDefinition, ScriptMigration},
+    models::{DefinitionDiff, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
 };
 
 pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
@@ -75,10 +75,10 @@ pub fn extract_events_files(
     extract_surql_files(config_file, dir_path, embedded_dir, false)
 }
 
-// TODO : refactor extract_forward_migrations_files/extract_backward_migrations_files
-pub fn extract_forward_migrations_files(
+pub fn extract_migrations_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
+    migration_direction: MigrationDirection,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
     let root_migrations_files =
@@ -88,32 +88,15 @@ pub fn extract_forward_migrations_files(
 
     let root_migrations_files = root_migrations_files
         .into_iter()
-        .filter(|file| !file.is_down_file)
+        .filter(|file| match migration_direction {
+            MigrationDirection::Forward => !file.is_down_file,
+            MigrationDirection::Backward => file.is_down_file,
+        })
         .collect::<Vec<_>>();
 
     let forward_migrations_files = root_migrations_files;
 
     get_sorted_migrations_files(forward_migrations_files)
-}
-
-pub fn extract_backward_migrations_files(
-    config_file: Option<&Path>,
-    embedded_dir: Option<&Dir<'static>>,
-) -> Vec<SurqlFile> {
-    let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
-    let root_migrations_files =
-        extract_surql_files(config_file, root_migrations_dir, embedded_dir, true)
-            .ok()
-            .unwrap_or_default();
-
-    let root_migrations_files = root_migrations_files
-        .into_iter()
-        .filter(|file| file.is_down_file)
-        .collect::<Vec<_>>();
-
-    let backward_migrations_files = root_migrations_files;
-
-    get_sorted_migrations_files(backward_migrations_files)
 }
 
 fn extract_surql_files(
@@ -427,7 +410,8 @@ pub fn create_definition_files(
     schema_definitions: String,
     event_definitions: String,
 ) -> Result<()> {
-    let forward_migrations_files = extract_forward_migrations_files(config_file, None);
+    let forward_migrations_files =
+        extract_migrations_files(config_file, None, MigrationDirection::Forward);
     let last_migration_file = forward_migrations_files.last();
 
     if let Some(last_migration_file) = last_migration_file {

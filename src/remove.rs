@@ -6,10 +6,12 @@ use crate::{
     config,
     constants::{DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, MIGRATIONS_DIR_NAME},
     io::{self, SurqlFile},
+    models::MigrationDirection,
 };
 
 pub fn main(config_file: Option<&Path>) -> Result<()> {
-    let forward_migrations_files = io::extract_forward_migrations_files(config_file, None);
+    let forward_migrations_files =
+        io::extract_migrations_files(config_file, None, MigrationDirection::Forward);
 
     if forward_migrations_files.is_empty() {
         return Err(eyre!("No migration files left"));

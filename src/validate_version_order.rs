@@ -6,7 +6,7 @@ use include_dir::Dir;
 
 use crate::{
     io::{self, SurqlFile},
-    models::ScriptMigration,
+    models::{MigrationDirection, ScriptMigration},
     surrealdb,
 };
 
@@ -26,7 +26,8 @@ pub async fn main<C: Connection>(args: ValidateVersionOrderArgs<'_, C>) -> Resul
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
-    let forward_migrations_files = io::extract_forward_migrations_files(config_file, dir);
+    let forward_migrations_files =
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward);
 
     let migrations_not_applied = forward_migrations_files
         .into_iter()
