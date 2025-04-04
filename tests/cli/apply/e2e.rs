@@ -1,5 +1,6 @@
 use assert_fs::TempDir;
-use color_eyre::eyre::{ensure, Result};
+use color_eyre::eyre::{ensure, Error, Result};
+use insta::{assert_snapshot, Settings};
 
 use crate::helpers::*;
 
@@ -58,6 +59,8 @@ Migration files successfully executed!\n",
 
 #[tokio::test]
 async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
+    let insta_settings = Settings::new();
+
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
@@ -97,14 +100,17 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let initial_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
 
-    ensure!(
-        initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()),
-        "Initial migration: wrong schemas"
-    );
-    ensure!(
-        initial_migration_definition.events == Some(INITIAL_DEFINITION_EVENTS.to_string()),
-        "Initial migration: wrong events"
-    );
+    insta_settings.bind(|| {
+        assert_snapshot!(
+            "Initial migration schemas",
+            initial_migration_definition.schemas.unwrap_or_default()
+        );
+        assert_snapshot!(
+            "Initial migration events",
+            initial_migration_definition.events.unwrap_or_default()
+        );
+        Ok::<(), Error>(())
+    })?;
 
     // Check data
     let ns_db = Some(("test", db_name.as_str()));
@@ -172,10 +178,13 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let second_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&second_migration_definition_str)?;
 
-    ensure!(
-        second_migration_definition.schemas == Some(SECOND_MIGRATION_SCHEMAS.to_string()),
-        "Second migration: wrong schemas"
-    );
+    insta_settings.bind(|| {
+        assert_snapshot!(
+            "Second migration",
+            second_migration_definition.schemas.unwrap_or_default()
+        );
+        Ok::<(), Error>(())
+    })?;
     ensure!(
         second_migration_definition.events.is_none(),
         "Second migration: wrong events"
@@ -249,10 +258,13 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let third_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&third_migration_definition_str)?;
 
-    ensure!(
-        third_migration_definition.schemas == Some(THIRD_MIGRATION_SCHEMAS.to_string()),
-        "Third migration: wrong schemas"
-    );
+    insta_settings.bind(|| {
+        assert_snapshot!(
+            "Third migration",
+            third_migration_definition.schemas.unwrap_or_default()
+        );
+        Ok::<(), Error>(())
+    })?;
     ensure!(
         third_migration_definition.events.is_none(),
         "Third migration: wrong events"
@@ -627,121 +639,3 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
 
     Ok(())
 }
-
-const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
-# out: post, comment
-DEFINE TABLE OVERWRITE comment SCHEMALESS
-    PERMISSIONS
-        FOR select FULL
-        FOR create WHERE permission:create_comment IN $auth.permissions
-        FOR update, delete WHERE in = $auth.id;
-
-DEFINE FIELD OVERWRITE content ON comment TYPE string;
-DEFINE FIELD OVERWRITE created_at ON comment TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE OVERWRITE permission SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR create, update, delete NONE;
-
-DEFINE FIELD OVERWRITE name ON permission TYPE string;
-DEFINE FIELD OVERWRITE created_at ON permission TYPE datetime VALUE time::now() READONLY;
-
-DEFINE INDEX OVERWRITE unique_name ON permission COLUMNS name UNIQUE;
-DEFINE TABLE OVERWRITE post SCHEMALESS
-    PERMISSIONS
-        FOR select FULL
-        FOR create WHERE permission:create_post IN $auth.permissions
-        FOR update, delete WHERE author = $auth.id;
-
-DEFINE FIELD OVERWRITE title ON post TYPE string;
-DEFINE FIELD OVERWRITE content ON post TYPE string;
-DEFINE FIELD OVERWRITE author ON post TYPE references<user>;
-DEFINE FIELD OVERWRITE created_at ON post TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
-DEFINE TABLE OVERWRITE script_migration SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR create, update, delete NONE;
-
-DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string;
-DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE OVERWRITE user SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR update WHERE id = $auth.id
-        FOR create, delete NONE;
-
-DEFINE FIELD OVERWRITE username ON user TYPE string;
-DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON user TYPE string;
-DEFINE FIELD OVERWRITE registered_at ON user TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE avatar ON user TYPE option<string>;
-
-DEFINE FIELD OVERWRITE permissions ON user TYPE array<record<permission>> 
-    DEFAULT [permission:create_post, permission:create_comment];
-
-DEFINE INDEX OVERWRITE unique_username ON user COLUMNS username UNIQUE;
-DEFINE INDEX OVERWRITE unique_email ON user COLUMNS email UNIQUE;
-
-DEFINE SCOPE OVERWRITE user_scope
-    SESSION 30d
-    SIGNUP (
-        CREATE user
-        SET
-            username = $username,
-            email = $email,
-            avatar = \"https://www.gravatar.com/avatar/\" + crypto::md5($email),
-            password = crypto::argon2::generate($password)
-    )
-    SIGNIN (
-        SELECT *
-        FROM user
-        WHERE username = $username AND crypto::argon2::compare(password, $password)
-    );";
-
-const INITIAL_DEFINITION_EVENTS: &str = "DEFINE TABLE OVERWRITE publish_post SCHEMALESS
-    PERMISSIONS
-        FOR select, create FULL
-        FOR update, delete NONE;
-
-DEFINE FIELD OVERWRITE post_id ON publish_post TYPE record<post>;
-DEFINE FIELD OVERWRITE created_at ON publish_post TYPE datetime VALUE time::now() READONLY;
-
-DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREATE\" THEN (
-    UPDATE post SET status = \"PUBLISHED\" WHERE id = $after.post_id
-);
-DEFINE TABLE OVERWRITE unpublish_post SCHEMALESS
-    PERMISSIONS
-        FOR select, create FULL
-        FOR update, delete NONE;
-
-DEFINE FIELD OVERWRITE post_id ON unpublish_post TYPE record<post>;
-DEFINE FIELD OVERWRITE created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
-
-DEFINE EVENT OVERWRITE unpublish_post ON TABLE unpublish_post WHEN $event == \"CREATE\" THEN (
-    UPDATE post SET status = \"DRAFT\" WHERE id = $after.post_id
-);";
-
-const SECOND_MIGRATION_SCHEMAS: &str = "--- original
-+++ modified
-@@ -1,3 +1,7 @@
-+DEFINE TABLE OVERWRITE category SCHEMALESS;
-+
-+DEFINE FIELD OVERWRITE name ON category TYPE string;
-+DEFINE FIELD OVERWRITE created_at ON category TYPE datetime VALUE time::now() READONLY;
- # in: user
- # out: post, comment
- DEFINE TABLE OVERWRITE comment SCHEMALESS\n";
-
-const THIRD_MIGRATION_SCHEMAS: &str = "--- original
-+++ modified
-@@ -1,3 +1,9 @@
-+DEFINE TABLE OVERWRITE archive SCHEMALESS;
-+
-+DEFINE FIELD OVERWRITE name ON archive TYPE string;
-+DEFINE FIELD OVERWRITE from_date ON archive TYPE datetime;
-+DEFINE FIELD OVERWRITE to_date ON archive TYPE datetime;
-+DEFINE FIELD OVERWRITE created_at ON archive TYPE datetime VALUE time::now() READONLY;
- DEFINE TABLE OVERWRITE category SCHEMALESS;
-
- DEFINE FIELD OVERWRITE name ON category TYPE string;\n";

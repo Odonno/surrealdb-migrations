@@ -1,0 +1,27 @@
+---
+source: tests/cli/apply/e2e.rs
+expression: initial_migration_definition.events.unwrap_or_default()
+snapshot_kind: text
+---
+DEFINE TABLE OVERWRITE publish_post SCHEMALESS
+    PERMISSIONS
+        FOR select, create FULL
+        FOR update, delete NONE;
+
+DEFINE FIELD OVERWRITE post_id ON publish_post TYPE record<post>;
+DEFINE FIELD OVERWRITE created_at ON publish_post TYPE datetime VALUE time::now() READONLY;
+
+DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == "CREATE" THEN (
+    UPDATE post SET status = "PUBLISHED" WHERE id = $after.post_id
+);
+DEFINE TABLE OVERWRITE unpublish_post SCHEMALESS
+    PERMISSIONS
+        FOR select, create FULL
+        FOR update, delete NONE;
+
+DEFINE FIELD OVERWRITE post_id ON unpublish_post TYPE record<post>;
+DEFINE FIELD OVERWRITE created_at ON unpublish_post TYPE datetime VALUE time::now() READONLY;
+
+DEFINE EVENT OVERWRITE unpublish_post ON TABLE unpublish_post WHEN $event == "CREATE" THEN (
+    UPDATE post SET status = "DRAFT" WHERE id = $after.post_id
+);

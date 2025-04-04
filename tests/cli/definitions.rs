@@ -1,9 +1,10 @@
 use assert_fs::TempDir;
 use color_eyre::{
-    eyre::{ensure, ContextCompat, WrapErr},
+    eyre::{ensure, ContextCompat, Error, WrapErr},
     Result,
 };
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
+use insta::{assert_snapshot, Settings};
 use std::collections::HashSet;
 
 use crate::helpers::*;
@@ -48,10 +49,14 @@ fn initial_definition_on_initial_schema_changes() -> Result<()> {
     let initial_migration_definition =
         serde_json::from_str::<MigrationDefinition>(&initial_migration_definition_str)?;
 
-    ensure!(
-        initial_migration_definition.schemas == Some(INITIAL_DEFINITION_SCHEMAS.to_string()),
-        "Expected initial definition to be equal to the initial definition schema"
-    );
+    let insta_settings = Settings::new();
+    insta_settings.bind(|| {
+        assert_snapshot!(
+            "Initial migration definition",
+            initial_migration_definition.schemas.unwrap_or_default()
+        );
+        Ok::<(), Error>(())
+    })?;
 
     Ok(())
 }
@@ -177,74 +182,3 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
 
     Ok(())
 }
-
-const INITIAL_DEFINITION_SCHEMAS: &str = "# in: user
-# out: post, comment
-DEFINE TABLE OVERWRITE comment SCHEMALESS
-    PERMISSIONS
-        FOR select FULL
-        FOR create WHERE permission:create_comment IN $auth.permissions
-        FOR update, delete WHERE in = $auth.id;
-
-DEFINE FIELD OVERWRITE content ON comment TYPE string;
-DEFINE FIELD OVERWRITE created_at ON comment TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE OVERWRITE permission SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR create, update, delete NONE;
-
-DEFINE FIELD OVERWRITE name ON permission TYPE string;
-DEFINE FIELD OVERWRITE created_at ON permission TYPE datetime VALUE time::now() READONLY;
-
-DEFINE INDEX OVERWRITE unique_name ON permission COLUMNS name UNIQUE;
-DEFINE TABLE OVERWRITE post SCHEMALESS
-    PERMISSIONS
-        FOR select FULL
-        FOR create WHERE permission:create_post IN $auth.permissions
-        FOR update, delete WHERE author = $auth.id;
-
-DEFINE FIELD OVERWRITE title ON post TYPE string;
-DEFINE FIELD OVERWRITE content ON post TYPE string;
-DEFINE FIELD OVERWRITE author ON post TYPE references<user>;
-DEFINE FIELD OVERWRITE created_at ON post TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value IN ['DRAFT', 'PUBLISHED'];
-DEFINE TABLE OVERWRITE script_migration SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR create, update, delete NONE;
-
-DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string;
-DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
-DEFINE TABLE OVERWRITE user SCHEMAFULL
-    PERMISSIONS
-        FOR select FULL
-        FOR update WHERE id = $auth.id
-        FOR create, delete NONE;
-
-DEFINE FIELD OVERWRITE username ON user TYPE string;
-DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value);
-DEFINE FIELD OVERWRITE password ON user TYPE string;
-DEFINE FIELD OVERWRITE registered_at ON user TYPE datetime VALUE time::now() READONLY;
-DEFINE FIELD OVERWRITE avatar ON user TYPE option<string>;
-
-DEFINE FIELD OVERWRITE permissions ON user TYPE array<record<permission>> 
-    DEFAULT [permission:create_post, permission:create_comment];
-
-DEFINE INDEX OVERWRITE unique_username ON user COLUMNS username UNIQUE;
-DEFINE INDEX OVERWRITE unique_email ON user COLUMNS email UNIQUE;
-
-DEFINE SCOPE OVERWRITE user_scope
-    SESSION 30d
-    SIGNUP (
-        CREATE user
-        SET
-            username = $username,
-            email = $email,
-            avatar = \"https://www.gravatar.com/avatar/\" + crypto::md5($email),
-            password = crypto::argon2::generate($password)
-    )
-    SIGNIN (
-        SELECT *
-        FROM user
-        WHERE username = $username AND crypto::argon2::compare(password, $password)
-    );";

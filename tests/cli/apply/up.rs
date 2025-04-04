@@ -421,11 +421,7 @@ fn apply_with_recursive_schema_folders() -> Result<()> {
 
     cmd.assert().try_success().map(|assert| {
         let out = String::from_utf8_lossy(&assert.get_output().stdout);
-
-        let settings = Settings::new();
-        settings.bind(|| {
-            assert_snapshot!(out);
-        });
+        assert_snapshot!(out);
     })?;
 
     Ok(())
