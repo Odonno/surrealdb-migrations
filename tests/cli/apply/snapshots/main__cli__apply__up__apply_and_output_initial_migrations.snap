@@ -4,9 +4,8 @@ expression: out
 snapshot_kind: text
 ---
 -- Apply migration for AddAdminUser --
-# in: user
-# out: post, comment
 DEFINE TABLE OVERWRITE comment SCHEMALESS
+    TYPE RELATION IN user OUT post|comment
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions
@@ -102,9 +101,8 @@ CREATE permission:create_comment SET name = 'create_comment';
 CREATE user:admin SET username = 'admin', email = 'admin@admin.fr', password = 'admin';
 CREATE script_migration SET script_name = '[timestamp]_AddAdminUser';
 -- Apply migration for AddPost --
-# in: user
-# out: post, comment
 DEFINE TABLE OVERWRITE comment SCHEMALESS
+    TYPE RELATION IN user OUT post|comment
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions
@@ -197,9 +195,8 @@ DEFINE EVENT OVERWRITE unpublish_post ON TABLE unpublish_post WHEN $event == "CR
 CREATE post SET title = 'Hello world!', content = 'This is my first post!', author = user:admin;
 CREATE script_migration SET script_name = '[timestamp]_AddPost';
 -- Apply migration for CommentPost --
-# in: user
-# out: post, comment
 DEFINE TABLE OVERWRITE comment SCHEMALESS
+    TYPE RELATION IN user OUT post|comment
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions

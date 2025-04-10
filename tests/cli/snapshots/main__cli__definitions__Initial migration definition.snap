@@ -3,9 +3,8 @@ source: tests/cli/definitions.rs
 expression: initial_migration_definition.schemas.unwrap_or_default()
 snapshot_kind: text
 ---
-# in: user
-# out: post, comment
 DEFINE TABLE OVERWRITE comment SCHEMALESS
+    TYPE RELATION IN user OUT post|comment
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions

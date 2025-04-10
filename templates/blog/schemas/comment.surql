@@ -1,6 +1,5 @@
-# in: user
-# out: post, comment
 DEFINE TABLE OVERWRITE comment SCHEMALESS
+    TYPE RELATION IN user OUT post|comment
     PERMISSIONS
         FOR select FULL
         FOR create WHERE permission:create_comment IN $auth.permissions

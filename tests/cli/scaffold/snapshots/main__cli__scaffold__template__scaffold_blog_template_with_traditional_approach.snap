@@ -3,7 +3,7 @@ source: tests/cli/scaffold/template.rs
 expression: initial_content
 snapshot_kind: text
 ---
-DEFINE TABLE OVERWRITE comment TYPE ANY SCHEMALESS PERMISSIONS FOR select FULL, FOR create WHERE permission:create_comment INSIDE $auth.permissions, FOR update, delete WHERE in = $auth.id;
+DEFINE TABLE OVERWRITE comment TYPE RELATION IN user OUT post | comment SCHEMALESS PERMISSIONS FOR select FULL, FOR create WHERE permission:create_comment INSIDE $auth.permissions, FOR update, delete WHERE in = $auth.id;
 DEFINE FIELD OVERWRITE content ON comment TYPE string PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE created_at ON comment TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
 

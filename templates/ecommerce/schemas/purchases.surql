@@ -1,6 +1,5 @@
-# in: customer
-# out: product
 DEFINE TABLE OVERWRITE purchases SCHEMALESS
+    TYPE RELATION IN customer OUT product
     PERMISSIONS
         FOR select WHERE in = $auth.id
         FOR create, update, delete NONE;

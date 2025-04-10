@@ -28,7 +28,7 @@ DEFINE FIELD OVERWRITE price ON product TYPE number PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE category ON product TYPE string PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE images ON product TYPE array<string> PERMISSIONS FULL;
 
-DEFINE TABLE OVERWRITE purchases TYPE ANY SCHEMALESS PERMISSIONS FOR select WHERE in = $auth.id, FOR create, update, delete NONE;
+DEFINE TABLE OVERWRITE purchases TYPE RELATION IN customer OUT product SCHEMALESS PERMISSIONS FOR select WHERE in = $auth.id, FOR create, update, delete NONE;
 DEFINE FIELD OVERWRITE quantity ON purchases TYPE number PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE shipping_address ON purchases TYPE option<record<address>> PERMISSIONS FULL;
 DEFINE FIELD OVERWRITE created_at ON purchases TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
