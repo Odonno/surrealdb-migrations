@@ -180,7 +180,7 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
         .into_iter()
         .map(|file| {
             let content = file.get_content().unwrap_or_default();
-            let query = ::surrealdb::sql::parse(&content).unwrap_or_default();
+            let query = surrealdb::parse_statements(&content).unwrap_or_default();
             (file, content, query)
         })
         .collect::<Vec<_>>();
@@ -439,19 +439,27 @@ async fn apply_migrations<C: Connection>(
         let schemas_statements = current_definition.schemas.to_string();
         let events_statements = current_definition.events.to_string();
 
-        let query = format!(
-            "{}
-{}",
-            schemas_statements, events_statements,
-        );
-
         if output {
+            let query = format!(
+                "{}
+    {}",
+                schemas_statements, events_statements,
+            );
+
             println!("-- Initial schema and event definitions --");
             println!("{}", query);
         }
 
+        let schemas_statements = surrealdb::parse_statements(&schemas_statements)?;
+        let events_statements = surrealdb::parse_statements(&events_statements)?;
+
+        let statements = schemas_statements
+            .into_iter()
+            .chain(events_statements.into_iter())
+            .collect::<Vec<_>>();
+
         let transaction_action = get_transaction_action(dry_run);
-        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+        surrealdb::apply_in_transaction(client, statements, transaction_action).await?;
 
         if !current_definition.schemas.is_empty() {
             has_applied_schemas = true;
@@ -489,21 +497,21 @@ async fn apply_migrations<C: Connection>(
         let events_statements = current_definition.events.to_string();
         let migration_statements = migration_file.get_content().unwrap_or(String::new());
 
-        let query = format!(
-            "{}
-{}
-{}
-CREATE {} SET script_name = '{}';",
-            schemas_statements,
-            events_statements,
-            migration_statements,
-            SCRIPT_MIGRATION_TABLE_NAME,
-            migration_file.name
-        );
-
         if output {
             let migration_display_name = get_migration_display_name(&migration_file.name);
             println!("-- Apply migration for {} --", migration_display_name);
+
+            let query = format!(
+                "{}
+{}
+{}
+CREATE {} SET script_name = '{}';",
+                schemas_statements,
+                events_statements,
+                migration_statements,
+                SCRIPT_MIGRATION_TABLE_NAME,
+                migration_file.name
+            );
             println!("{}", query);
         }
 
@@ -512,8 +520,39 @@ CREATE {} SET script_name = '{}';",
             println!("Executing migration {}...", migration_display_name);
         }
 
+        let schemas_statements = surrealdb::parse_statements(&schemas_statements)?;
+        let events_statements = surrealdb::parse_statements(&events_statements)?;
+        let migration_statements = surrealdb::parse_statements(&migration_statements)?;
+
+        let mut what = ::surrealdb::sql::Values::default();
+        what.0.push(::surrealdb::sql::Value::Table(
+            SCRIPT_MIGRATION_TABLE_NAME.into(),
+        ));
+        let mut create_migration_script_statement =
+            ::surrealdb::sql::statements::CreateStatement::default();
+        create_migration_script_statement.what = what;
+        create_migration_script_statement.data =
+            Some(::surrealdb::sql::Data::SetExpression(vec![(
+                ::surrealdb::sql::Idiom::from("script_name"),
+                ::surrealdb::sql::Operator::Equal,
+                ::surrealdb::sql::Value::Strand(migration_file.name.to_string().into()),
+            )]));
+        create_migration_script_statement.output = Some(::surrealdb::sql::Output::None);
+
+        let statements = schemas_statements
+            .into_iter()
+            .chain(events_statements.into_iter())
+            .chain(migration_statements.into_iter())
+            .chain(
+                vec![::surrealdb::sql::Statement::Create(
+                    create_migration_script_statement,
+                )]
+                .into_iter(),
+            )
+            .collect::<Vec<_>>();
+
         let transaction_action = get_transaction_action(dry_run);
-        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+        surrealdb::apply_in_transaction(client, statements, transaction_action).await?;
 
         if !current_definition.schemas.is_empty() {
             has_applied_schemas = true;
@@ -610,25 +649,31 @@ async fn revert_migrations<C: Connection>(
         let schemas_statements_after_revert = definition_after_revert.schemas.to_string();
         let events_statements_after_revert = definition_after_revert.events.to_string();
 
-        let query = format!(
-            "{}
+        if output {
+            let migration_display_name = get_migration_display_name(&migration_file.name);
+            println!("-- Revert migration for {} --", migration_display_name);
+
+            let query = format!(
+                "{}
 {}
 {}
 {}
 {}
 DELETE {} WHERE script_name = '{}';",
-            migration_statements,
-            rollback_schemas_statements,
-            rollback_events_statements,
-            schemas_statements_after_revert,
-            events_statements_after_revert,
-            SCRIPT_MIGRATION_TABLE_NAME,
-            migration_file.name
-        );
-
-        if output {
-            let migration_display_name = get_migration_display_name(&migration_file.name);
-            println!("-- Revert migration for {} --", migration_display_name);
+                migration_statements,
+                rollback_schemas_statements
+                    .iter()
+                    .map(|s| s.to_string())
+                    .join("\n"),
+                rollback_events_statements
+                    .iter()
+                    .map(|s| s.to_string())
+                    .join("\n"),
+                schemas_statements_after_revert,
+                events_statements_after_revert,
+                SCRIPT_MIGRATION_TABLE_NAME,
+                migration_file.name
+            );
             println!("{}", query);
         }
 
@@ -637,8 +682,45 @@ DELETE {} WHERE script_name = '{}';",
             println!("Reverting migration {}...", migration_display_name);
         }
 
+        let migration_statements = surrealdb::parse_statements(&migration_statements)?;
+        let schemas_statements_after_revert =
+            surrealdb::parse_statements(&schemas_statements_after_revert)?;
+        let events_statements_after_revert =
+            surrealdb::parse_statements(&events_statements_after_revert)?;
+
+        let mut what = ::surrealdb::sql::Values::default();
+        what.0.push(::surrealdb::sql::Value::Table(
+            SCRIPT_MIGRATION_TABLE_NAME.into(),
+        ));
+        let mut cond = ::surrealdb::sql::Cond::default();
+        cond.0 =
+            ::surrealdb::sql::Value::Expression(Box::new(::surrealdb::sql::Expression::Binary {
+                l: ::surrealdb::sql::Value::Idiom("script_name".into()),
+                o: ::surrealdb::sql::Operator::Exact,
+                r: ::surrealdb::sql::Value::Strand(migration_file.name.to_string().into()),
+            }));
+        let mut delete_migration_script_statement =
+            ::surrealdb::sql::statements::DeleteStatement::default();
+        delete_migration_script_statement.what = what;
+        delete_migration_script_statement.cond = Some(cond);
+        delete_migration_script_statement.output = Some(::surrealdb::sql::Output::None);
+
+        let statements = migration_statements
+            .into_iter()
+            .chain(rollback_schemas_statements.into_iter())
+            .chain(rollback_events_statements.into_iter())
+            .chain(schemas_statements_after_revert.into_iter())
+            .chain(events_statements_after_revert.into_iter())
+            .chain(
+                vec![::surrealdb::sql::Statement::Delete(
+                    delete_migration_script_statement,
+                )]
+                .into_iter(),
+            )
+            .collect::<Vec<_>>();
+
         let transaction_action = get_transaction_action(dry_run);
-        surrealdb::apply_in_transaction(client, &query, transaction_action).await?;
+        surrealdb::apply_in_transaction(client, statements, transaction_action).await?;
 
         current_definition = definition_after_revert;
     }
@@ -661,15 +743,11 @@ DELETE {} WHERE script_name = '{}';",
 fn get_rollback_statements(
     next_statements_str: &str,
     previous_statements_str: &str,
-) -> Result<String> {
+) -> Result<Vec<::surrealdb::sql::Statement>> {
     let next_statements = match next_statements_str.is_empty() {
         true => vec![],
         false => {
-            let next_statements = ::surrealdb::syn::parse_with_capabilities(
-                next_statements_str,
-                &::surrealdb::dbs::Capabilities::all()
-                    .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
-            )?;
+            let next_statements = surrealdb::parse_statements(next_statements_str)?;
             next_statements.0 .0
         }
     };
@@ -677,11 +755,7 @@ fn get_rollback_statements(
     let previous_statements = match previous_statements_str.is_empty() {
         true => vec![],
         false => {
-            let previous_statements = ::surrealdb::syn::parse_with_capabilities(
-                previous_statements_str,
-                &::surrealdb::dbs::Capabilities::all()
-                    .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
-            )?;
+            let previous_statements = surrealdb::parse_statements(previous_statements_str)?;
             previous_statements.0 .0
         }
     };
@@ -702,9 +776,14 @@ fn get_rollback_statements(
     let remove_table_statements = tables_to_remove
         .clone()
         .into_iter()
-        .map(|table_name| format!("REMOVE TABLE {};", table_name))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .map(|table_name| {
+            let mut s = ::surrealdb::sql::statements::RemoveTableStatement::default();
+            s.name = table_name.into();
+            ::surrealdb::sql::Statement::Remove(
+                ::surrealdb::sql::statements::RemoveStatement::Table(s),
+            )
+        })
+        .collect::<Vec<_>>();
 
     let next_fields_statements = extract_define_field_statements(next_statements.clone());
     let previous_fields_statements = extract_define_field_statements(previous_statements.clone());
@@ -723,9 +802,15 @@ fn get_rollback_statements(
 
     let remove_fields_statements = fields_to_remove
         .into_iter()
-        .map(|(field_name, table_name)| format!("REMOVE FIELD {} ON {};", field_name, table_name))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .map(|(field_name, table_name)| {
+            let mut s = ::surrealdb::sql::statements::RemoveFieldStatement::default();
+            s.name = field_name.into();
+            s.what = table_name.into();
+            ::surrealdb::sql::Statement::Remove(
+                ::surrealdb::sql::statements::RemoveStatement::Field(s),
+            )
+        })
+        .collect::<Vec<_>>();
 
     let next_events_statements = extract_define_event_statements(next_statements);
     let previous_events_statements = extract_define_event_statements(previous_statements);
@@ -744,16 +829,21 @@ fn get_rollback_statements(
 
     let remove_events_statements = events_to_remove
         .into_iter()
-        .map(|(event_name, table_name)| format!("REMOVE EVENT {} ON {};", event_name, table_name))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .map(|(event_name, table_name)| {
+            let mut s = ::surrealdb::sql::statements::RemoveEventStatement::default();
+            s.name = event_name.into();
+            s.what = table_name.into();
+            ::surrealdb::sql::Statement::Remove(
+                ::surrealdb::sql::statements::RemoveStatement::Event(s),
+            )
+        })
+        .collect::<Vec<_>>();
 
-    let all_statements = [
-        remove_table_statements,
-        remove_fields_statements,
-        remove_events_statements,
-    ];
-    let all_statements = all_statements.join("\n");
+    let all_statements = remove_table_statements
+        .into_iter()
+        .chain(remove_fields_statements)
+        .chain(remove_events_statements)
+        .collect::<Vec<_>>();
 
     Ok(all_statements)
 }

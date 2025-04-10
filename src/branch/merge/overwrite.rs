@@ -64,15 +64,15 @@ async fn apply_changes_to_main_branch(
     main_branch_client.import(dump_file_path).await?;
 
     // Remove databases created for this branch
+    let mut remove_statement = surrealdb::sql::statements::RemoveDatabaseStatement::default();
+    remove_statement.name = branch.name.to_string().into();
+    let remove_statement = surrealdb::sql::statements::RemoveStatement::Database(remove_statement);
+
     let client = create_branch_client(config_file, &branch.name, db_configuration).await?;
-    client
-        .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name))
-        .await?;
+    client.query(remove_statement.clone()).await?;
 
     let client = create_origin_branch_client(config_file, &branch.name, db_configuration).await?;
-    client
-        .query(format!("REMOVE DATABASE ⟨{}⟩", branch.name))
-        .await?;
+    client.query(remove_statement).await?;
 
     // Remove branch from branches table
     let branch_data_client = create_branching_feature_client(config_file, db_configuration).await?;

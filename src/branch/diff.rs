@@ -184,8 +184,9 @@ async fn get_surrealdb_database_definition(
 ) -> Result<SurrealdbDatabaseDefinition> {
     let client = create_surrealdb_client(config_file, &db_configuration).await?;
 
-    const DATABASE_DEFINITION_QUERY: &str = "INFO FOR DB;";
-    let mut response = client.query(DATABASE_DEFINITION_QUERY).await?;
+    let mut response = client
+        .query(surrealdb::sql::statements::InfoStatement::Db(false, None))
+        .await?;
 
     let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;
@@ -194,9 +195,14 @@ async fn get_surrealdb_database_definition(
 
     let table_definitions_query = tables
         .iter()
-        .map(|table| format!("INFO FOR TABLE {};", table))
-        .collect::<Vec<_>>()
-        .join("\n");
+        .map(|table| {
+            surrealdb::sql::Statement::Info(surrealdb::sql::statements::InfoStatement::Tb(
+                table.to_string().into(),
+                false,
+                None,
+            ))
+        })
+        .collect::<Vec<_>>();
     let mut response = client.query(table_definitions_query).await?;
 
     let database_definition = tables

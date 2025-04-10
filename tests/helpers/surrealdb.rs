@@ -33,7 +33,9 @@ pub async fn get_surrealdb_table_definitions(
     let db_configuration = db_configuration.unwrap_or_default();
     let client = create_surrealdb_client(&db_configuration).await?;
 
-    let mut response = client.query("INFO FOR DB;").await?;
+    let mut response = client
+        .query(surrealdb::sql::statements::InfoStatement::Db(false, None))
+        .await?;
 
     let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;

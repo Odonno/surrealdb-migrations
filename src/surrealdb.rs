@@ -90,11 +90,19 @@ async fn set_namespace_and_database(
     let ns = ns.or(db_config.ns.to_owned()).unwrap_or("test".to_owned());
     let db = db.or(db_config.db.to_owned()).unwrap_or("test".to_owned());
 
-    client.query(format!("DEFINE NAMESPACE `{ns}`")).await?;
-    client.use_ns(ns.to_owned()).await?;
+    let mut ns_statement = surrealdb::sql::statements::DefineNamespaceStatement::default();
+    ns_statement.name = ns.to_string().into();
+    let ns_statement = surrealdb::sql::statements::DefineStatement::Namespace(ns_statement);
 
-    client.query(format!("DEFINE DATABASE `{db}`")).await?;
-    client.use_db(db.to_owned()).await?;
+    client.query(ns_statement).await?;
+    client.use_ns(ns.to_string()).await?;
+
+    let mut db_statement = surrealdb::sql::statements::DefineDatabaseStatement::default();
+    db_statement.name = db.to_string().into();
+    let db_statement = surrealdb::sql::statements::DefineStatement::Database(db_statement);
+
+    client.query(db_statement).await?;
+    client.use_db(db.to_string()).await?;
 
     Ok(())
 }
@@ -112,7 +120,9 @@ type SurrealdbTableDefinitions = HashMap<String, String>;
 pub async fn get_surrealdb_table_definitions<C: Connection>(
     client: &Surreal<C>,
 ) -> Result<SurrealdbTableDefinitions> {
-    let mut response = client.query("INFO FOR DB;").await?;
+    let mut response = client
+        .query(surrealdb::sql::statements::InfoStatement::Db(false, None))
+        .await?;
 
     let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;
@@ -137,13 +147,39 @@ async fn list_script_migration<C: Connection>(client: &Surreal<C>) -> Result<Vec
     Ok(result)
 }
 
+pub fn parse_statements(query_str: &str) -> Result<surrealdb::sql::Query> {
+    let query = ::surrealdb::syn::parse_with_capabilities(
+        query_str,
+        &::surrealdb::dbs::Capabilities::all()
+            .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
+    )?;
+
+    Ok(query)
+}
+
 pub async fn apply_in_transaction<C: Connection>(
     client: &Surreal<C>,
-    inner_query: &String,
+    statements: Vec<surrealdb::sql::Statement>,
     action: TransactionAction,
 ) -> Result<()> {
-    let query = format_transaction(inner_query.to_owned(), &action);
-    let response_result = client.query(query).await;
+    let mut statements = statements.clone();
+
+    statements.insert(
+        0,
+        surrealdb::sql::Statement::Begin(surrealdb::sql::statements::BeginStatement::default()),
+    );
+
+    let end_statement = match action {
+        TransactionAction::Commit => {
+            surrealdb::sql::Statement::Commit(surrealdb::sql::statements::CommitStatement::default())
+        }
+        TransactionAction::Rollback => {
+            surrealdb::sql::Statement::Cancel(surrealdb::sql::statements::CancelStatement::default())
+        }
+    };
+    statements.push(end_statement);
+
+    let response_result = client.query(statements).await;
 
     match action {
         TransactionAction::Rollback => {
@@ -197,72 +233,8 @@ pub async fn apply_in_transaction<C: Connection>(
     }
 }
 
-fn format_transaction(inner_query: String, action: &TransactionAction) -> String {
-    match action {
-        TransactionAction::Commit => format_transaction_with_commit(inner_query),
-        TransactionAction::Rollback => format_transaction_with_rollback(inner_query),
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum TransactionAction {
     Commit,
     Rollback,
-}
-
-fn format_transaction_with_commit(inner_query: String) -> String {
-    format!(
-        "BEGIN TRANSACTION;
-
-{}
-
-COMMIT TRANSACTION;",
-        inner_query
-    )
-}
-
-fn format_transaction_with_rollback(inner_query: String) -> String {
-    format!(
-        "BEGIN TRANSACTION;
-
-{}
-
-CANCEL TRANSACTION;",
-        inner_query
-    )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn within_transaction_should_return_string() {
-        let inner_query = "DEFINE TABLE post SCHEMALESS;";
-        let result = format_transaction(inner_query.to_owned(), &TransactionAction::Commit);
-
-        assert_eq!(
-            result,
-            "BEGIN TRANSACTION;
-
-DEFINE TABLE post SCHEMALESS;
-
-COMMIT TRANSACTION;"
-        );
-    }
-
-    #[test]
-    fn within_rollback_should_return_string() {
-        let inner_query = "DEFINE TABLE post SCHEMALESS;";
-        let result = format_transaction(inner_query.to_owned(), &TransactionAction::Rollback);
-
-        assert_eq!(
-            result,
-            "BEGIN TRANSACTION;
-
-DEFINE TABLE post SCHEMALESS;
-
-CANCEL TRANSACTION;"
-        );
-    }
 }
