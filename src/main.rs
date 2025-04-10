@@ -59,9 +59,13 @@ async fn sub_main() -> Result<()> {
     match args.command {
         #[cfg(feature = "scaffold")]
         Action::Scaffold { command } => match command {
-            ScaffoldAction::Template { template } => {
+            ScaffoldAction::Template {
+                template,
+                traditional,
+            } => {
                 let args = ScaffoldFromTemplateArgs {
                     template,
+                    traditional,
                     config_file,
                 };
                 scaffold::template::main(args)
@@ -70,11 +74,13 @@ async fn sub_main() -> Result<()> {
                 schema,
                 db_type,
                 preserve_casing,
+                traditional,
             } => {
                 let args = ScaffoldFromSchemaArgs {
                     schema,
                     db_type,
                     preserve_casing,
+                    traditional,
                     config_file,
                 };
                 scaffold::schema::main(args)

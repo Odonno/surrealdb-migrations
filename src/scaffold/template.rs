@@ -9,12 +9,14 @@ use super::common::{
 
 pub struct ScaffoldFromTemplateArgs<'a> {
     pub template: ScaffoldTemplate,
+    pub traditional: bool,
     pub config_file: Option<&'a Path>,
 }
 
 pub fn main(args: ScaffoldFromTemplateArgs) -> Result<()> {
     let ScaffoldFromTemplateArgs {
         template,
+        traditional,
         config_file,
     } = args;
 
@@ -24,7 +26,7 @@ pub fn main(args: ScaffoldFromTemplateArgs) -> Result<()> {
 
     copy_template_files_to_current_dir(template, folder_path.to_owned())?;
 
-    apply_after_scaffold(folder_path)?;
+    apply_after_scaffold(config_file, traditional, folder_path)?;
 
     Ok(())
 }

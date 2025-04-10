@@ -1,0 +1,52 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_content
+snapshot_kind: text
+---
+DEFINE TABLE OVERWRITE address TYPE ANY SCHEMALESS PERMISSIONS FOR select, create, update, delete WHERE customer = $auth.id;
+DEFINE FIELD OVERWRITE number ON address TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE street ON address TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE city ON address TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE state ON address TYPE option<string> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE zip_code ON address TYPE option<string> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE country ON address TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE customer ON address TYPE record<customer> PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE customer TYPE ANY SCHEMALESS PERMISSIONS FOR select FULL, FOR create, delete NONE, FOR update WHERE id = $auth.id;
+DEFINE FIELD OVERWRITE name ON customer TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE email ON customer TYPE string ASSERT string::is::email($value) PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE password ON customer TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE addresses ON customer TYPE array<record<address>> PERMISSIONS FULL;
+DEFINE INDEX OVERWRITE unique_email ON customer FIELDS email UNIQUE;
+
+DEFINE ACCESS OVERWRITE customer_scope ON DATABASE TYPE RECORD SIGNUP (CREATE customer SET name = $name, email = $email, password = crypto::argon2::generate($password)) SIGNIN (SELECT * FROM customer WHERE email = $email AND crypto::argon2::compare(password, $password)) WITH JWT ALGORITHM HS512 KEY [jwt_key] WITH ISSUER KEY [jwt_key] DURATION FOR TOKEN 1h, FOR SESSION 4w2d;
+
+DEFINE TABLE OVERWRITE product TYPE ANY SCHEMALESS PERMISSIONS FOR select FULL, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE name ON product TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE description ON product TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE price ON product TYPE number PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE category ON product TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE images ON product TYPE array<string> PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE purchases TYPE ANY SCHEMALESS PERMISSIONS FOR select WHERE in = $auth.id, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE quantity ON purchases TYPE number PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE shipping_address ON purchases TYPE option<record<address>> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON purchases TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE shipped_at ON purchases TYPE option<datetime> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE total ON purchases TYPE number PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE status ON purchases TYPE string DEFAULT 'Pending' ASSERT $value INSIDE ['Pending', 'Delivered'] PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE script_migration TYPE NORMAL SCHEMAFULL PERMISSIONS FOR select FULL, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE purchase TYPE ANY SCHEMALESS PERMISSIONS FOR select, create FULL, FOR update, delete NONE;
+DEFINE FIELD OVERWRITE customer ON purchase TYPE record<customer> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE product ON purchase TYPE record<product> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE quantity ON purchase TYPE number PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE total ON purchase TYPE number PERMISSIONS FULL;
+DEFINE EVENT OVERWRITE purchase ON purchase WHEN $event == 'CREATE' THEN {
+LET $from = (SELECT * FROM customer WHERE id == $after.customer);
+LET $to = (SELECT * FROM product WHERE id == $after.product);
+RELATE $from -> purchases -> $to CONTENT { quantity: $after.quantity, status: 'Pending', total: $after.total };
+};

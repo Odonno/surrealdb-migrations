@@ -17,6 +17,7 @@ pub struct ScaffoldFromSchemaArgs<'a> {
     pub schema: String,
     pub db_type: ScaffoldSchemaDbType,
     pub preserve_casing: bool,
+    pub traditional: bool,
     pub config_file: Option<&'a Path>,
 }
 
@@ -25,6 +26,7 @@ pub fn main(args: ScaffoldFromSchemaArgs) -> Result<()> {
         schema,
         db_type,
         preserve_casing,
+        traditional,
         config_file,
     } = args;
 
@@ -34,7 +36,7 @@ pub fn main(args: ScaffoldFromSchemaArgs) -> Result<()> {
 
     scaffold_from_schema(schema, db_type, preserve_casing, folder_path.to_owned())?;
 
-    apply_after_scaffold(folder_path)?;
+    apply_after_scaffold(config_file, traditional, folder_path)?;
 
     Ok(())
 }

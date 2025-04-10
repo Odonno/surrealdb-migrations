@@ -3,18 +3,14 @@ use ::surrealdb::{
         statements::{
             DefineEventStatement, DefineFieldStatement, DefineStatement, DefineTableStatement,
         },
-        Query, Statement,
+        Statement,
     },
     Connection, Surreal,
 };
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::Dir;
 use itertools::Itertools;
-use std::{
-    cmp::Ordering,
-    collections::HashSet,
-    path::{Path, PathBuf},
-};
+use std::path::{Path, PathBuf};
 
 use crate::{
     common::get_migration_display_name,
@@ -72,13 +68,8 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         false => display_logs,
     };
 
-    let schemas_files = io::extract_schemas_files(config_file, dir)?;
-    let schema_definitions = extract_schema_definitions(schemas_files);
-
-    let events_files = io::extract_events_files(config_file, dir)
-        .ok()
-        .unwrap_or_default();
-    let event_definitions = extract_event_definitions(events_files);
+    let schema_definitions = io::extract_schema_definitions(config_file, dir)?;
+    let event_definitions = io::extract_event_definitions(config_file, dir);
 
     const DEFINITIONS_FOLDER: &str = "migrations/definitions";
     let definitions_path = Path::new(DEFINITIONS_FOLDER);
@@ -165,115 +156,6 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     }
 
     Ok(())
-}
-
-fn extract_schema_definitions(schemas_files: Vec<SurqlFile>) -> String {
-    concat_files_content(schemas_files)
-}
-
-fn extract_event_definitions(events_files: Vec<SurqlFile>) -> String {
-    concat_files_content(events_files)
-}
-
-fn concat_files_content(files: Vec<SurqlFile>) -> String {
-    let files_with_content_and_query = files
-        .into_iter()
-        .map(|file| {
-            let content = file.get_content().unwrap_or_default();
-            let query = surrealdb::parse_statements(&content).unwrap_or_default();
-            (file, content, query)
-        })
-        .collect::<Vec<_>>();
-
-    let all_tables = files_with_content_and_query
-        .iter()
-        .map(|(_, _, query)| query)
-        .flat_map(extract_table_names)
-        .collect::<HashSet<_>>();
-
-    files_with_content_and_query
-        .into_iter()
-        .sorted_by(|a, b| {
-            let a_query = &a.2;
-            let b_query = &b.2;
-
-            // 💡 ensures computed tables are created after the tables they depend
-            if consumes_table(a_query, b_query) {
-                return Ordering::Greater;
-            }
-            if consumes_table(b_query, a_query) {
-                return Ordering::Less;
-            }
-
-            match (
-                consumes_any_table(a_query, &all_tables),
-                consumes_any_table(b_query, &all_tables),
-            ) {
-                (true, false) => Ordering::Greater,
-                (false, true) => Ordering::Less,
-                _ => a.0.name.cmp(&b.0.name),
-            }
-        })
-        .map(|(_, content, _)| content)
-        .collect::<Vec<_>>()
-        .join("\n")
-}
-
-fn consumes_table(query1: &Query, query2: &Query) -> bool {
-    let query2_table_names = extract_table_names(query2);
-    let consumed_table_names = extract_consumed_table_names(query1);
-
-    consumed_table_names
-        .intersection(&query2_table_names)
-        .count()
-        > 0
-}
-
-fn consumes_any_table(query: &Query, all_tables: &HashSet<String>) -> bool {
-    let consumed_table_names = extract_consumed_table_names(query);
-
-    let query_table_names = extract_table_names(query);
-    let other_table_names = all_tables
-        .difference(&query_table_names)
-        .cloned()
-        .collect::<HashSet<_>>();
-
-    other_table_names
-        .intersection(&consumed_table_names)
-        .count()
-        > 0
-}
-
-fn extract_table_names(query: &Query) -> HashSet<String> {
-    query
-        .0
-         .0
-        .iter()
-        .filter_map(|statement| match statement {
-            Statement::Define(DefineStatement::Table(table)) => Some(table.name.0.clone()),
-            _ => None,
-        })
-        .collect()
-}
-
-fn extract_consumed_table_names(query: &Query) -> HashSet<String> {
-    query
-        .0
-         .0
-        .iter()
-        .filter_map(|statement| match statement {
-            Statement::Define(DefineStatement::Table(table)) => match &table.view {
-                Some(view) => {
-                    let dependent_tables = view.what.0.iter().map(|t| &t.0).collect::<HashSet<_>>();
-                    Some(dependent_tables)
-                }
-                None => None,
-            },
-            _ => None,
-        })
-        .flatten()
-        .cloned()
-        .collect()
 }
 
 fn get_transaction_action(dry_run: bool) -> TransactionAction {
@@ -888,29 +770,4 @@ fn extract_define_event_statements(statements: Vec<Statement>) -> Vec<DefineEven
             _ => None,
         })
         .collect::<Vec<_>>()
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::io::create_surql_file;
-
-    use super::*;
-
-    #[test]
-    fn concat_empty_list_of_files() {
-        let result = concat_files_content(vec![]);
-        assert_eq!(result, "");
-    }
-
-    #[test]
-    fn concat_files_in_alphabetic_order() {
-        let files = vec![
-            create_surql_file("a.text", "Text of a file"),
-            create_surql_file("c.text", "Text of c file"),
-            create_surql_file("b.text", "Text of b file"),
-        ];
-
-        let result = concat_files_content(files);
-        assert_eq!(result, "Text of a file\nText of b file\nText of c file");
-    }
 }

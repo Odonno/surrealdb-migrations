@@ -1,0 +1,8 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_down_content
+snapshot_kind: text
+---
+REMOVE FIELD executed_at ON script_migration;
+REMOVE FIELD script_name ON script_migration;
+REMOVE TABLE script_migration;

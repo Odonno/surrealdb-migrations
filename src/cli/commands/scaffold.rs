@@ -27,6 +27,9 @@ pub enum ScaffoldAction {
     Template {
         /// Predefined template used to scaffold the project
         template: ScaffoldTemplate,
+        /// Scaffold a template using a more traditional approach (only create a `migrations` folder)
+        #[clap(long)]
+        traditional: bool,
     },
     /// ** Preview ** Scaffold a new project from an existing SQL schema file
     Schema {
@@ -38,5 +41,8 @@ pub enum ScaffoldAction {
         /// Preserve casing of the table and column names instead of converting them to snake_case
         #[clap(long)]
         preserve_casing: bool,
+        /// Scaffold a template using a more traditional approach (only create a `migrations` folder)
+        #[clap(long)]
+        traditional: bool,
     },
 }

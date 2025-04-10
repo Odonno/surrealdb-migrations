@@ -1,0 +1,46 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_content
+snapshot_kind: text
+---
+DEFINE TABLE OVERWRITE comment TYPE ANY SCHEMALESS PERMISSIONS FOR select FULL, FOR create WHERE permission:create_comment INSIDE $auth.permissions, FOR update, delete WHERE in = $auth.id;
+DEFINE FIELD OVERWRITE content ON comment TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON comment TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE permission TYPE NORMAL SCHEMAFULL PERMISSIONS FOR select FULL, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE name ON permission TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON permission TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE INDEX OVERWRITE unique_name ON permission FIELDS name UNIQUE;
+
+DEFINE TABLE OVERWRITE post TYPE ANY SCHEMALESS PERMISSIONS FOR select FULL, FOR create WHERE permission:create_post INSIDE $auth.permissions, FOR update, delete WHERE author = $auth.id;
+DEFINE FIELD OVERWRITE title ON post TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE content ON post TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE author ON post TYPE references<user> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON post TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE status ON post TYPE string DEFAULT 'DRAFT' ASSERT $value INSIDE ['DRAFT', 'PUBLISHED'] PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE script_migration TYPE NORMAL SCHEMAFULL PERMISSIONS FOR select FULL, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+
+DEFINE TABLE OVERWRITE user TYPE NORMAL SCHEMAFULL PERMISSIONS FOR select FULL, FOR create, delete NONE, FOR update WHERE id = $auth.id;
+DEFINE FIELD OVERWRITE username ON user TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE email ON user TYPE string ASSERT string::is::email($value) PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE password ON user TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE registered_at ON user TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE avatar ON user TYPE option<string> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE permissions ON user TYPE array<record<permission>> DEFAULT [permission:create_post, permission:create_comment] PERMISSIONS FULL;
+DEFINE INDEX OVERWRITE unique_username ON user FIELDS username UNIQUE;
+DEFINE INDEX OVERWRITE unique_email ON user FIELDS email UNIQUE;
+
+DEFINE ACCESS OVERWRITE user_scope ON DATABASE TYPE RECORD SIGNUP (CREATE user SET username = $username, email = $email, avatar = 'https://www.gravatar.com/avatar/' + crypto::md5($email), password = crypto::argon2::generate($password)) SIGNIN (SELECT * FROM user WHERE username = $username AND crypto::argon2::compare(password, $password)) WITH JWT ALGORITHM HS512 KEY [jwt_key] WITH ISSUER KEY [jwt_key] DURATION FOR TOKEN 1h, FOR SESSION 4w2d;
+
+DEFINE TABLE OVERWRITE publish_post TYPE ANY SCHEMALESS PERMISSIONS FOR select, create FULL, FOR update, delete NONE;
+DEFINE FIELD OVERWRITE post_id ON publish_post TYPE record<post> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON publish_post TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE EVENT OVERWRITE publish_post ON publish_post WHEN $event == 'CREATE' THEN (UPDATE post SET status = 'PUBLISHED' WHERE id = $after.post_id);
+
+DEFINE TABLE OVERWRITE unpublish_post TYPE ANY SCHEMALESS PERMISSIONS FOR select, create FULL, FOR update, delete NONE;
+DEFINE FIELD OVERWRITE post_id ON unpublish_post TYPE record<post> PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE created_at ON unpublish_post TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;
+DEFINE EVENT OVERWRITE unpublish_post ON unpublish_post WHEN $event == 'CREATE' THEN (UPDATE post SET status = 'DRAFT' WHERE id = $after.post_id);

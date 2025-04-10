@@ -1,0 +1,46 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_down_content
+snapshot_kind: text
+---
+REMOVE EVENT unpublish_post ON unpublish_post;
+REMOVE FIELD created_at ON unpublish_post;
+REMOVE FIELD post_id ON unpublish_post;
+REMOVE TABLE unpublish_post;
+
+REMOVE EVENT publish_post ON publish_post;
+REMOVE FIELD created_at ON publish_post;
+REMOVE FIELD post_id ON publish_post;
+REMOVE TABLE publish_post;
+
+REMOVE ACCESS user_scope ON DATABASE;
+
+REMOVE INDEX unique_email ON user;
+REMOVE INDEX unique_username ON user;
+REMOVE FIELD permissions ON user;
+REMOVE FIELD avatar ON user;
+REMOVE FIELD registered_at ON user;
+REMOVE FIELD password ON user;
+REMOVE FIELD email ON user;
+REMOVE FIELD username ON user;
+REMOVE TABLE user;
+
+REMOVE FIELD executed_at ON script_migration;
+REMOVE FIELD script_name ON script_migration;
+REMOVE TABLE script_migration;
+
+REMOVE FIELD status ON post;
+REMOVE FIELD created_at ON post;
+REMOVE FIELD author ON post;
+REMOVE FIELD content ON post;
+REMOVE FIELD title ON post;
+REMOVE TABLE post;
+
+REMOVE INDEX unique_name ON permission;
+REMOVE FIELD created_at ON permission;
+REMOVE FIELD name ON permission;
+REMOVE TABLE permission;
+
+REMOVE FIELD created_at ON comment;
+REMOVE FIELD content ON comment;
+REMOVE TABLE comment;

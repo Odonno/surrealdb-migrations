@@ -1,0 +1,48 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_down_content
+snapshot_kind: text
+---
+REMOVE EVENT purchase ON purchase;
+REMOVE FIELD total ON purchase;
+REMOVE FIELD quantity ON purchase;
+REMOVE FIELD product ON purchase;
+REMOVE FIELD customer ON purchase;
+REMOVE TABLE purchase;
+
+REMOVE FIELD executed_at ON script_migration;
+REMOVE FIELD script_name ON script_migration;
+REMOVE TABLE script_migration;
+
+REMOVE FIELD status ON purchases;
+REMOVE FIELD total ON purchases;
+REMOVE FIELD shipped_at ON purchases;
+REMOVE FIELD created_at ON purchases;
+REMOVE FIELD shipping_address ON purchases;
+REMOVE FIELD quantity ON purchases;
+REMOVE TABLE purchases;
+
+REMOVE FIELD images ON product;
+REMOVE FIELD category ON product;
+REMOVE FIELD price ON product;
+REMOVE FIELD description ON product;
+REMOVE FIELD name ON product;
+REMOVE TABLE product;
+
+REMOVE ACCESS customer_scope ON DATABASE;
+
+REMOVE INDEX unique_email ON customer;
+REMOVE FIELD addresses ON customer;
+REMOVE FIELD password ON customer;
+REMOVE FIELD email ON customer;
+REMOVE FIELD name ON customer;
+REMOVE TABLE customer;
+
+REMOVE FIELD customer ON address;
+REMOVE FIELD country ON address;
+REMOVE FIELD zip_code ON address;
+REMOVE FIELD state ON address;
+REMOVE FIELD city ON address;
+REMOVE FIELD street ON address;
+REMOVE FIELD number ON address;
+REMOVE TABLE address;

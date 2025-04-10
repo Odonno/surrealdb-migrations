@@ -1,0 +1,8 @@
+---
+source: tests/cli/scaffold/template.rs
+expression: initial_content
+snapshot_kind: text
+---
+DEFINE TABLE OVERWRITE script_migration TYPE NORMAL SCHEMAFULL PERMISSIONS FOR select FULL, FOR create, update, delete NONE;
+DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string PERMISSIONS FULL;
+DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime READONLY VALUE time::now() PERMISSIONS FULL;

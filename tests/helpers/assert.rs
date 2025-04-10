@@ -19,3 +19,8 @@ pub fn is_empty_folder(path: &Path) -> Result<bool> {
 
     Ok(nubmer_of_files == 0)
 }
+
+pub fn is_folder_exists(path: &Path) -> Result<bool> {
+    let exists = path.try_exists()?;
+    Ok(exists)
+}

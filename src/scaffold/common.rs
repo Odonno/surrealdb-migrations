@@ -1,7 +1,13 @@
+use ::surrealdb::sql::statements::{
+    DefineAccessStatement, DefineEventStatement, DefineFieldStatement, DefineIndexStatement,
+    DefineStatement, DefineTableStatement, RemoveAccessStatement, RemoveEventStatement,
+    RemoveFieldStatement, RemoveIndexStatement, RemoveStatement, RemoveTableStatement,
+};
 use chrono::{DateTime, Local};
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use std::{
+    fs,
     io::Write,
     path::{Path, PathBuf},
 };
@@ -10,6 +16,7 @@ use crate::{
     cli::ScaffoldTemplate,
     constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
     io::{self, ensures_folder_exists},
+    surrealdb::parse_statements,
 };
 
 pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
@@ -24,7 +31,11 @@ pub fn apply_before_scaffold(folder_path: Option<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
+pub fn apply_after_scaffold(
+    config_file: Option<&Path>,
+    traditional: bool,
+    folder_path: Option<String>,
+) -> Result<()> {
     let schemas_dir_path = io::concat_path(&folder_path, SCHEMAS_DIR_NAME);
     let events_dir_path = io::concat_path(&folder_path, EVENTS_DIR_NAME);
     let migrations_dir_path = io::concat_path(&folder_path, MIGRATIONS_DIR_NAME);
@@ -37,6 +48,156 @@ pub fn apply_after_scaffold(folder_path: Option<String>) -> Result<()> {
 
     rename_migrations_files_to_match_current_date(now, &migrations_dir_path)?;
     rename_down_migrations_files_to_match_current_date(now, &migrations_dir_path)?;
+
+    if traditional {
+        // extract surql files
+        let schema_definitions = io::extract_schema_definitions(config_file, None)?;
+        let event_definitions = io::extract_event_definitions(config_file, None);
+
+        // concat surql statements
+        let schemas_statements = parse_statements(&schema_definitions)?;
+        let events_statements = parse_statements(&event_definitions)?;
+
+        let statements = schemas_statements
+            .into_iter()
+            .chain(events_statements)
+            .collect::<Vec<_>>();
+
+        create_initial_migration(&migrations_dir_path, &statements)?;
+        create_initial_down_migration(&migrations_dir_path, &statements)?;
+
+        // remove all files from schemas and events folders
+        fs::remove_dir_all(schemas_dir_path)?;
+        fs::remove_dir_all(events_dir_path)?;
+    }
+
+    Ok(())
+}
+
+const APPROXIMATE_LENGTH_PER_STATEMENT: usize = 50;
+const INITIAL_MIGRATION_FILENAME: &str = "__Initial.surql";
+
+fn create_initial_migration(
+    migrations_dir_path: &Path,
+    statements: &Vec<::surrealdb::sql::Statement>,
+) -> Result<()> {
+    let mut forward_content =
+        String::with_capacity(APPROXIMATE_LENGTH_PER_STATEMENT * statements.len());
+    let mut previous_idiom: Option<String> = None;
+
+    for statement in statements {
+        let idiom = match statement {
+            ::surrealdb::sql::Statement::Define(define_statement) => match define_statement {
+                DefineStatement::Table(DefineTableStatement { name, .. }) => Some(name.to_string()),
+                DefineStatement::Field(DefineFieldStatement { what, .. }) => Some(what.to_string()),
+                DefineStatement::Index(DefineIndexStatement { what, .. }) => Some(what.to_string()),
+                DefineStatement::Event(DefineEventStatement { what, .. }) => Some(what.to_string()),
+                _ => None,
+            },
+            _ => None,
+        };
+
+        if previous_idiom.is_some() && idiom != previous_idiom {
+            forward_content.push('\n');
+        }
+
+        forward_content.push_str(&statement.to_string());
+        forward_content.push_str(";\n");
+
+        if idiom.is_some() {
+            previous_idiom = idiom;
+        }
+    }
+
+    let initial_file = migrations_dir_path.join(INITIAL_MIGRATION_FILENAME);
+    fs::write(&initial_file, forward_content)?;
+
+    Ok(())
+}
+
+fn create_initial_down_migration(
+    migrations_dir_path: &Path,
+    statements: &[::surrealdb::sql::Statement],
+) -> Result<()> {
+    let mut forward_content =
+        String::with_capacity(APPROXIMATE_LENGTH_PER_STATEMENT * statements.len());
+    let mut previous_idiom: Option<String> = None;
+
+    for statement in statements.iter().rev() {
+        let idiom = match statement {
+            ::surrealdb::sql::Statement::Define(define_statement) => match define_statement {
+                DefineStatement::Table(DefineTableStatement { name, .. }) => Some(name.to_string()),
+                DefineStatement::Field(DefineFieldStatement { what, .. }) => Some(what.to_string()),
+                DefineStatement::Index(DefineIndexStatement { what, .. }) => Some(what.to_string()),
+                DefineStatement::Event(DefineEventStatement { what, .. }) => Some(what.to_string()),
+                _ => None,
+            },
+            _ => None,
+        };
+
+        if previous_idiom.is_some() && idiom != previous_idiom {
+            forward_content.push('\n');
+        }
+
+        let remove_statement = match statement {
+            ::surrealdb::sql::Statement::Define(define_statement) => match define_statement {
+                DefineStatement::Table(DefineTableStatement { name, .. }) => {
+                    let mut s = RemoveTableStatement::default();
+                    s.name = name.clone();
+
+                    Ok(RemoveStatement::Table(s))
+                }
+                DefineStatement::Field(DefineFieldStatement { name, what, .. }) => {
+                    let mut s = RemoveFieldStatement::default();
+                    s.name = name.clone();
+                    s.what = what.clone();
+
+                    Ok(RemoveStatement::Field(s))
+                }
+                DefineStatement::Index(DefineIndexStatement { name, what, .. }) => {
+                    let mut s = RemoveIndexStatement::default();
+                    s.name = name.clone();
+                    s.what = what.clone();
+
+                    Ok(RemoveStatement::Index(s))
+                }
+                DefineStatement::Event(DefineEventStatement { name, what, .. }) => {
+                    let mut s = RemoveEventStatement::default();
+                    s.name = name.clone();
+                    s.what = what.clone();
+
+                    Ok(RemoveStatement::Event(s))
+                }
+                DefineStatement::Access(DefineAccessStatement { name, base, .. }) => {
+                    let mut s = RemoveAccessStatement::default();
+                    s.name = name.clone();
+                    s.base = base.clone();
+
+                    Ok(RemoveStatement::Access(s))
+                }
+                _ => Err(eyre!(
+                    "DEFINE statements are not supported in remove statements"
+                )),
+            },
+            _ => Err(eyre!(
+                "DEFINE statements are not supported in remove statements"
+            )),
+        }?;
+
+        forward_content.push_str(&remove_statement.to_string());
+        forward_content.push_str(";\n");
+
+        if idiom.is_some() {
+            previous_idiom = idiom;
+        }
+    }
+
+    let down_folder = migrations_dir_path.join(DOWN_MIGRATIONS_DIR_NAME);
+
+    ensures_folder_exists(&down_folder)?;
+
+    let initial_file = down_folder.join(INITIAL_MIGRATION_FILENAME);
+    fs::write(&initial_file, forward_content)?;
 
     Ok(())
 }
