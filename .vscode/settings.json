@@ -6,5 +6,6 @@
     "./Cargo.toml",
     "./samples/wasm/rsw-hello/Cargo.toml"
   ],
+  "rust-analyzer.cargo.features": "all",
   "rust-analyzer.checkOnSave.command": "clippy"
 }
