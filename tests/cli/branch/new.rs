@@ -73,6 +73,8 @@ db: test-branch\n",
 
     ensure!(!is_empty, "SurrealDB database should not be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -101,6 +103,8 @@ async fn fails_if_branch_already_exists() -> Result<()> {
     cmd.assert().try_failure().and_then(|assert| {
         assert.try_stderr(predicate::str::contains("Branch name already exists"))
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -173,6 +177,8 @@ db: (\S+)\n$",
 
     ensure!(!is_empty, "SurrealDB database should not be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -242,6 +248,8 @@ db: test-branch\n",
     .await?;
 
     ensure!(!is_empty, "SurrealDB database should not be empty");
+
+    temp_dir.close()?;
 
     Ok(())
 }

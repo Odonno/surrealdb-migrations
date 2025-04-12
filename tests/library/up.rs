@@ -26,6 +26,8 @@ async fn apply_initial_schema_changes() -> Result<()> {
 
     runner.up().await?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -53,6 +55,8 @@ async fn apply_new_schema_changes() -> Result<()> {
 
     runner.up().await?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -76,6 +80,8 @@ async fn apply_initial_migrations() -> Result<()> {
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -104,6 +110,8 @@ async fn apply_new_migrations() -> Result<()> {
 
     runner.up().await?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -131,6 +139,8 @@ async fn apply_with_db_configuration() -> Result<()> {
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -161,6 +171,8 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
 
     runner.up().await?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -185,6 +197,8 @@ async fn apply_with_inlined_down_files() -> Result<()> {
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -219,6 +233,8 @@ async fn apply_with_recursive_schema_folders() -> Result<()> {
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

@@ -72,6 +72,8 @@ async fn list_existing_branches() -> Result<()> {
         .try_success()
         .and_then(|assert| assert.try_stdout(expected + "\n"))?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -94,6 +96,8 @@ async fn list_with_no_existing_branch() -> Result<()> {
     cmd.assert()
         .try_success()
         .and_then(|assert| assert.try_stdout("There are no branch yet!\n"))?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

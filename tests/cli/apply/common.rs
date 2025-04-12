@@ -28,5 +28,7 @@ fn apply_fails_if_both_up_and_down_args_provided() -> Result<()> {
         ))
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }

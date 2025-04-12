@@ -26,6 +26,8 @@ async fn ok_if_no_migration_file() -> Result<()> {
 
     runner.validate_version_order().await?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -51,6 +53,8 @@ async fn ok_if_migrations_applied_but_no_new_migration() -> Result<()> {
     runner.up().await?;
 
     runner.validate_version_order().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -78,6 +82,8 @@ async fn ok_if_migrations_applied_with_new_migration_after_last_applied() -> Res
     runner.up_to(&first_migration_name).await?;
 
     runner.validate_version_order().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -126,6 +132,8 @@ async fn fails_if_migrations_applied_with_new_migration_before_last_applied() ->
         "Expected validation to fail"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -152,6 +160,8 @@ async fn ok_if_migrations_applied_but_no_new_migration_with_inlined_down_files()
     runner.up().await?;
 
     runner.validate_version_order().await?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

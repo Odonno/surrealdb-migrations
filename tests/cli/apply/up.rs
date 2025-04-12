@@ -25,6 +25,8 @@ Event files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -42,6 +44,8 @@ fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
     cmd.assert().failure().stderr(predicate::str::contains(
         "There was an error processing a remote WS request",
     ));
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -67,6 +71,8 @@ fn apply_new_schema_changes() -> Result<()> {
 Event files successfully executed!\n",
         )
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -96,6 +102,8 @@ Migration files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -123,6 +131,8 @@ Event files successfully executed!
 Migration files successfully executed!\n",
         )
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -155,6 +165,8 @@ Event files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -175,6 +187,8 @@ fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     cmd.assert()
         .try_success()
         .and_then(|assert| assert.try_stdout("Schema files successfully executed!\n"))?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -199,6 +213,8 @@ async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
     let is_empty = is_surreal_db_empty(None, Some(db_name)).await?;
     ensure!(is_empty, "SurrealDB should be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -221,6 +237,8 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     let is_empty = is_surreal_db_empty(None, Some(db_name)).await?;
     ensure!(is_empty, "SurrealDB should be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -236,6 +254,8 @@ async fn apply_initial_migrations_in_dry_run_should_fail() -> Result<()> {
     cmd.arg("apply").arg("--dry-run");
 
     cmd.assert().try_failure()?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -259,6 +279,8 @@ async fn apply_initial_migrations_in_dry_run_using_http_engine() -> Result<()> {
 
     let is_empty = is_surreal_db_empty(None, None).await?;
     ensure!(is_empty, "SurrealDB should be empty");
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -287,6 +309,8 @@ Migration files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -314,6 +338,8 @@ Migration files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -339,6 +365,8 @@ fn apply_and_output_initial_migrations() -> Result<()> {
             assert_snapshot!(out);
         });
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -369,6 +397,8 @@ fn apply_and_output_new_migrations() -> Result<()> {
         });
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -393,6 +423,8 @@ fn apply_should_run_computed_table_last() -> Result<()> {
 Event files successfully executed!\n",
         )
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -423,6 +455,8 @@ fn apply_with_recursive_schema_folders() -> Result<()> {
         let out = String::from_utf8_lossy(&assert.get_output().stdout);
         assert_snapshot!(out);
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

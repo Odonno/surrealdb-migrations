@@ -42,6 +42,8 @@ Database: {db_name}\n",
     let match_regex = regex.is_match(&output);
     assert!(match_regex, "Output does not match regex: {output}");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -81,6 +83,8 @@ Database: {db_name}\n",
     let match_regex = regex.is_match(&output);
     assert!(match_regex, "Output does not match regex: {output}");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -98,6 +102,8 @@ async fn fails_if_branch_does_not_exist() -> Result<()> {
     cmd.assert().try_failure().and_then(|assert| {
         assert.try_stderr(predicate::str::contains("Branch void does not exist"))
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

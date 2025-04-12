@@ -54,6 +54,8 @@ Migration files successfully executed!\n",
         "Initial definition file should exist"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -289,6 +291,8 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
         "Last migration: 'archive' table should not be empty"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -510,6 +514,8 @@ async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()
         "Third definition file should exist"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -574,6 +580,8 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migr
     let table_definitions = get_surrealdb_table_definitions(Some(db_configuration)).await?;
     ensure!(table_definitions.len() == 8, "Wrong number of tables");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -636,6 +644,8 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
 
     let table_definitions = get_surrealdb_table_definitions(Some(db_configuration)).await?;
     ensure!(table_definitions.len() == 7, "Wrong number of tables");
+
+    temp_dir.close()?;
 
     Ok(())
 }

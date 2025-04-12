@@ -79,6 +79,8 @@ async fn merge_existing_branch() -> Result<()> {
 
     ensure!(is_empty, "SurrealDB origin branch database should be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -100,6 +102,8 @@ async fn fails_to_merge_if_branch_does_not_exist() -> Result<()> {
     cmd.assert().try_failure().and_then(|assert| {
         assert.try_stderr(predicate::str::contains("Branch void does not exist"))
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

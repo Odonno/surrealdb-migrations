@@ -20,6 +20,8 @@ fn create_migration_file() -> Result<()> {
     let migrations_folder = fs::read_dir(temp_dir.join("migrations"))?;
     assert_eq!(migrations_folder.count(), 1);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -55,6 +57,8 @@ fn create_migration_file_with_down_file() -> Result<()> {
         });
     assert_eq!(down_migration_files.count(), 1);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -85,6 +89,8 @@ fn create_migration_file_with_one_line_content() -> Result<()> {
     let migration_file_content = fs::read_to_string(migration_file.path())?;
 
     assert_eq!(migration_file_content, content);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -119,6 +125,8 @@ CREATE post SET title = 'Hello world!', content = 'This is my first post!', auth
     let migration_file_content = fs::read_to_string(migration_file.path())?;
 
     assert_eq!(migration_file_content, content);
+
+    temp_dir.close()?;
 
     Ok(())
 }

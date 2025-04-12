@@ -24,6 +24,8 @@ fn scaffold_fails_from_empty_schema_file() -> Result<()> {
         .failure()
         .stderr(predicate::str::contains("No table found in schema file."));
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -44,6 +46,8 @@ fn scaffold_from_create_table_fails_if_contains_table_named_script_migration() -
     cmd.assert().failure().stderr(predicate::str::contains(
         "The table 'script_migration' is reserved for internal use.",
     ));
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -90,6 +94,8 @@ DEFINE FIELD created_at ON post TYPE datetime;
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -135,6 +141,8 @@ DEFINE FIELD CreatedAt ON Post TYPE datetime;
 
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -193,6 +201,8 @@ DEFINE FIELD variant ON test;
 
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -267,6 +277,8 @@ DEFINE FIELD post ON comment TYPE record(post) ASSERT $value != NONE;
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -314,6 +326,8 @@ DEFINE FIELD registered_at ON user TYPE datetime ASSERT $value != NONE;
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -358,6 +372,8 @@ DEFINE INDEX Vote_Username_Movie_Unique ON vote COLUMNS username, movie UNIQUE;
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -401,6 +417,8 @@ DEFINE INDEX IX_DailySales_Sales ON daily_sales COLUMNS date;
 
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -447,6 +465,8 @@ DEFINE INDEX Vote_Name_Color_Size ON product COLUMNS name, color, size;
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -491,6 +511,8 @@ DEFINE FIELD created_at ON post TYPE datetime ASSERT $value != NONE;
 
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
+
+    temp_dir.close()?;
 
     Ok(())
 }

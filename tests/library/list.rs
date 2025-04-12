@@ -35,6 +35,8 @@ async fn list_empty_migrations() -> Result<()> {
         "Expected no migrations to be applied"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -125,6 +127,8 @@ async fn list_blog_migrations() -> Result<()> {
         ),
         "Expected third migration to be executed just now"
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }

@@ -36,6 +36,8 @@ Migration files successfully executed!\n",
     let is_table_empty = is_surreal_table_empty(ns_db, "comment").await?;
     ensure!(is_table_empty, "'comment' table should be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -74,6 +76,8 @@ Migration files successfully executed!\n",
     let is_table_empty = is_surreal_table_empty(ns_db, "comment").await?;
     ensure!(is_table_empty, "'comment' table should be empty");
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -101,6 +105,8 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
 Migration files successfully executed!\n",
         )
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

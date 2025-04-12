@@ -34,6 +34,8 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
 );",
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -63,6 +65,8 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
 
     let events_folder = temp_dir.join("events");
     assert_eq!(events_folder.exists(), false);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -99,6 +103,8 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
         "invalid publish post file string"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -134,6 +140,8 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
         "invalid publish post file string"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -167,6 +175,8 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
     # TODO
 );",
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }

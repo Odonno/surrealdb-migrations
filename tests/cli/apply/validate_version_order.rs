@@ -36,5 +36,7 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
         .try_failure()
         .and_then(|assert| assert.try_stderr(predicate::str::contains(error)))?;
 
+    temp_dir.close()?;
+
     Ok(())
 }

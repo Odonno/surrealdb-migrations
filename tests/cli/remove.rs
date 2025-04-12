@@ -37,6 +37,8 @@ fn remove_last_migration() -> Result<()> {
         });
     assert_eq!(down_migration_files.count(), 2);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -53,6 +55,8 @@ fn cannot_remove_if_no_migration_file_left() -> Result<()> {
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("No migration files left"));
+
+    temp_dir.close()?;
 
     Ok(())
 }

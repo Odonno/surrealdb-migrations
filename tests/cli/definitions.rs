@@ -58,6 +58,8 @@ fn initial_definition_on_initial_schema_changes() -> Result<()> {
         Ok::<(), Error>(())
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -95,6 +97,8 @@ fn initial_definition_on_initial_migrations() -> Result<()> {
         initial_definition_file_path.exists(),
         "Expected _initial.json file to exist"
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -179,6 +183,8 @@ fn create_new_definition_on_new_migrations() -> Result<()> {
         !new_definition_file_content.is_empty(),
         "empty new definition file"
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }

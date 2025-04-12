@@ -26,5 +26,7 @@ Migration files successfully executed!\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }

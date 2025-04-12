@@ -33,5 +33,7 @@ async fn apply_with_skipped_migrations() -> Result<()> {
         "Expected 1 migration to be applied"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }

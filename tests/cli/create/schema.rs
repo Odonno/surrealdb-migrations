@@ -31,6 +31,8 @@ DEFINE FIELD OVERWRITE title ON post;
 DEFINE FIELD OVERWRITE published_at ON post;"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -57,6 +59,8 @@ DEFINE FIELD OVERWRITE published_at ON post;\n",
 
     let schemas_folder = temp_dir.join("schemas");
     assert_eq!(schemas_folder.exists(), false);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -90,6 +94,8 @@ DEFINE FIELD OVERWRITE published_at ON post;",
         "Expected file contents to match"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -122,6 +128,8 @@ DEFINE FIELD OVERWRITE published_at ON post;",
         "Expected file contents to match"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -152,6 +160,8 @@ DEFINE FIELD OVERWRITE name ON post;
 DEFINE FIELD OVERWRITE title ON post;
 DEFINE FIELD OVERWRITE published_at ON post;"
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }

@@ -29,6 +29,8 @@ async fn diff_without_changes() -> Result<()> {
         .try_success()
         .and_then(|assert| assert.try_stdout("No schema changes detected\n"))?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -68,6 +70,8 @@ DEFINE FIELD name ON category TYPE string PERMISSIONS FULL\n",
         )
     })?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -85,6 +89,8 @@ async fn fails_if_branch_does_not_exist() -> Result<()> {
     cmd.assert().try_failure().and_then(|assert| {
         assert.try_stderr(predicate::str::contains("Branch void does not exist"))
     })?;
+
+    temp_dir.close()?;
 
     Ok(())
 }

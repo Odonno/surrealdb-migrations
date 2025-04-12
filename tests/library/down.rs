@@ -33,6 +33,8 @@ async fn apply_revert_all_migrations() -> Result<()> {
         "Expected no migrations to be applied"
     );
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -65,6 +67,8 @@ async fn apply_revert_to_first_migration() -> Result<()> {
         migrations_applied.len() == 1,
         "Expected 1 migration to be applied"
     );
+
+    temp_dir.close()?;
 
     Ok(())
 }

@@ -27,6 +27,8 @@ fn scaffold_empty_template() -> Result<()> {
     let migrations_dir = temp_dir.join("migrations");
     assert!(is_empty_folder(&migrations_dir)?);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -67,6 +69,8 @@ fn scaffold_blog_template() -> Result<()> {
             Err(_) => false,
         });
     assert_eq!(down_migration_files.count(), 3);
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -109,6 +113,8 @@ fn scaffold_ecommerce_template() -> Result<()> {
         });
     assert_eq!(down_migration_files.count(), 3);
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -125,6 +131,8 @@ fn scaffold_fails_if_schemas_folder_already_exists() -> Result<()> {
     cmd.assert()
         .failure()
         .stderr(predicate::str::contains("'schemas' folder already exists."));
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -143,6 +151,8 @@ fn scaffold_fails_if_events_folder_already_exists() -> Result<()> {
         .failure()
         .stderr(predicate::str::contains("'events' folder already exists."));
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -160,6 +170,8 @@ fn scaffold_fails_if_migrations_folder_already_exists() -> Result<()> {
         "'migrations' folder already exists.",
     ));
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -172,6 +184,8 @@ fn scaffold_fails_if_invalid_template_name() -> Result<()> {
     cmd.arg("scaffold").arg("template").arg("invalid");
 
     cmd.assert().failure();
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -247,6 +261,8 @@ fn scaffold_empty_template_with_traditional_approach() -> Result<()> {
 
         assert_snapshot!(initial_down_content);
     }
+
+    temp_dir.close()?;
 
     Ok(())
 }
@@ -328,6 +344,8 @@ fn scaffold_blog_template_with_traditional_approach() -> Result<()> {
         assert_snapshot!(initial_down_content);
     }
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -407,6 +425,8 @@ fn scaffold_ecommerce_template_with_traditional_approach() -> Result<()> {
 
         assert_snapshot!(initial_down_content);
     }
+
+    temp_dir.close()?;
 
     Ok(())
 }

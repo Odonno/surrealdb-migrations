@@ -21,6 +21,8 @@ fn list_empty_migrations() -> Result<()> {
         .try_success()
         .and_then(|assert| assert.try_stdout("No migrations applied yet!\n"))?;
 
+    temp_dir.close()?;
+
     Ok(())
 }
 
@@ -56,6 +58,8 @@ fn list_blog_migrations() -> Result<()> {
     cmd.assert()
         .try_success()
         .and_then(|assert| assert.try_stdout(expected))?;
+
+    temp_dir.close()?;
 
     Ok(())
 }
