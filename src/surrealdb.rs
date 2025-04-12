@@ -92,16 +92,20 @@ async fn set_namespace_and_database(
 
     let mut ns_statement = surrealdb::sql::statements::DefineNamespaceStatement::default();
     ns_statement.name = ns.to_string().into();
+    ns_statement.if_not_exists = true;
     let ns_statement = surrealdb::sql::statements::DefineStatement::Namespace(ns_statement);
 
-    client.query(ns_statement).await?;
+    let response = client.query(ns_statement).await?;
+    response.check()?;
     client.use_ns(ns.to_string()).await?;
 
     let mut db_statement = surrealdb::sql::statements::DefineDatabaseStatement::default();
     db_statement.name = db.to_string().into();
+    db_statement.if_not_exists = true;
     let db_statement = surrealdb::sql::statements::DefineStatement::Database(db_statement);
 
-    client.query(db_statement).await?;
+    let response = client.query(db_statement).await?;
+    response.check()?;
     client.use_db(db.to_string()).await?;
 
     Ok(())

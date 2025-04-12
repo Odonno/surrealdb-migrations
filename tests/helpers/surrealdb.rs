@@ -168,10 +168,16 @@ async fn set_namespace_and_database(
     let ns = ns.unwrap_or("test".to_owned());
     let db = db.unwrap_or("test".to_owned());
 
-    client.query(format!("DEFINE NAMESPACE `{ns}`")).await?;
+    let response = client
+        .query(format!("DEFINE NAMESPACE IF NOT EXISTS `{ns}`;"))
+        .await?;
+    response.check()?;
     client.use_ns(ns.to_owned()).await?;
 
-    client.query(format!("DEFINE DATABASE `{db}`")).await?;
+    let response = client
+        .query(format!("DEFINE DATABASE IF NOT EXISTS `{db}`;"))
+        .await?;
+    response.check()?;
     client.use_db(db.to_owned()).await?;
 
     Ok(())
