@@ -1,0 +1,7 @@
+[profile.default]
+retries = 3
+
+[[profile.default.overrides]]
+# Run these tests with the highest priority.
+filter = 'test(e2e)'
+priority = 100
