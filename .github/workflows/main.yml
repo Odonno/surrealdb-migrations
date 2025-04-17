@@ -37,9 +37,6 @@ jobs:
       - name: Run check
         run: cargo check --all
 
-      - name: Run tests
-        run: cargo test --all-features
-
       - name: Run format
         run: |
           cargo check --all
@@ -47,6 +44,14 @@ jobs:
 
       - name: Run lint
         run: cargo clippy -- -Dwarnings
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Perform tests
+        run: cargo nextest run --all-features
 
   coverage:
     runs-on: ubuntu-latest
