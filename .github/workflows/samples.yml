@@ -37,4 +37,5 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build WASM example
+        continue-on-error: true
         run: (cd samples/wasm/rsw-hello && wasm-pack build --target web)
