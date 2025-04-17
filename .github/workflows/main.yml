@@ -49,8 +49,6 @@ jobs:
         run: cargo clippy -- -Dwarnings
 
   coverage:
-    needs: ci
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
@@ -59,6 +57,8 @@ jobs:
 
       - name: Install 1.81.0 toolchain
         uses: dtolnay/rust-toolchain@1.81.0
+        with:
+          components: llvm-tools-preview
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -72,20 +72,26 @@ jobs:
       - name: Run SurrealDB admin
         run: surreal start --user admin --pass admin --bind 0.0.0.0:8001 memory --allow-experimental record_references &
 
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
-        with:
-          version: "0.22.0"
-          args: "--engine llvm --target-dir target/tarpaulin --skip-clean"
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: taiki-e/install-action@nextest
 
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
+      - name: Collect coverage data (including doctests)
+        run: |
+          cargo llvm-cov --no-report nextest --all-features --test-threads=1
+          # cargo llvm-cov --no-report --doc
+          cargo llvm-cov report --doctests --lcov --output-path lcov.info
+
+      - name: Upload test results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report
-          path: cobertura.xml
+          path: lcov.info
 
   docs:
     runs-on: ubuntu-latest
