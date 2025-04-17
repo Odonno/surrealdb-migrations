@@ -15,7 +15,7 @@ async fn diff_without_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     apply_migrations(&temp_dir, &db_name)?;
     create_branch(&temp_dir, "test-branch-without-changes")?;
 
@@ -44,7 +44,7 @@ async fn diff_with_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     apply_migrations(&temp_dir, &db_name)?;
     create_branch(&temp_dir, "test-branch-with-changes")?;
     add_category_schema_file(&temp_dir)?;

@@ -1,5 +1,5 @@
 ---
-source: tests/cli/scaffold/template.rs
+source: tests/cli/scaffold/traditional/template.rs
 expression: initial_down_content
 snapshot_kind: text
 ---

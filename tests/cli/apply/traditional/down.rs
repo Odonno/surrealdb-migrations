@@ -9,7 +9,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
     apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -47,15 +47,15 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
-    let first_migration_name = get_first_migration_name(&temp_dir)?;
+    let second_migration_name = get_second_migration_name(&temp_dir)?;
 
     apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
-    cmd.arg("apply").arg("--down").arg(first_migration_name);
+    cmd.arg("apply").arg("--down").arg(second_migration_name);
 
     cmd.assert().try_success().and_then(|assert| {
         assert.try_stdout(
@@ -87,7 +87,7 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_empty_template(&temp_dir, false)?;
+    scaffold_empty_template(&temp_dir, true)?;
 
     add_simple_migration_file(&temp_dir)?;
     let first_migration_name = get_first_migration_name(&temp_dir)?;

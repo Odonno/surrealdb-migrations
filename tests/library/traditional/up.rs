@@ -1,21 +1,21 @@
 use assert_fs::TempDir;
-use color_eyre::{eyre::ensure, Result};
+use color_eyre::Result;
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
-async fn apply_revert_all_migrations() -> Result<()> {
+async fn apply_initial_migrations() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
 
     let configuration = SurrealdbConfiguration {
-        db: Some(db_name.to_string()),
+        db: Some(db_name),
         ..Default::default()
     };
 
@@ -24,14 +24,6 @@ async fn apply_revert_all_migrations() -> Result<()> {
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
-
-    runner.down("0").await?;
-
-    let migrations_applied = runner.list().await?;
-    ensure!(
-        migrations_applied.is_empty(),
-        "Expected no migrations to be applied"
-    );
 
     temp_dir.close()?;
 
@@ -39,34 +31,55 @@ async fn apply_revert_all_migrations() -> Result<()> {
 }
 
 #[tokio::test]
-async fn apply_revert_to_first_migration() -> Result<()> {
+async fn apply_new_migrations() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
+    apply_migrations_up_to(&temp_dir, &db_name, &first_migration_name)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
 
     let configuration = SurrealdbConfiguration {
-        db: Some(db_name.to_string()),
+        db: Some(db_name),
         ..Default::default()
     };
+
     let db = create_surrealdb_client(&configuration).await?;
 
     let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
 
     runner.up().await?;
 
-    runner.down(&first_migration_name).await?;
+    temp_dir.close()?;
 
-    let migrations_applied = runner.list().await?;
-    ensure!(
-        migrations_applied.len() == 1,
-        "Expected 1 migration to be applied"
-    );
+    Ok(())
+}
+
+#[tokio::test]
+async fn apply_with_inlined_down_files() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    let db_name = generate_random_db_name()?;
+
+    add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
+    scaffold_blog_template(&temp_dir, true)?;
+    inline_down_migration_files(&temp_dir)?;
+
+    let config_file_path = temp_dir.join(".surrealdb");
+
+    let configuration = SurrealdbConfiguration {
+        db: Some(db_name),
+        ..Default::default()
+    };
+
+    let db = create_surrealdb_client(&configuration).await?;
+
+    let runner = MigrationRunner::new(&db).use_config_file(&config_file_path);
+
+    runner.up().await?;
 
     temp_dir.close()?;
 

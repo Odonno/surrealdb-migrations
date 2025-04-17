@@ -1,25 +1,34 @@
 use assert_cmd::Command;
 use color_eyre::eyre::{eyre, ContextCompat, Result};
+use lexicmp::natural_lexical_cmp;
 use names::{Generator, Name};
 use std::{
     fs, io,
     path::{Path, PathBuf},
 };
 
-pub fn scaffold_empty_template(path: &Path) -> Result<()> {
-    scaffold_template(None, "empty", path)
+pub fn scaffold_empty_template(path: &Path, use_traditional_approach: bool) -> Result<()> {
+    scaffold_template(None, "empty", path, use_traditional_approach)
 }
 
-pub fn scaffold_blog_template(path: &Path) -> Result<()> {
-    scaffold_template(None, "blog", path)
+pub fn scaffold_blog_template(path: &Path, use_traditional_approach: bool) -> Result<()> {
+    scaffold_template(None, "blog", path, use_traditional_approach)
 }
 
-fn scaffold_template(config_file: Option<&str>, template_name: &str, path: &Path) -> Result<()> {
+fn scaffold_template(
+    config_file: Option<&str>,
+    template_name: &str,
+    path: &Path,
+    use_traditional_approach: bool,
+) -> Result<()> {
     let mut cmd = create_cmd(path)?;
 
     cmd.arg("scaffold").arg("template").arg(template_name);
     if let Some(config_file) = config_file {
         cmd.arg("--config-file").arg(config_file);
+    }
+    if use_traditional_approach {
+        cmd.arg("--traditional");
     }
     cmd.assert().try_success()?;
 
@@ -109,6 +118,9 @@ pub fn get_first_migration_file(path: &Path) -> Result<PathBuf> {
 pub fn get_second_migration_name(path: &Path) -> Result<String> {
     get_nth_migration_name(path, 1)
 }
+pub fn get_second_migration_file(path: &Path) -> Result<PathBuf> {
+    get_nth_migration_file(path, 1)
+}
 
 pub fn get_third_migration_name(path: &Path) -> Result<String> {
     get_nth_migration_name(path, 2)
@@ -136,16 +148,23 @@ fn get_nth_migration_file(path: &Path, index: i8) -> Result<PathBuf> {
         .collect::<Result<Vec<PathBuf>, io::Error>>()?;
 
     migration_files.sort_by(|a, b| {
-        a.file_name()
-            .unwrap_or_default()
-            .cmp(b.file_name().unwrap_or_default())
+        natural_lexical_cmp(
+            a.file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default(),
+            b.file_name()
+                .unwrap_or_default()
+                .to_str()
+                .unwrap_or_default(),
+        )
     });
 
-    let first_migration_file = migration_files
+    let nth_migration_file = migration_files
         .get(index as usize)
         .ok_or_else(|| eyre!("No migration files found"))?;
 
-    Ok(first_migration_file.to_path_buf())
+    Ok(nth_migration_file.to_path_buf())
 }
 
 pub fn generate_random_db_name() -> Result<String> {

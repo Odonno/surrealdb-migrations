@@ -8,7 +8,7 @@ use crate::helpers::*;
 fn replay_migrations_on_clean_db() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     {
         let db_name = generate_random_db_name()?;
@@ -67,7 +67,7 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     // First migration
@@ -300,7 +300,7 @@ async fn apply_3_consecutives_schema_and_data_changes() -> Result<()> {
 async fn apply_3_consecutives_schema_and_data_changes_on_clean_db() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     {
@@ -526,7 +526,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_previous_migr
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     // First migration
@@ -591,7 +591,7 @@ async fn apply_3_consecutives_schema_and_data_changes_then_down_to_first_migrati
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     // First migration

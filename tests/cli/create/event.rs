@@ -8,7 +8,7 @@ use crate::helpers::*;
 fn create_event_file() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -76,7 +76,7 @@ fn create_event_file_with_schemafull_table_from_config() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
     add_migration_config_file_with_core_schema(&temp_dir, "full")?;
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -113,7 +113,7 @@ fn create_event_file_with_schemaless_table_from_invalid_config() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
     add_migration_config_file_with_core_schema(&temp_dir, "invalid")?;
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -149,7 +149,7 @@ DEFINE EVENT OVERWRITE publish_post ON TABLE publish_post WHEN $event == \"CREAT
 fn create_event_file_with_schemafull_table_from_cli_arg() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 

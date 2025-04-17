@@ -10,7 +10,7 @@ async fn apply_initial_schema_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -37,7 +37,7 @@ async fn apply_new_schema_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
     apply_migrations(&temp_dir, &db_name)?;
     add_category_schema_file(&temp_dir)?;
@@ -66,7 +66,7 @@ async fn apply_initial_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
 
@@ -92,7 +92,7 @@ async fn apply_new_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
     apply_migrations_up_to(&temp_dir, &db_name, &first_migration_name)?;
@@ -121,7 +121,7 @@ async fn apply_with_db_configuration() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Admin, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -151,7 +151,7 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Admin, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
     remove_folder(&temp_dir.join("events"))?;
 
@@ -182,7 +182,7 @@ async fn apply_with_inlined_down_files() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     inline_down_migration_files(&temp_dir)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
@@ -209,7 +209,7 @@ async fn apply_with_recursive_schema_folders() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("events"))?;
     remove_folder(&temp_dir.join("migrations"))?;
     add_category_schema_file(&temp_dir)?;

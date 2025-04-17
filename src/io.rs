@@ -3,6 +3,7 @@ use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use include_dir::Dir;
 use itertools::Itertools;
+use lexicmp::natural_lexical_cmp;
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
@@ -63,14 +64,18 @@ pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
     }
 }
 
+#[allow(dead_code)]
 pub fn extract_schema_definitions(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
-) -> Result<String> {
-    let schemas_files = extract_schemas_files(config_file, embedded_dir)?;
-    Ok(concat_files_content(schemas_files))
+) -> String {
+    let schemas_files = extract_schemas_files(config_file, embedded_dir)
+        .ok()
+        .unwrap_or_default();
+    concat_files_content(&schemas_files)
 }
 
+#[allow(dead_code)]
 pub fn extract_event_definitions(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
@@ -78,12 +83,12 @@ pub fn extract_event_definitions(
     let events_files = extract_events_files(config_file, embedded_dir)
         .ok()
         .unwrap_or_default();
-    concat_files_content(events_files)
+    concat_files_content(&events_files)
 }
 
-fn concat_files_content(files: Vec<SurqlFile>) -> String {
+pub fn concat_files_content(files: &[SurqlFile]) -> String {
     let files_with_content_and_query = files
-        .into_iter()
+        .iter()
         .map(|file| {
             let content = file.get_content().unwrap_or_default();
             let query = parse_statements(&content).unwrap_or_default();
@@ -117,7 +122,7 @@ fn concat_files_content(files: Vec<SurqlFile>) -> String {
             ) {
                 (true, false) => Ordering::Greater,
                 (false, true) => Ordering::Less,
-                _ => a.0.name.cmp(&b.0.name),
+                _ => natural_lexical_cmp(&a.0.name, &b.0.name),
             }
         })
         .map(|(_, content, _)| content)
@@ -182,7 +187,7 @@ fn extract_consumed_table_names(query: &Query) -> HashSet<String> {
         .collect()
 }
 
-fn extract_schemas_files(
+pub fn extract_schemas_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
@@ -190,7 +195,7 @@ fn extract_schemas_files(
     extract_surql_files(config_file, dir_path, embedded_dir, false)
 }
 
-fn extract_events_files(
+pub fn extract_events_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Vec<SurqlFile>> {
@@ -412,7 +417,7 @@ fn extract_string_dir_entry_value(
 
 fn get_sorted_migrations_files(migrations_files: Vec<SurqlFile>) -> Vec<SurqlFile> {
     let mut sorted_migrations_files = migrations_files;
-    sorted_migrations_files.sort_by(|a, b| a.name.cmp(&b.name));
+    sorted_migrations_files.sort_by(|a, b| natural_lexical_cmp(&a.name, &b.name));
 
     sorted_migrations_files
 }
@@ -898,7 +903,7 @@ mod tests {
 
     #[test]
     fn concat_empty_list_of_files() {
-        let result = concat_files_content(vec![]);
+        let result = concat_files_content(&[]);
         assert_eq!(result, "");
     }
 
@@ -910,7 +915,7 @@ mod tests {
             create_surql_file("b.text", "Text of b file"),
         ];
 
-        let result = concat_files_content(files);
+        let result = concat_files_content(&files);
         assert_eq!(result, "Text of a file\nText of b file\nText of c file");
     }
 }

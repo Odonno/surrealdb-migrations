@@ -10,7 +10,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
     let config_file_path = temp_dir.join(".surrealdb");
 
@@ -25,7 +25,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
 
     runner.up().await?;
 
-    runner.down("0").await?;
+    runner.down("__0").await?;
 
     let migrations_applied = runner.list().await?;
     ensure!(
@@ -44,7 +44,7 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name_in_dir(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
 
@@ -63,6 +63,8 @@ async fn apply_revert_to_first_migration() -> Result<()> {
     runner.down(&first_migration_name).await?;
 
     let migrations_applied = runner.list().await?;
+    println!("{}", migrations_applied.len());
+
     ensure!(
         migrations_applied.len() == 1,
         "Expected 1 migration to be applied"

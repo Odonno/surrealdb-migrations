@@ -14,7 +14,10 @@ use std::{
 
 use crate::{
     cli::ScaffoldTemplate,
-    constants::{DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME},
+    constants::{
+        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, INITIAL_TRADITIONAL_MIGRATION_FILENAME,
+        MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
+    },
     io::{self, ensures_folder_exists},
     surrealdb::parse_statements,
 };
@@ -51,7 +54,7 @@ pub fn apply_after_scaffold(
 
     if traditional {
         // extract surql files
-        let schema_definitions = io::extract_schema_definitions(config_file, None)?;
+        let schema_definitions = io::extract_schema_definitions(config_file, None);
         let event_definitions = io::extract_event_definitions(config_file, None);
 
         // concat surql statements
@@ -75,7 +78,6 @@ pub fn apply_after_scaffold(
 }
 
 const APPROXIMATE_LENGTH_PER_STATEMENT: usize = 50;
-const INITIAL_MIGRATION_FILENAME: &str = "__Initial.surql";
 
 fn create_initial_migration(
     migrations_dir_path: &Path,
@@ -109,7 +111,7 @@ fn create_initial_migration(
         }
     }
 
-    let initial_file = migrations_dir_path.join(INITIAL_MIGRATION_FILENAME);
+    let initial_file = migrations_dir_path.join(INITIAL_TRADITIONAL_MIGRATION_FILENAME);
     fs::write(&initial_file, forward_content)?;
 
     Ok(())
@@ -196,7 +198,7 @@ fn create_initial_down_migration(
 
     ensures_folder_exists(&down_folder)?;
 
-    let initial_file = down_folder.join(INITIAL_MIGRATION_FILENAME);
+    let initial_file = down_folder.join(INITIAL_TRADITIONAL_MIGRATION_FILENAME);
     fs::write(&initial_file, forward_content)?;
 
     Ok(())

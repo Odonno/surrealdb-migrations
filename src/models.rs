@@ -15,7 +15,7 @@ pub struct Branch {
     pub created_at: Datetime,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug)]
 pub struct SchemaMigrationDefinition {
     pub schemas: String,
     pub events: String,

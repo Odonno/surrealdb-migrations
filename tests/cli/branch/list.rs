@@ -15,7 +15,7 @@ async fn list_existing_branches() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     apply_migrations(&temp_dir, &db_name)?;
 
     create_branch(&temp_dir, "branch-1")?;
@@ -86,7 +86,7 @@ async fn list_with_no_existing_branch() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;

@@ -11,7 +11,7 @@ fn apply_initial_schema_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -35,7 +35,7 @@ fn cannot_apply_if_surreal_instance_not_running() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
     add_migration_config_file_with_db_address(&temp_dir, "ws://localhost:12345")?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -56,7 +56,7 @@ fn apply_new_schema_changes() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
     apply_migrations(&temp_dir, &db_name)?;
     add_category_schema_file(&temp_dir)?;
@@ -85,7 +85,7 @@ fn apply_initial_migrations() -> Result<()> {
     println!("{}", db_name);
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -113,7 +113,7 @@ fn apply_new_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
     apply_migrations_up_to(&temp_dir, &db_name, &first_migration_name)?;
@@ -143,7 +143,7 @@ fn apply_with_db_configuration() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Admin, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -176,7 +176,7 @@ fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     empty_folder(&temp_dir.join("migrations"))?;
     remove_folder(&temp_dir.join("events"))?;
 
@@ -199,7 +199,7 @@ async fn apply_initial_schema_changes_in_dry_run() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -224,7 +224,7 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -246,7 +246,7 @@ async fn apply_initial_migrations_in_dry_run() -> Result<()> {
 async fn apply_initial_migrations_in_dry_run_should_fail() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
     add_invalid_schema_file(&temp_dir)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -264,7 +264,7 @@ async fn apply_initial_migrations_in_dry_run_should_fail() -> Result<()> {
 async fn apply_initial_migrations_in_dry_run_using_http_engine() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -291,7 +291,7 @@ fn apply_with_inlined_down_files() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     inline_down_migration_files(&temp_dir)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -320,7 +320,7 @@ fn should_support_jwks_features() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     add_jwks_schema_file(&temp_dir)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
@@ -349,7 +349,7 @@ fn apply_and_output_initial_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -377,7 +377,7 @@ fn apply_and_output_new_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
     apply_migrations_up_to(&temp_dir, &db_name, &first_migration_name)?;
@@ -409,7 +409,7 @@ fn apply_should_run_computed_table_last() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("migrations"))?;
     add_computed_schema_file(&temp_dir)?;
 
@@ -435,7 +435,7 @@ fn apply_with_recursive_schema_folders() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
     remove_folder(&temp_dir.join("events"))?;
     remove_folder(&temp_dir.join("migrations"))?;
     add_category_schema_file(&temp_dir)?;

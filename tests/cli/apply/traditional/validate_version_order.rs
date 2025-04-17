@@ -10,26 +10,26 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
-    let first_migration_file = get_first_migration_file(&temp_dir)?;
-    std::fs::remove_file(first_migration_file)?;
+    let second_migration_file = get_second_migration_file(&temp_dir)?;
+    std::fs::remove_file(second_migration_file)?;
 
     apply_migrations(&temp_dir, &db_name)?;
 
     empty_folder(&temp_dir)?;
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
     cmd.arg("apply").arg("--validate-version-order");
 
-    let first_migration_name = get_first_migration_name(&temp_dir)?;
+    let second_migration_name = get_second_migration_name(&temp_dir)?;
 
     let error = format!(
         "The following migrations have not been applied: {}",
-        first_migration_name
+        second_migration_name
     );
 
     cmd.assert()

@@ -1053,9 +1053,9 @@ dependencies = [
 
 [[package]]
 name = "deunicode"
-version = "1.6.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "339544cc9e2c4dc3fc7149fd630c5f22263a4fdf18a98afd0075784968b5cf00"
+checksum = "dc55fe0d1f6c107595572ec8b107c0999bb1a2e0b75e37429a4fb0d6474a0e7d"
 
 [[package]]
 name = "diff"
@@ -2107,6 +2107,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7378d131ddf24063b32cbd7e91668d183140c4b3906270635a4d633d1068ea5d"
 dependencies = [
  "any_ascii",
+]
+
+[[package]]
+name = "lexicmp"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0e8f89da8fd95c4eb6274e914694bea90c7826523b26f2a2fd863d44b9d42c43"
+dependencies = [
+ "deunicode",
 ]
 
 [[package]]
@@ -3882,7 +3891,7 @@ dependencies = [
  "http",
  "ipnet",
  "jsonwebtoken",
- "lexicmp",
+ "lexicmp 0.1.0",
  "linfa-linalg",
  "md-5",
  "nanoid",
@@ -3953,6 +3962,7 @@ dependencies = [
  "include_dir",
  "insta",
  "itertools 0.14.0",
+ "lexicmp 0.2.0",
  "names",
  "predicates",
  "pretty_assertions",

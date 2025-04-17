@@ -1,8 +1,8 @@
-use std::path::Path;
-
 use ::surrealdb::{Connection, Surreal};
 use color_eyre::eyre::{eyre, Result};
 use include_dir::Dir;
+use lexicmp::natural_lexical_cmp;
+use std::{cmp::Ordering, path::Path};
 
 use crate::{
     io::{self, SurqlFile},
@@ -85,5 +85,8 @@ fn is_migration_file_before_last_applied(
     migration_file: &SurqlFile,
     last_migration_applied: &ScriptMigration,
 ) -> Result<bool> {
-    Ok(migration_file.name < last_migration_applied.script_name)
+    Ok(
+        natural_lexical_cmp(&migration_file.name, &last_migration_applied.script_name)
+            == Ordering::Less,
+    )
 }

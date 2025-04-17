@@ -19,8 +19,8 @@ async fn use_config_file_fails_if_folder_does_not_exist() -> Result<()> {
         result
     );
     ensure!(
-        result.as_ref().err().unwrap().to_string() == "Error listing schemas directory",
-        "Expected error message to be 'Error listing schemas directory', but got {:?}",
+        result.as_ref().err().unwrap().to_string() == "The file 'script_migration' should exist.",
+        "Expected error message to be 'The file 'script_migration' should exist.', but got {:?}",
         result.as_ref().err().unwrap().to_string()
     );
 

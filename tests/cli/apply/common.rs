@@ -10,7 +10,7 @@ use crate::helpers::*;
 fn apply_fails_if_both_up_and_down_args_provided() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let first_migration_name = get_first_migration_name(&temp_dir)?;
 

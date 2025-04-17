@@ -8,7 +8,7 @@ use crate::helpers::*;
 fn remove_last_migration() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_blog_template(&temp_dir)?;
+    scaffold_blog_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -46,7 +46,7 @@ fn remove_last_migration() -> Result<()> {
 fn cannot_remove_if_no_migration_file_left() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 

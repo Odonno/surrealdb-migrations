@@ -9,7 +9,7 @@ use crate::helpers::*;
 fn create_migration_file() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -29,7 +29,7 @@ fn create_migration_file() -> Result<()> {
 fn create_migration_file_with_down_file() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -66,7 +66,7 @@ fn create_migration_file_with_down_file() -> Result<()> {
 fn create_migration_file_with_one_line_content() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
@@ -99,7 +99,7 @@ fn create_migration_file_with_one_line_content() -> Result<()> {
 fn create_migration_file_with_multiline_content() -> Result<()> {
     let temp_dir = TempDir::new()?;
 
-    scaffold_empty_template(&temp_dir)?;
+    scaffold_empty_template(&temp_dir, false)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
