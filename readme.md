@@ -276,6 +276,22 @@ Here is the list of all environment variables that you can use:
 * `SURREAL_MIG_NS` - Namespace to use inside the surrealdb instance
 * `SURREAL_MIG_DB` - Name of the database to use inside the surrealdb instance
 
+### Execution context
+
+The execution context describes how configuration settings are applied and prioritized when a command is executed.
+
+The order of execution goes like this:
+
+```
+Environment variables -> Configuration file -> CLI arguments
+```
+
+**Environment variables**: Default settings can be via environment variables. These are typically set up in the system or shell environment.
+
+**Configuration file**: If additional customization is needed, a config file can override environment variables, offering fine-tuned settings. See the section above.
+
+**CLI arguments**: These take precedence over both environment variables and the configuration file. CLI arguments are explicitly provided at runtime, ensuring immediate and specific customization for the specified command.
+
 ## Backward migrations
 
 By default, migrations are forward-only. However, it can be interesting to revert a migration in order to undo a mistake. You will find backward migrations in two places:
