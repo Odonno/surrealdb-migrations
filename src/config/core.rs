@@ -1,4 +1,6 @@
-use std::path::Path;
+use std::{env, path::Path};
+
+use crate::constants;
 
 use super::common::{load_config, retrieve_config_value};
 
@@ -12,9 +14,9 @@ pub fn retrieve_folder_path(config_file: Option<&Path>) -> Option<String> {
     let config = load_config(config_file);
 
     if let Some(config) = config {
-        retrieve_config_value(&config, "core", "path")
+        retrieve_config_value(&config, "core", "path").or(env::var(constants::ENV_PATH).ok())
     } else {
-        None
+        env::var(constants::ENV_PATH).ok()
     }
 }
 
@@ -23,9 +25,9 @@ pub fn retrieve_table_schema_design(config_file: Option<&Path>) -> Option<TableS
     let config = load_config(config_file);
 
     let schema_str = if let Some(config) = config {
-        retrieve_config_value(&config, "core", "schema")
+        retrieve_config_value(&config, "core", "schema").or(env::var(constants::ENV_SCHEMA).ok())
     } else {
-        None
+        env::var(constants::ENV_SCHEMA).ok()
     };
 
     match schema_str {

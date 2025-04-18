@@ -195,6 +195,8 @@ surrealdb-migrations scaffold template <TEMPLATE>
 
 ## Configuration
 
+### Configuration file
+
 You can create a `.surrealdb` configuration file at the root of your project. This way you won't have to set the same configuration values every time.
 
 ```toml
@@ -261,6 +263,18 @@ Here is the definition of the `.surrealdb` configuration file:
     # Default: "test"
     db
 ```
+
+### Environment variables
+
+Here is the list of all environment variables that you can use:
+
+* `SURREAL_MIG_PATH` - Path to the folder that contains your migration project
+* `SURREAL_MIG_SCHEMA` - Define SCHEMALESS or SCHEMAFULL option by default when creating new table/event file
+* `SURREAL_MIG_ADDRESS` - Address of the surrealdb instance
+* `SURREAL_MIG_USER` - Username used to authenticate to the surrealdb instance
+* `SURREAL_MIG_PASS` - Password used to authenticate to the surrealdb instance
+* `SURREAL_MIG_NS` - Namespace to use inside the surrealdb instance
+* `SURREAL_MIG_DB` - Name of the database to use inside the surrealdb instance
 
 ## Backward migrations
 
