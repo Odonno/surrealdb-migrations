@@ -30,10 +30,8 @@ pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
     match branch {
         Some(branch) => {
             // Retrieve branch table definitions from the 2 branches
-            #[allow(deprecated)]
             let branch_db_configuration = SurrealdbConfiguration {
                 address: db_configuration.address.clone(),
-                url: db_configuration.url.clone(),
                 username: db_configuration.username.clone(),
                 password: db_configuration.password.clone(),
                 ns: Some(BRANCH_NS.to_owned()),
@@ -42,10 +40,8 @@ pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
             let branch_table_definitions =
                 get_surrealdb_database_definition(config_file, branch_db_configuration).await?;
 
-            #[allow(deprecated)]
             let origin_branch_db_configuration = SurrealdbConfiguration {
                 address: db_configuration.address.clone(),
-                url: db_configuration.url.clone(),
                 username: db_configuration.username.clone(),
                 password: db_configuration.password.clone(),
                 ns: Some(ORIGIN_BRANCH_NS.to_owned()),

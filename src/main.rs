@@ -161,13 +161,11 @@ async fn sub_main() -> Result<()> {
             }
         }
         Action::Remove => remove::main(config_file),
-        #[allow(deprecated)]
         Action::Apply(apply_args) => {
             let cli::ApplyArgs {
                 up,
                 down,
                 address,
-                url,
                 ns,
                 db,
                 username,
@@ -189,7 +187,6 @@ async fn sub_main() -> Result<()> {
             };
             let db_configuration = SurrealdbConfiguration {
                 address,
-                url,
                 ns,
                 db,
                 username,
@@ -208,11 +205,9 @@ async fn sub_main() -> Result<()> {
             };
             apply::main(args).await
         }
-        #[allow(deprecated)]
         Action::List(list_args) => {
             let cli::ListArgs {
                 address,
-                url,
                 ns,
                 db,
                 username,
@@ -222,7 +217,6 @@ async fn sub_main() -> Result<()> {
 
             let db_configuration = SurrealdbConfiguration {
                 address,
-                url,
                 ns,
                 db,
                 username,
@@ -236,7 +230,6 @@ async fn sub_main() -> Result<()> {
             list::main(args).await
         }
         #[cfg(feature = "branching")]
-        #[allow(deprecated)]
         Action::Branch(branch_args) => {
             let cli::BranchArgs { command, name } = branch_args;
 
@@ -256,7 +249,6 @@ async fn sub_main() -> Result<()> {
                     }) => {
                         let db_configuration = SurrealdbConfiguration {
                             address,
-                            url: None,
                             ns,
                             db,
                             username,
@@ -279,7 +271,6 @@ async fn sub_main() -> Result<()> {
                     }) => {
                         let db_configuration = SurrealdbConfiguration {
                             address,
-                            url: None,
                             ns,
                             db,
                             username,
@@ -303,7 +294,6 @@ async fn sub_main() -> Result<()> {
                     }) => {
                         let db_configuration = SurrealdbConfiguration {
                             address,
-                            url: None,
                             ns,
                             db,
                             username,
@@ -331,7 +321,6 @@ async fn sub_main() -> Result<()> {
                     }) => {
                         let db_configuration = SurrealdbConfiguration {
                             address,
-                            url: None,
                             ns,
                             db,
                             username,
@@ -354,7 +343,6 @@ async fn sub_main() -> Result<()> {
                     }) => {
                         let db_configuration = SurrealdbConfiguration {
                             address,
-                            url: None,
                             ns,
                             db,
                             username,

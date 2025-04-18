@@ -22,10 +22,8 @@ pub async fn create_surrealdb_client(
     config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
 ) -> Result<Surreal<Any>> {
-    #[allow(deprecated)]
     let SurrealdbConfiguration {
         address,
-        url,
         username,
         password,
         ns,
@@ -34,7 +32,7 @@ pub async fn create_surrealdb_client(
 
     let db_config = config::retrieve_db_config(config_file);
 
-    let client = create_surrealdb_connection(url.clone(), address.clone(), &db_config).await?;
+    let client = create_surrealdb_connection(address.clone(), &db_config).await?;
     sign_in(username.clone(), password.clone(), &db_config, &client).await?;
     set_namespace_and_database(ns.clone(), db.clone(), &db_config, &client).await?;
 
@@ -42,17 +40,12 @@ pub async fn create_surrealdb_client(
 }
 
 async fn create_surrealdb_connection(
-    url: Option<String>,
     address: Option<String>,
     db_config: &config::DbConfig,
 ) -> Result<Surreal<Any>, surrealdb::Error> {
-    let url = url
-        .or(db_config.url.to_owned())
-        .unwrap_or("localhost:8000".to_owned());
-
     let address = address
         .or(db_config.address.to_owned())
-        .unwrap_or(format!("ws://{}", url));
+        .unwrap_or(String::from("ws://localhost:8000"));
 
     let config =
         Config::new().capabilities(Capabilities::all().with_all_experimental_features_allowed());

@@ -14,7 +14,6 @@ use crate::{
 
 use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};
 
-#[allow(deprecated)]
 pub async fn create_branching_feature_client(
     config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
@@ -24,7 +23,6 @@ pub async fn create_branching_feature_client(
 
     let branch_data_db_configuration = SurrealdbConfiguration {
         address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
         username: db_configuration.username.clone(),
         password: db_configuration.password.clone(),
         ns: Some(BRANCH_DATA_NS.to_owned()),
@@ -35,7 +33,6 @@ pub async fn create_branching_feature_client(
     Ok(client)
 }
 
-#[allow(deprecated)]
 pub async fn create_branch_client(
     config_file: Option<&Path>,
     branch_name: &String,
@@ -43,7 +40,6 @@ pub async fn create_branch_client(
 ) -> Result<Surreal<Any>> {
     let branch_db_configuration = SurrealdbConfiguration {
         address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
         username: db_configuration.username.clone(),
         password: db_configuration.password.clone(),
         ns: Some(BRANCH_NS.to_owned()),
@@ -54,7 +50,6 @@ pub async fn create_branch_client(
     Ok(client)
 }
 
-#[allow(deprecated)]
 pub async fn create_origin_branch_client(
     config_file: Option<&Path>,
     branch_name: &String,
@@ -62,7 +57,6 @@ pub async fn create_origin_branch_client(
 ) -> Result<Surreal<Any>> {
     let branch_db_configuration = SurrealdbConfiguration {
         address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
         username: db_configuration.username.clone(),
         password: db_configuration.password.clone(),
         ns: Some(ORIGIN_BRANCH_NS.to_owned()),
@@ -73,7 +67,6 @@ pub async fn create_origin_branch_client(
     Ok(client)
 }
 
-#[allow(deprecated)]
 pub async fn create_main_branch_client(
     config_file: Option<&Path>,
     db_configuration: &SurrealdbConfiguration,
@@ -81,7 +74,6 @@ pub async fn create_main_branch_client(
 ) -> Result<Surreal<Any>> {
     let main_branch_db_configuration = SurrealdbConfiguration {
         address: db_configuration.address.clone(),
-        url: db_configuration.url.clone(),
         username: db_configuration.username.clone(),
         password: db_configuration.password.clone(),
         ns: Some(branch.from_ns.to_string()),

@@ -78,12 +78,6 @@ pub struct MigrationRunner<'a, C: Connection> {
     config_file: Option<&'a Path>,
 }
 
-#[deprecated(
-    since = "0.9.6",
-    note = "SurrealdbMigrations is a confusing name. You should use MigrationRunner instead."
-)]
-pub type SurrealdbMigrations<'a, C> = MigrationRunner<'a, C>;
-
 impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// Create a new instance of `MigrationRunner`.
     ///

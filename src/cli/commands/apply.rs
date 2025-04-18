@@ -14,11 +14,6 @@ pub struct ApplyArgs {
     /// Default value is `ws://localhost:8000`.
     #[clap(long)]
     pub address: Option<String>,
-    #[deprecated(since = "0.9.6", note = "Please use `address` instead")]
-    /// Url of the surrealdb instance.
-    /// Default value is `localhost:8000`.
-    #[clap(long)]
-    pub url: Option<String>,
     /// Namespace to use inside the surrealdb instance.
     /// Default value is `test`.
     #[clap(long)]

@@ -85,7 +85,6 @@ pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
     }
 }
 
-#[allow(deprecated)]
 fn merge_db_config(
     db_configuration: &SurrealdbConfiguration,
     db_config: &config::DbConfig,
@@ -95,7 +94,6 @@ fn merge_db_config(
             .address
             .to_owned()
             .or(db_config.address.to_owned()),
-        url: db_configuration.url.to_owned().or(db_config.url.to_owned()),
         username: db_configuration
             .username
             .to_owned()

@@ -1,13 +1,8 @@
 /// The configuration used to connect to a SurrealDB instance.
-#[allow(deprecated)]
 pub struct SurrealdbConfiguration {
     /// Address of the surrealdb instance.
     /// Default value is `ws://localhost:8000`.
     pub address: Option<String>,
-    #[deprecated(since = "0.9.6", note = "Please use `address` instead")]
-    /// Url of the surrealdb instance.
-    /// Default value is `localhost:8000`.
-    pub url: Option<String>,
     /// Namespace to use inside the surrealdb instance.
     /// Default value is `test`.
     pub ns: Option<String>,
@@ -24,11 +19,10 @@ pub struct SurrealdbConfiguration {
 
 impl SurrealdbConfiguration {
     /// Create a new configuration with default values.
-    #[allow(deprecated, dead_code)]
+    #[allow(dead_code)]
     pub fn default() -> Self {
         SurrealdbConfiguration {
             address: None,
-            url: None,
             ns: None,
             db: None,
             username: None,
