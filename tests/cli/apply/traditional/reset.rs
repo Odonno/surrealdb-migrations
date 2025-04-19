@@ -9,18 +9,19 @@ async fn apply_revert_all_migrations() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, false)?;
+    scaffold_blog_template(&temp_dir, true)?;
     apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
-    cmd.arg("apply").arg("--down");
+    cmd.arg("apply").arg("--reset");
 
     cmd.assert().try_success().and_then(|assert| {
         assert.try_stdout(
             "Reverting migration CommentPost...
 Reverting migration AddPost...
 Reverting migration AddAdminUser...
+Reverting migration Initial...
 Migration files successfully executed!\n",
         )
     })?;
@@ -47,7 +48,7 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_empty_template(&temp_dir, false)?;
+    scaffold_empty_template(&temp_dir, true)?;
 
     add_simple_migration_file(&temp_dir)?;
     let first_migration_name = get_first_migration_name(&temp_dir)?;
@@ -57,11 +58,12 @@ async fn apply_and_revert_on_empty_template() -> Result<()> {
 
     let mut cmd = create_cmd(&temp_dir)?;
 
-    cmd.arg("apply").arg("--down");
+    cmd.arg("apply").arg("--reset");
 
     cmd.assert().try_success().and_then(|assert| {
         assert.try_stdout(
             "Reverting migration AddTokenParam...
+Reverting migration Initial...
 Migration files successfully executed!\n",
         )
     })?;

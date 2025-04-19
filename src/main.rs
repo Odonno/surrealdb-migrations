@@ -165,6 +165,7 @@ async fn sub_main() -> Result<()> {
             let cli::ApplyArgs {
                 up,
                 down,
+                reset,
                 address,
                 ns,
                 db,
@@ -175,16 +176,31 @@ async fn sub_main() -> Result<()> {
                 output,
             } = apply_args;
 
-            let operation = match (up, down) {
-                (Some(_), Some(_)) => {
+            let operation = match (up, down, reset) {
+                (Some(_), Some(_), true) => {
+                    return Err(eyre!(
+                    "You can't specify both `up`, `down` and `reset` parameters at the same time"
+                ))
+                }
+                (Some(_), Some(_), false) => {
                     return Err(eyre!(
                         "You can't specify both `up` and `down` parameters at the same time"
                     ))
                 }
-                (Some(up), None) => apply::ApplyOperation::UpTo(up),
-                (None, Some(down)) if down.is_empty() => apply::ApplyOperation::Down,
-                (None, Some(down)) => apply::ApplyOperation::DownTo(down),
-                (None, None) => apply::ApplyOperation::Up,
+                (None, Some(_), true) => {
+                    return Err(eyre!(
+                        "You can't specify both `down` and `reset` parameters at the same time"
+                    ))
+                }
+                (Some(_), None, true) => {
+                    return Err(eyre!(
+                        "You can't specify both `up` and `reset` parameters at the same time"
+                    ))
+                }
+                (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
+                (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
+                (None, None, true) => apply::ApplyOperation::Reset,
+                (None, None, false) => apply::ApplyOperation::Up,
             };
             let db_configuration = SurrealdbConfiguration {
                 address,

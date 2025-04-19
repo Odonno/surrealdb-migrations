@@ -25,7 +25,7 @@ async fn apply_revert_all_migrations() -> Result<()> {
 
     runner.up().await?;
 
-    runner.down().await?;
+    runner.reset().await?;
 
     let migrations_applied = runner.list().await?;
     ensure!(

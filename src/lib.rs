@@ -319,7 +319,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
         apply::main(args).await
     }
 
-    /// Revert all schema definitions and migrations.
+    /// Revert ALL schema definitions and migrations.
     ///
     /// ## Examples
     ///
@@ -343,16 +343,16 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// db.use_ns("namespace").use_db("database").await?;
     ///
     /// MigrationRunner::new(&db)
-    ///     .down()
+    ///     .reset()
     ///     .await
     ///     .expect("Failed to revert migrations");
     ///
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn down(&self) -> Result<()> {
+    pub async fn reset(&self) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::Down,
+            operation: apply::ApplyOperation::Reset,
             db: self.db,
             dir: self.dir,
             display_logs: false,
