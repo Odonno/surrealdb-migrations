@@ -43,7 +43,8 @@ pub struct ApplyArgs<'a, C: Connection> {
 pub enum ApplyOperation {
     Up,
     UpTo(String),
-    Down(String),
+    Down,
+    DownTo(String),
 }
 
 pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
@@ -108,9 +109,8 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     if use_migration_definitions {
         if io::can_use_filesystem(config_file)? {
             let should_create_definition_files = match &operation {
-                ApplyOperation::Up => true,
-                ApplyOperation::UpTo(_) => true,
-                ApplyOperation::Down(_) => false,
+                ApplyOperation::Up | ApplyOperation::UpTo(_) => true,
+                ApplyOperation::Down | ApplyOperation::DownTo(_) => false,
             };
 
             if should_create_definition_files {
@@ -144,9 +144,8 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     );
 
     let migration_direction = match &operation {
-        ApplyOperation::Up => MigrationDirection::Forward,
-        ApplyOperation::UpTo(_) => MigrationDirection::Forward,
-        ApplyOperation::Down(_) => MigrationDirection::Backward,
+        ApplyOperation::Up | ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Down | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
     };
 
     match migration_direction {
@@ -226,9 +225,8 @@ fn get_sorted_migrations_files(
 ) -> Vec<SurqlFile> {
     let mut sorted_migrations_files = migrations_files;
     sorted_migrations_files.sort_by(|a, b| match operation {
-        ApplyOperation::Up => natural_lexical_cmp(&a.name, &b.name),
-        ApplyOperation::UpTo(_) => natural_lexical_cmp(&a.name, &b.name),
-        ApplyOperation::Down(_) => natural_lexical_cmp(&b.name, &a.name),
+        ApplyOperation::Up | ApplyOperation::UpTo(_) => natural_lexical_cmp(&a.name, &b.name),
+        ApplyOperation::Down | ApplyOperation::DownTo(_) => natural_lexical_cmp(&b.name, &a.name),
     });
 
     sorted_migrations_files
@@ -241,9 +239,8 @@ fn filter_migration_file_to_execute(
     is_backward_migration: bool,
 ) -> Result<bool> {
     let migration_direction = match &operation {
-        ApplyOperation::Up => MigrationDirection::Forward,
-        ApplyOperation::UpTo(_) => MigrationDirection::Forward,
-        ApplyOperation::Down(_) => MigrationDirection::Backward,
+        ApplyOperation::Up | ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Down | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
     };
 
     match (&migration_direction, is_backward_migration) {
@@ -253,7 +250,7 @@ fn filter_migration_file_to_execute(
     }
 
     match &operation {
-        ApplyOperation::Up => {}
+        ApplyOperation::Up | ApplyOperation::Down => {}
         ApplyOperation::UpTo(target_migration) => {
             let is_beyond_target =
                 natural_lexical_cmp(&migration_file.name, target_migration) == Ordering::Greater;
@@ -261,7 +258,7 @@ fn filter_migration_file_to_execute(
                 return Ok(false);
             }
         }
-        ApplyOperation::Down(target_migration) => {
+        ApplyOperation::DownTo(target_migration) => {
             let is_target_or_below =
                 natural_lexical_cmp(&migration_file.name, target_migration) != Ordering::Greater;
             if is_target_or_below {

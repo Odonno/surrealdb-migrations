@@ -8,7 +8,7 @@ pub struct ApplyArgs {
     pub up: Option<String>,
     /// Apply migrations down to this migration name.
     /// This parameter allows you to rollback applied migrations.
-    #[clap(long)]
+    #[clap(long, num_args=0..=1, default_missing_value = "")]
     pub down: Option<String>,
     /// Address of the surrealdb instance.
     /// Default value is `ws://localhost:8000`.

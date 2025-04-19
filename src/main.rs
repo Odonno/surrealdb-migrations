@@ -182,7 +182,8 @@ async fn sub_main() -> Result<()> {
                     ))
                 }
                 (Some(up), None) => apply::ApplyOperation::UpTo(up),
-                (None, Some(down)) => apply::ApplyOperation::Down(down),
+                (None, Some(down)) if down.is_empty() => apply::ApplyOperation::Down,
+                (None, Some(down)) => apply::ApplyOperation::DownTo(down),
                 (None, None) => apply::ApplyOperation::Up,
             };
             let db_configuration = SurrealdbConfiguration {
