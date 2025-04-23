@@ -1,81 +1,161 @@
 {
-  "projectName": "surrealdb-migrations",
-  "projectOwner": "Odonno",
-  "repoType": "github",
-  "repoHost": "https://github.com",
-  "files": [
-    "readme.md"
-  ],
-  "imageSize": 100,
   "commit": false,
   "commitConvention": "gitmoji",
-  "contributorsPerLine": 7,
-  "skipCi": true,
   "contributors": [
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/63247?v=4",
+      "contributions": ["code"],
       "login": "tekacs",
       "name": "Amar Sood",
-      "avatar_url": "https://avatars.githubusercontent.com/u/63247?v=4",
-      "profile": "http://www.tekacs.com/",
-      "contributions": [
-        "code"
-      ]
+      "profile": "http://www.tekacs.com/"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/21016014?v=4",
+      "contributions": ["code", "ideas", "infra"],
       "login": "Roms1383",
       "name": "Rom's",
-      "avatar_url": "https://avatars.githubusercontent.com/u/21016014?v=4",
-      "profile": "https://github.com/Roms1383",
-      "contributions": [
-        "code",
-        "ideas",
-        "infra"
-      ]
+      "profile": "https://github.com/Roms1383"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/10587083?v=4",
+      "contributions": ["bug"],
       "login": "pranaypratyush",
       "name": "Pranay Pratyush",
-      "avatar_url": "https://avatars.githubusercontent.com/u/10587083?v=4",
-      "profile": "https://github.com/pranaypratyush",
-      "contributions": [
-        "bug"
-      ]
+      "profile": "https://github.com/pranaypratyush"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5788284?v=4",
+      "contributions": ["ideas"],
       "login": "ansarizafar",
       "name": "Zafar Ansari",
-      "avatar_url": "https://avatars.githubusercontent.com/u/5788284?v=4",
-      "profile": "https://github.com/ansarizafar",
-      "contributions": [
-        "ideas"
-      ]
+      "profile": "https://github.com/ansarizafar"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/28957605?v=4",
+      "contributions": ["ideas"],
       "login": "turulix",
       "name": "Tim",
-      "avatar_url": "https://avatars.githubusercontent.com/u/28957605?v=4",
-      "profile": "https://turulix.de/",
-      "contributions": [
-        "ideas"
-      ]
+      "profile": "https://turulix.de/"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/3688989?v=4",
+      "contributions": ["bug"],
       "login": "snarkipus",
       "name": "Matt Jackson",
-      "avatar_url": "https://avatars.githubusercontent.com/u/3688989?v=4",
-      "profile": "https://github.com/snarkipus",
-      "contributions": [
-        "bug"
-      ]
+      "profile": "https://github.com/snarkipus"
     },
     {
+      "avatar_url": "https://avatars.githubusercontent.com/u/53177682?v=4",
+      "contributions": ["ideas", "bug"],
       "login": "keyruu",
       "name": "Lucas",
+      "profile": "https://github.com/keyruu"
+    },
+    {
       "avatar_url": "https://avatars.githubusercontent.com/u/53177682?v=4",
-      "profile": "https://github.com/keyruu",
-      "contributions": [
-        "ideas"
-      ]
+      "contributions": ["ideas"],
+      "login": "Keyruu",
+      "name": "Lucas",
+      "profile": "https://keyruu.de"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/136799?v=4",
+      "contributions": ["bug", "ideas"],
+      "login": "unidesigner",
+      "name": "Stephan Gerhard",
+      "profile": "https://github.com/unidesigner"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/5317234?v=4",
+      "contributions": ["bug"],
+      "login": "happysalada",
+      "name": "Yt",
+      "profile": "megzari.com"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/115547?v=4",
+      "contributions": ["bug"],
+      "login": "dave42w",
+      "name": "Dave Warnock",
+      "profile": "https://amastodon.uk/@Dave42W"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/12995632?v=4",
+      "contributions": ["code", "bug"],
+      "login": "johansmitsnl",
+      "name": "Johan Smits",
+      "profile": "https://github.com/johansmitsnl"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/31696304?v=4",
+      "contributions": ["code"],
+      "login": "gibbz00",
+      "name": "Gabriel Hansson",
+      "profile": "https://github.com/gibbz00"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/23312359?v=4",
+      "contributions": ["code"],
+      "login": "liamwh",
+      "name": "Liam Woodleigh-Hardinge",
+      "profile": "veloxide.dev"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/61641?v=4",
+      "contributions": ["ideas", "code"],
+      "login": "turbohz",
+      "name": "Gerard Ruiz",
+      "profile": "https://github.com/turbohz"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/3621566?v=4",
+      "contributions": ["bug"],
+      "login": "marko-lazic",
+      "name": "Marko Lazić",
+      "profile": "https://github.com/marko-lazic"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/414720?v=4",
+      "contributions": ["bug"],
+      "login": "rcjara",
+      "name": "Rhea Jara",
+      "profile": "https://github.com/rcjara"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/33750251?v=4",
+      "contributions": ["ideas"],
+      "login": "itsezc",
+      "name": "Chiru B",
+      "profile": "https://github.com/itsezc"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/52580954?v=4",
+      "contributions": ["code"],
+      "login": "marcocondrache",
+      "name": "Marco Mihai Condrache",
+      "profile": "marcocondrache.com"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/56911974?v=4",
+      "contributions": ["code"],
+      "login": "retrokiller543",
+      "name": "Tosic.Killer",
+      "profile": "https://github.com/retrokiller543"
+    },
+    {
+      "avatar_url": "https://avatars.githubusercontent.com/u/307006?v=4",
+      "contributions": ["code"],
+      "login": "akkie",
+      "name": "Christian Kaps",
+      "profile": "https://github.com/akkie"
     }
-  ]
+  ],
+  "contributorsPerLine": 7,
+  "files": ["readme.md"],
+  "imageSize": 100,
+  "projectName": "surrealdb-migrations",
+  "projectOwner": "Odonno",
+  "repoHost": "https://github.com",
+  "repoType": "github",
+  "skipCi": true
 }
