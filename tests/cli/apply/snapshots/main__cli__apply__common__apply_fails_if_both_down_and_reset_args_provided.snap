@@ -1,0 +1,9 @@
+---
+source: tests/cli/apply/common.rs
+expression: stderr
+---
+error: the argument '--down <DOWN>' cannot be used with '--reset'
+
+Usage: surrealdb-migrations apply --down <DOWN>
+
+For more information, try '--help'.

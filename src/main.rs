@@ -10,6 +10,8 @@ use cli::BranchAction;
 #[cfg(feature = "scaffold")]
 use cli::ScaffoldAction;
 use cli::{Action, Args, CreateAction};
+use color_eyre::config::HookBuilder;
+use color_eyre::config::Theme;
 use color_eyre::eyre::eyre;
 use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
@@ -17,6 +19,9 @@ use input::SurrealdbConfiguration;
 use list::ListArgs;
 #[cfg(feature = "scaffold")]
 use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
+use std::env;
+
+use crate::surrealdb::create_surrealdb_client;
 
 mod apply;
 #[cfg(feature = "branching")]
@@ -49,7 +54,14 @@ async fn main() -> Result<()> {
 }
 
 async fn sub_main() -> Result<()> {
-    color_eyre::install()?;
+    if env::var("NO_COLOR").unwrap_or(String::from("0")) == "1" {
+        HookBuilder::default()
+            .theme(Theme::new()) // disable colors
+            .install()?;
+    } else {
+        color_eyre::install()?;
+    }
+
     let args = Args::parse();
 
     let config_file = args.config_file.as_deref();
@@ -175,30 +187,11 @@ async fn sub_main() -> Result<()> {
             } = apply_args;
 
             let operation = match (up, down, reset) {
-                (Some(_), Some(_), true) => {
-                    return Err(eyre!(
-                    "You can't specify both `up`, `down` and `reset` parameters at the same time"
-                ))
-                }
-                (Some(_), Some(_), false) => {
-                    return Err(eyre!(
-                        "You can't specify both `up` and `down` parameters at the same time"
-                    ))
-                }
-                (None, Some(_), true) => {
-                    return Err(eyre!(
-                        "You can't specify both `down` and `reset` parameters at the same time"
-                    ))
-                }
-                (Some(_), None, true) => {
-                    return Err(eyre!(
-                        "You can't specify both `up` and `reset` parameters at the same time"
-                    ))
-                }
                 (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
                 (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
                 (None, None, true) => apply::ApplyOperation::Reset,
                 (None, None, false) => apply::ApplyOperation::Up,
+                _ => return Err(eyre!("Cannot apply when multiple args in conflict")),
             };
             let db_configuration = SurrealdbConfiguration {
                 address,

@@ -1,6 +1,6 @@
 use assert_fs::TempDir;
-use color_eyre::eyre::Result;
-use predicates::prelude::*;
+use color_eyre::eyre::{Error, Result};
+use insta::{assert_snapshot, Settings};
 use serial_test::serial;
 
 use crate::helpers::*;
@@ -22,10 +22,13 @@ fn apply_fails_if_both_up_and_down_args_provided() -> Result<()> {
         .arg("--down")
         .arg(&first_migration_name);
 
-    cmd.assert().try_failure().and_then(|assert| {
-        assert.try_stderr(predicate::str::contains(
-            "You can\'t specify both `up` and `down` parameters at the same time",
-        ))
+    let assert = cmd.assert().try_failure()?;
+    let stderr = get_stderr_str(assert)?;
+
+    let insta_settings = Settings::new();
+    insta_settings.bind(|| {
+        assert_snapshot!(stderr);
+        Ok::<(), Error>(())
     })?;
 
     temp_dir.close()?;
@@ -51,10 +54,13 @@ fn apply_fails_if_both_up_and_down_and_reset_args_provided() -> Result<()> {
         .arg(&first_migration_name)
         .arg("--reset");
 
-    cmd.assert().try_failure().and_then(|assert| {
-        assert.try_stderr(predicate::str::contains(
-            "You can\'t specify both `up`, `down` and `reset` parameters at the same time",
-        ))
+    let assert = cmd.assert().try_failure()?;
+    let stderr = get_stderr_str(assert)?;
+
+    let insta_settings = Settings::new();
+    insta_settings.bind(|| {
+        assert_snapshot!(stderr);
+        Ok::<(), Error>(())
     })?;
 
     temp_dir.close()?;
@@ -78,10 +84,13 @@ fn apply_fails_if_both_up_and_reset_args_provided() -> Result<()> {
         .arg(&first_migration_name)
         .arg("--reset");
 
-    cmd.assert().try_failure().and_then(|assert| {
-        assert.try_stderr(predicate::str::contains(
-            "You can\'t specify both `up` and `reset` parameters at the same time",
-        ))
+    let assert = cmd.assert().try_failure()?;
+    let stderr = get_stderr_str(assert)?;
+
+    let insta_settings = Settings::new();
+    insta_settings.bind(|| {
+        assert_snapshot!(stderr);
+        Ok::<(), Error>(())
     })?;
 
     temp_dir.close()?;
@@ -105,10 +114,13 @@ fn apply_fails_if_both_down_and_reset_args_provided() -> Result<()> {
         .arg(&first_migration_name)
         .arg("--reset");
 
-    cmd.assert().try_failure().and_then(|assert| {
-        assert.try_stderr(predicate::str::contains(
-            "You can\'t specify both `down` and `reset` parameters at the same time",
-        ))
+    let assert = cmd.assert().try_failure()?;
+    let stderr = get_stderr_str(assert)?;
+
+    let insta_settings = Settings::new();
+    insta_settings.bind(|| {
+        assert_snapshot!(stderr);
+        Ok::<(), Error>(())
     })?;
 
     temp_dir.close()?;
