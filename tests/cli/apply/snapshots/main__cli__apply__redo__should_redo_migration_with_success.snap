@@ -1,0 +1,6 @@
+---
+source: tests/cli/apply/redo.rs
+expression: stdout
+---
+Executing migration AddPost...
+Migration successfully re-executed!

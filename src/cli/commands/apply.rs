@@ -4,16 +4,20 @@ use clap::Args;
 pub struct ApplyArgs {
     /// Apply migrations up to this migration name.
     /// This parameter allows you to skip ulterior migrations.
-    #[clap(long, conflicts_with_all = vec!["down", "reset"])]
+    #[clap(long, conflicts_with_all = vec!["down", "reset", "redo"])]
     pub up: Option<String>,
     /// Apply migrations down to this migration name.
     /// This parameter allows you to rollback applied migrations.
-    #[clap(long, conflicts_with_all = vec!["up", "reset"])]
+    #[clap(long, conflicts_with_all = vec!["up", "reset", "redo"])]
     pub down: Option<String>,
     /// Resets the database, i.e. apply all migrations down.
     /// This parameter allows you to rollback ALL applied migrations.
-    #[clap(long, conflicts_with_all = vec!["up", "down"])]
+    #[clap(long, conflicts_with_all = vec!["up", "down", "redo"])]
     pub reset: bool,
+    /// Re-apply an already applied migration script.
+    /// Please specify the name of the migration to re-apply.
+    #[clap(long, conflicts_with_all = vec!["up", "down", "reset"])]
+    pub redo: Option<String>,
     /// Address of the surrealdb instance.
     /// Default value is `ws://localhost:8000`.
     #[clap(long)]

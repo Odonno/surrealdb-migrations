@@ -1,6 +1,7 @@
 mod down_to;
 mod list;
 mod load_files;
+mod redo;
 mod reset;
 mod traditional;
 mod up;

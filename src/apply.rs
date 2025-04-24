@@ -184,7 +184,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     Ok(())
 }
 
-fn get_transaction_action(dry_run: bool) -> TransactionAction {
+pub fn get_transaction_action(dry_run: bool) -> TransactionAction {
     match dry_run {
         true => TransactionAction::Rollback,
         false => TransactionAction::Commit,

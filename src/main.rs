@@ -17,6 +17,7 @@ use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 use list::ListArgs;
+use redo::RedoArgs;
 #[cfg(feature = "scaffold")]
 use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
 use std::env;
@@ -35,6 +36,7 @@ mod input;
 mod io;
 mod list;
 mod models;
+mod redo;
 mod remove;
 #[cfg(feature = "scaffold")]
 mod scaffold;
@@ -176,6 +178,7 @@ async fn sub_main() -> Result<()> {
                 up,
                 down,
                 reset,
+                redo,
                 address,
                 ns,
                 db,
@@ -186,13 +189,6 @@ async fn sub_main() -> Result<()> {
                 output,
             } = apply_args;
 
-            let operation = match (up, down, reset) {
-                (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
-                (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
-                (None, None, true) => apply::ApplyOperation::Reset,
-                (None, None, false) => apply::ApplyOperation::Up,
-                _ => return Err(eyre!("Cannot apply when multiple args in conflict")),
-            };
             let db_configuration = SurrealdbConfiguration {
                 address,
                 ns,
@@ -201,17 +197,39 @@ async fn sub_main() -> Result<()> {
                 password,
             };
             let db = create_surrealdb_client(config_file, &db_configuration).await?;
-            let args = ApplyArgs {
-                operation,
-                db: &db,
-                dir: None,
-                display_logs: true,
-                dry_run,
-                validate_version_order,
-                config_file,
-                output,
-            };
-            apply::main(args).await
+
+            if let Some(redo) = redo {
+                let args = RedoArgs {
+                    migration_script: redo,
+                    db: &db,
+                    dir: None,
+                    display_logs: true,
+                    dry_run,
+                    validate_version_order,
+                    config_file,
+                    output,
+                };
+                redo::main(args).await
+            } else {
+                let operation = match (up, down, reset) {
+                    (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
+                    (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
+                    (None, None, true) => apply::ApplyOperation::Reset,
+                    (None, None, false) => apply::ApplyOperation::Up,
+                    _ => return Err(eyre!("Cannot apply when multiple args in conflict")),
+                };
+                let args = ApplyArgs {
+                    operation,
+                    db: &db,
+                    dir: None,
+                    display_logs: true,
+                    dry_run,
+                    validate_version_order,
+                    config_file,
+                    output,
+                };
+                apply::main(args).await
+            }
         }
         Action::List(list_args) => {
             let cli::ListArgs {

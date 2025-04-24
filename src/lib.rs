@@ -60,6 +60,7 @@ mod constants;
 mod input;
 mod io;
 mod models;
+mod redo;
 mod surrealdb;
 mod validate_version_order;
 
@@ -68,6 +69,7 @@ use apply::ApplyArgs;
 use color_eyre::eyre::Result;
 use include_dir::Dir;
 use models::ScriptMigration;
+use redo::RedoArgs;
 use std::path::Path;
 use validate_version_order::ValidateVersionOrderArgs;
 
@@ -319,51 +321,6 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
         apply::main(args).await
     }
 
-    /// Revert ALL schema definitions and migrations.
-    ///
-    /// ## Examples
-    ///
-    /// ```rust,no_run
-    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
-    /// use surrealdb_migrations::MigrationRunner;
-    /// use surrealdb::engine::any::connect;
-    /// use surrealdb::opt::auth::Root;
-    ///
-    /// # #[tokio::main]
-    /// # async fn main() -> Result<()> {
-    /// let db = connect("ws://localhost:8000").await?;
-    ///
-    /// // Signin as a namespace, database, or root user
-    /// db.signin(Root {
-    ///     username: "root",
-    ///     password: "root",
-    /// }).await?;
-    ///
-    /// // Select a specific namespace / database
-    /// db.use_ns("namespace").use_db("database").await?;
-    ///
-    /// MigrationRunner::new(&db)
-    ///     .reset()
-    ///     .await
-    ///     .expect("Failed to revert migrations");
-    ///
-    /// # Ok(())
-    /// # }
-    /// ```
-    pub async fn reset(&self) -> Result<()> {
-        let args = ApplyArgs {
-            operation: apply::ApplyOperation::Reset,
-            db: self.db,
-            dir: self.dir,
-            display_logs: false,
-            dry_run: false,
-            validate_version_order: false,
-            config_file: self.config_file,
-            output: false,
-        };
-        apply::main(args).await
-    }
-
     /// Revert schema definitions and all migrations down to the named migration.
     ///
     /// ## Arguments
@@ -411,6 +368,96 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             output: false,
         };
         apply::main(args).await
+    }
+
+    /// Revert ALL schema definitions and migrations.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// MigrationRunner::new(&db)
+    ///     .reset()
+    ///     .await
+    ///     .expect("Failed to revert migrations");
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn reset(&self) -> Result<()> {
+        let args = ApplyArgs {
+            operation: apply::ApplyOperation::Reset,
+            db: self.db,
+            dir: self.dir,
+            display_logs: false,
+            dry_run: false,
+            validate_version_order: false,
+            config_file: self.config_file,
+            output: false,
+        };
+        apply::main(args).await
+    }
+
+    /// Re-apply an already applied migration script.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// MigrationRunner::new(&db)
+    ///     .redo("20240607_163541_AddPost")
+    ///     .await
+    ///     .expect("Failed to re-apply migration");
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn redo(&self, migration_script: &str) -> Result<()> {
+        let args = RedoArgs {
+            migration_script: migration_script.to_string(),
+            db: self.db,
+            dir: self.dir,
+            display_logs: false,
+            dry_run: false,
+            validate_version_order: false,
+            config_file: self.config_file,
+            output: false,
+        };
+        redo::main(args).await
     }
 
     /// List script migrations that have been applied to the database.

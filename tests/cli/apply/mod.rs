@@ -1,6 +1,7 @@
 mod common;
 mod down_to;
 mod e2e;
+mod redo;
 mod reset;
 mod traditional;
 mod up;

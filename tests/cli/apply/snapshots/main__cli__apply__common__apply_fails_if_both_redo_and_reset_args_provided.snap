@@ -1,0 +1,9 @@
+---
+source: tests/cli/apply/common.rs
+expression: stderr
+---
+error: the argument '--redo <REDO>' cannot be used with '--reset'
+
+Usage: surrealdb-migrations apply --redo <REDO>
+
+For more information, try '--help'.
