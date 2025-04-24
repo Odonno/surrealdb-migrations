@@ -1,5 +1,3 @@
-use crate::surrealdb::create_surrealdb_client;
-
 use apply::ApplyArgs;
 #[cfg(feature = "branching")]
 use branch::{

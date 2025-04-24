@@ -104,6 +104,7 @@ pub fn create_branch_from_ns_db(path: &Path, branch_name: &str, ns_db: (&str, &s
 pub fn create_cmd(path: &Path) -> Result<Command> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.current_dir(path);
+    cmd.env("NO_COLOR", "1");
 
     Ok(cmd)
 }
