@@ -274,7 +274,7 @@ fn rename_migrations_files_to_match_current_date(
     now: DateTime<Local>,
     migrations_dir_path: &PathBuf,
 ) -> Result<()> {
-    let regex = regex::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_")?;
+    let regex = regex_lite::Regex::new(r"^YYYYMMDD_HHMM(\d{2})_")?;
 
     let migrations_dir = std::fs::read_dir(migrations_dir_path)?;
 
