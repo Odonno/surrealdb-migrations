@@ -215,6 +215,7 @@ async fn sub_main() -> Result<()> {
                 redo::main(args).await
             } else {
                 let operation = match (up, down, reset) {
+                    (Some(up), None, false) if up.is_empty() => apply::ApplyOperation::UpSingle,
                     (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
                     (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
                     (None, None, true) => apply::ApplyOperation::Reset,

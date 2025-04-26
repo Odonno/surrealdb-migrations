@@ -1,0 +1,10 @@
+---
+source: tests/cli/apply/up_single.rs
+expression: script_migrations
+---
+[
+  ScriptMigration(
+    script_name: "[timestamp]_AddAdminUser",
+    executed_at: "[datetime]",
+  ),
+]

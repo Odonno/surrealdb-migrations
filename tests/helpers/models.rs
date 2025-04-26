@@ -19,3 +19,9 @@ pub struct MigrationDefinition {
     pub schemas: Option<String>,
     pub events: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ScriptMigration {
+    pub script_name: String,
+    pub executed_at: String,
+}

@@ -3,5 +3,6 @@ mod e2e;
 mod redo;
 mod reset;
 mod up;
+mod up_single;
 mod up_to;
 mod validate_version_order;

@@ -321,6 +321,51 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
         apply::main(args).await
     }
 
+    /// Apply only the next migration. This allows you to apply migrations step by step when necessary.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// MigrationRunner::new(&db)
+    ///     .up_single()
+    ///     .await
+    ///     .expect("Failed to apply migrations");
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn up_single(&self) -> Result<()> {
+        let args = ApplyArgs {
+            operation: apply::ApplyOperation::UpSingle,
+            db: self.db,
+            dir: self.dir,
+            display_logs: false,
+            dry_run: false,
+            validate_version_order: false,
+            config_file: self.config_file,
+            output: false,
+        };
+        apply::main(args).await
+    }
+
     /// Revert schema definitions and all migrations down to the named migration.
     ///
     /// ## Arguments

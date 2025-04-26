@@ -2,8 +2,8 @@
 source: tests/cli/apply/common.rs
 expression: stderr
 ---
-error: the argument '--up <UP>' cannot be used with '--redo <REDO>'
+error: the argument '--up [<UP>]' cannot be used with '--redo <REDO>'
 
-Usage: surrealdb-migrations apply --up <UP>
+Usage: surrealdb-migrations apply --up [<UP>]
 
 For more information, try '--help'.

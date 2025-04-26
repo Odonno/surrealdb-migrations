@@ -1,0 +1,10 @@
+---
+source: tests/cli/apply/traditional/up_single.rs
+expression: script_migrations
+---
+[
+  ScriptMigration(
+    script_name: "__Initial",
+    executed_at: "[datetime]",
+  ),
+]

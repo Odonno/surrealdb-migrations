@@ -4,7 +4,9 @@ use clap::Args;
 pub struct ApplyArgs {
     /// Apply migrations up to this migration name.
     /// This parameter allows you to skip ulterior migrations.
-    #[clap(long, conflicts_with_all = vec!["down", "reset", "redo"])]
+    ///
+    /// Note: Apply a single migration when no value is provided.
+    #[clap(long, num_args=0..=1, default_missing_value = "", conflicts_with_all = vec!["down", "reset", "redo"])]
     pub up: Option<String>,
     /// Apply migrations down to this migration name.
     /// This parameter allows you to rollback applied migrations.

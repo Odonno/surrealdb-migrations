@@ -131,7 +131,7 @@ fn apply_and_output_initial_migrations() -> Result<()> {
         let out = String::from_utf8_lossy(&assert.get_output().stdout);
 
         let mut settings = Settings::new();
-        settings.add_filter(r"\d{8}_\d{6}", "[timestamp]");
+        settings.add_script_timestamp_filter();
 
         settings.bind(|| {
             assert_snapshot!(out);
@@ -162,7 +162,7 @@ fn apply_and_output_new_migrations() -> Result<()> {
         let out = String::from_utf8_lossy(&assert.get_output().stdout);
 
         let mut settings = Settings::new();
-        settings.add_filter(r"\d{8}_\d{6}", "[timestamp]");
+        settings.add_script_timestamp_filter();
 
         settings.bind(|| {
             assert_snapshot!(out);

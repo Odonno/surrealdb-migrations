@@ -42,6 +42,7 @@ pub struct ApplyArgs<'a, C: Connection> {
 
 pub enum ApplyOperation {
     Up,
+    UpSingle,
     UpTo(String),
     Reset,
     DownTo(String),
@@ -109,7 +110,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     if use_migration_definitions {
         if io::can_use_filesystem(config_file)? {
             let should_create_definition_files = match &operation {
-                ApplyOperation::Up | ApplyOperation::UpTo(_) => true,
+                ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => true,
                 ApplyOperation::Reset | ApplyOperation::DownTo(_) => false,
             };
 
@@ -144,7 +145,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     );
 
     let migration_direction = match &operation {
-        ApplyOperation::Up | ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
+            MigrationDirection::Forward
+        }
         ApplyOperation::Reset | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
     };
 
@@ -216,7 +219,15 @@ fn get_migration_files_to_execute(
     let mut filtered_migrations_files = filtered_forward_migrations_files;
     filtered_migrations_files.extend(filtered_backward_migrations_files);
 
-    get_sorted_migrations_files(filtered_migrations_files, operation)
+    let migrations_files = get_sorted_migrations_files(filtered_migrations_files, operation);
+
+    match operation {
+        ApplyOperation::UpSingle => migrations_files
+            .into_iter()
+            .take(migrations_applied.len() + 1)
+            .collect::<Vec<_>>(),
+        _ => migrations_files,
+    }
 }
 
 fn get_sorted_migrations_files(
@@ -225,7 +236,9 @@ fn get_sorted_migrations_files(
 ) -> Vec<SurqlFile> {
     let mut sorted_migrations_files = migrations_files;
     sorted_migrations_files.sort_by(|a, b| match operation {
-        ApplyOperation::Up | ApplyOperation::UpTo(_) => natural_lexical_cmp(&a.name, &b.name),
+        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
+            natural_lexical_cmp(&a.name, &b.name)
+        }
         ApplyOperation::Reset | ApplyOperation::DownTo(_) => natural_lexical_cmp(&b.name, &a.name),
     });
 
@@ -239,7 +252,9 @@ fn filter_migration_file_to_execute(
     is_backward_migration: bool,
 ) -> Result<bool> {
     let migration_direction = match &operation {
-        ApplyOperation::Up | ApplyOperation::UpTo(_) => MigrationDirection::Forward,
+        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
+            MigrationDirection::Forward
+        }
         ApplyOperation::Reset | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
     };
 
@@ -250,7 +265,7 @@ fn filter_migration_file_to_execute(
     }
 
     match &operation {
-        ApplyOperation::Up | ApplyOperation::Reset => {}
+        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::Reset => {}
         ApplyOperation::UpTo(target_migration) => {
             let is_beyond_target =
                 natural_lexical_cmp(&migration_file.name, target_migration) == Ordering::Greater;
@@ -272,12 +287,10 @@ fn filter_migration_file_to_execute(
         .any(|migration_applied| migration_applied.script_name == migration_file.name);
 
     match (&migration_direction, has_already_been_applied) {
-        (MigrationDirection::Forward, true) => return Ok(false),
-        (MigrationDirection::Backward, false) => return Ok(false),
-        _ => {}
+        (MigrationDirection::Forward, true) => Ok(false),
+        (MigrationDirection::Backward, false) => Ok(false),
+        _ => Ok(true),
     }
-
-    Ok(true)
 }
 
 fn expect_migration_definitions_to_be_up_to_date(

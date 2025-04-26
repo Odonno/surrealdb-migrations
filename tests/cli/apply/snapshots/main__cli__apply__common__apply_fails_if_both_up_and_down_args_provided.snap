@@ -2,8 +2,8 @@
 source: tests/cli/apply/common.rs
 expression: stderr
 ---
-error: the argument '--up <UP>' cannot be used with '--down <DOWN>'
+error: the argument '--up [<UP>]' cannot be used with '--down <DOWN>'
 
-Usage: surrealdb-migrations apply --up <UP>
+Usage: surrealdb-migrations apply --up [<UP>]
 
 For more information, try '--help'.
