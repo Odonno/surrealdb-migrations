@@ -7,6 +7,7 @@ pub enum ScaffoldTemplate {
     Ecommerce,
 }
 
+#[cfg(feature = "scaffold-sql")]
 #[derive(clap::ValueEnum, Debug, Clone)]
 #[clap(rename_all = "lower")]
 pub enum ScaffoldSchemaDbType {
@@ -31,6 +32,7 @@ pub enum ScaffoldAction {
         #[clap(long)]
         traditional: bool,
     },
+    #[cfg(feature = "scaffold-sql")]
     /// ** Preview ** Scaffold a new project from an existing SQL schema file
     Schema {
         /// Path to the SQL schema file

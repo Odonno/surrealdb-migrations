@@ -47,8 +47,10 @@ serial_test = "3.2.0"
 tokio-test = "0.4.4"
 
 [features]
+default = ["scaffold"]
 branching = ["dep:names"]
-scaffold = ["dep:convert_case", "dep:names", "dep:regex", "dep:sqlparser"]
+scaffold = ["dep:regex"]
+scaffold-sql = ["scaffold", "dep:convert_case", "dep:sqlparser"]
 
 [profile.dev.package]
 insta.opt-level = 3

@@ -18,8 +18,10 @@ use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, 
 use input::SurrealdbConfiguration;
 use list::ListArgs;
 use redo::RedoArgs;
+#[cfg(feature = "scaffold-sql")]
+use scaffold::schema::ScaffoldFromSchemaArgs;
 #[cfg(feature = "scaffold")]
-use scaffold::{schema::ScaffoldFromSchemaArgs, template::ScaffoldFromTemplateArgs};
+use scaffold::template::ScaffoldFromTemplateArgs;
 use std::env;
 
 use crate::surrealdb::create_surrealdb_client;
@@ -82,6 +84,7 @@ async fn sub_main() -> Result<()> {
                 };
                 scaffold::template::main(args)
             }
+            #[cfg(feature = "scaffold-sql")]
             ScaffoldAction::Schema {
                 schema,
                 db_type,
