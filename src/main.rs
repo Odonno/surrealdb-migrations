@@ -17,6 +17,7 @@ use color_eyre::eyre::Result;
 use create::{CreateArgs, CreateEventArgs, CreateMigrationArgs, CreateOperation, CreateSchemaArgs};
 use input::SurrealdbConfiguration;
 use list::ListArgs;
+use models::ApplyOperation;
 use redo::RedoArgs;
 #[cfg(feature = "scaffold-sql")]
 use scaffold::schema::ScaffoldFromSchemaArgs;
@@ -215,14 +216,12 @@ async fn sub_main() -> Result<()> {
                 redo::main(args).await
             } else {
                 let operation = match (up, down, reset) {
-                    (Some(up), None, false) if up.is_empty() => apply::ApplyOperation::UpSingle,
-                    (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
-                    (None, Some(down), false) if down.is_empty() => {
-                        apply::ApplyOperation::DownSingle
-                    }
-                    (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
-                    (None, None, true) => apply::ApplyOperation::Reset,
-                    (None, None, false) => apply::ApplyOperation::Up,
+                    (Some(up), None, false) if up.is_empty() => ApplyOperation::UpSingle,
+                    (Some(up), None, false) => ApplyOperation::UpTo(up),
+                    (None, Some(down), false) if down.is_empty() => ApplyOperation::DownSingle,
+                    (None, Some(down), false) => ApplyOperation::DownTo(down),
+                    (None, None, true) => ApplyOperation::Reset,
+                    (None, None, false) => ApplyOperation::Up,
                     _ => return Err(eyre!("Cannot apply when multiple args in conflict")),
                 };
                 let args = ApplyArgs {

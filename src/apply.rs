@@ -24,7 +24,7 @@ use crate::{
         extract_json_definition_files, filter_except_initial_definition, get_current_definition,
         get_initial_definition, get_migration_definition_diff, SurqlFile,
     },
-    models::{MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
+    models::{ApplyOperation, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{self, TransactionAction},
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
@@ -38,15 +38,6 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub validate_version_order: bool,
     pub config_file: Option<&'a Path>,
     pub output: bool,
-}
-
-pub enum ApplyOperation {
-    Up,
-    UpSingle,
-    UpTo(String),
-    Reset,
-    DownSingle,
-    DownTo(String),
 }
 
 pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
@@ -147,14 +138,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         &migrations_applied,
     );
 
-    let migration_direction = match &operation {
-        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
-            MigrationDirection::Forward
-        }
-        ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
-            MigrationDirection::Backward
-        }
-    };
+    let migration_direction = MigrationDirection::from(operation);
 
     match migration_direction {
         MigrationDirection::Forward => {
@@ -258,14 +242,7 @@ fn filter_migration_file_to_execute(
     migrations_applied: &[ScriptMigration],
     is_backward_migration: bool,
 ) -> Result<bool> {
-    let migration_direction = match &operation {
-        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
-            MigrationDirection::Forward
-        }
-        ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
-            MigrationDirection::Backward
-        }
-    };
+    let migration_direction = MigrationDirection::from(operation);
 
     match (&migration_direction, is_backward_migration) {
         (MigrationDirection::Forward, true) => return Ok(false),

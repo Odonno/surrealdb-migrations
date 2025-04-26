@@ -68,7 +68,7 @@ use ::surrealdb::{Connection, Surreal};
 use apply::ApplyArgs;
 use color_eyre::eyre::Result;
 use include_dir::Dir;
-use models::ScriptMigration;
+use models::{ApplyOperation, ScriptMigration};
 use redo::RedoArgs;
 use std::path::Path;
 use validate_version_order::ValidateVersionOrderArgs;
@@ -260,7 +260,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn up(&self) -> Result<()> {
         let args: ApplyArgs<C> = ApplyArgs {
-            operation: apply::ApplyOperation::Up,
+            operation: ApplyOperation::Up,
             db: self.db,
             dir: self.dir,
             display_logs: false,
@@ -309,7 +309,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn up_to(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::UpTo(name.to_string()),
+            operation: ApplyOperation::UpTo(name.to_string()),
             db: self.db,
             dir: self.dir,
             display_logs: false,
@@ -354,7 +354,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn up_single(&self) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::UpSingle,
+            operation: ApplyOperation::UpSingle,
             db: self.db,
             dir: self.dir,
             display_logs: false,
@@ -403,7 +403,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn down_to(&self, name: &str) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::DownTo(name.to_string()),
+            operation: ApplyOperation::DownTo(name.to_string()),
             db: self.db,
             dir: self.dir,
             display_logs: false,
@@ -448,7 +448,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn down_single(&self) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::DownSingle,
+            operation: ApplyOperation::DownSingle,
             db: self.db,
             dir: self.dir,
             display_logs: false,
@@ -493,7 +493,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// ```
     pub async fn reset(&self) -> Result<()> {
         let args = ApplyArgs {
-            operation: apply::ApplyOperation::Reset,
+            operation: ApplyOperation::Reset,
             db: self.db,
             dir: self.dir,
             display_logs: false,
