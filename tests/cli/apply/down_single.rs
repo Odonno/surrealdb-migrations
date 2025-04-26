@@ -6,16 +6,17 @@ use itertools::Itertools;
 use crate::helpers::*;
 
 #[tokio::test]
-async fn apply_up_single_migration() -> Result<()> {
+async fn apply_revert_single_migration() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
-    scaffold_blog_template(&temp_dir, true)?;
+    scaffold_blog_template(&temp_dir, false)?;
+    apply_migrations(&temp_dir, &db_name)?;
 
     let mut cmd = create_cmd(&temp_dir)?;
 
-    cmd.arg("apply").arg("--up");
+    cmd.arg("apply").arg("--down");
 
     let assert = cmd.assert().try_success()?;
     let stdout = get_stdout_str(assert)?;
@@ -23,7 +24,7 @@ async fn apply_up_single_migration() -> Result<()> {
     let mut insta_settings = Settings::new();
     insta_settings.bind(|| {
         assert_snapshot!(stdout, @r"
-        Executing migration Initial...
+        Reverting migration CommentPost...
         Migration files successfully executed!
         ");
         Ok::<(), Error>(())

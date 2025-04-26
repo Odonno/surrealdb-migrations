@@ -1,6 +1,7 @@
 use assert_fs::TempDir;
 use color_eyre::eyre::{Error, Result};
 use insta::{assert_ron_snapshot, assert_snapshot, Settings};
+use itertools::Itertools;
 
 use crate::helpers::*;
 
@@ -40,7 +41,10 @@ async fn apply_up_single_migration() -> Result<()> {
     insta_settings.add_script_timestamp_filter();
     insta_settings.add_datetime_filter();
     insta_settings.bind(|| {
-        assert_ron_snapshot!(script_migrations);
+        assert_ron_snapshot!(script_migrations
+            .iter()
+            .sorted_by(|a, b| Ord::cmp(&b.script_name, &a.script_name))
+            .collect_vec());
         Ok::<(), Error>(())
     })?;
 

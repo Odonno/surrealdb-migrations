@@ -45,6 +45,7 @@ pub enum ApplyOperation {
     UpSingle,
     UpTo(String),
     Reset,
+    DownSingle,
     DownTo(String),
 }
 
@@ -111,7 +112,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         if io::can_use_filesystem(config_file)? {
             let should_create_definition_files = match &operation {
                 ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => true,
-                ApplyOperation::Reset | ApplyOperation::DownTo(_) => false,
+                ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
+                    false
+                }
             };
 
             if should_create_definition_files {
@@ -148,7 +151,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
             MigrationDirection::Forward
         }
-        ApplyOperation::Reset | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
+        ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
+            MigrationDirection::Backward
+        }
     };
 
     match migration_direction {
@@ -239,7 +244,9 @@ fn get_sorted_migrations_files(
         ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
             natural_lexical_cmp(&a.name, &b.name)
         }
-        ApplyOperation::Reset | ApplyOperation::DownTo(_) => natural_lexical_cmp(&b.name, &a.name),
+        ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
+            natural_lexical_cmp(&b.name, &a.name)
+        }
     });
 
     sorted_migrations_files
@@ -255,7 +262,9 @@ fn filter_migration_file_to_execute(
         ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::UpTo(_) => {
             MigrationDirection::Forward
         }
-        ApplyOperation::Reset | ApplyOperation::DownTo(_) => MigrationDirection::Backward,
+        ApplyOperation::Reset | ApplyOperation::DownSingle | ApplyOperation::DownTo(_) => {
+            MigrationDirection::Backward
+        }
     };
 
     match (&migration_direction, is_backward_migration) {
@@ -265,7 +274,6 @@ fn filter_migration_file_to_execute(
     }
 
     match &operation {
-        ApplyOperation::Up | ApplyOperation::UpSingle | ApplyOperation::Reset => {}
         ApplyOperation::UpTo(target_migration) => {
             let is_beyond_target =
                 natural_lexical_cmp(&migration_file.name, target_migration) == Ordering::Greater;
@@ -280,6 +288,19 @@ fn filter_migration_file_to_execute(
                 return Ok(false);
             }
         }
+        ApplyOperation::DownSingle if migrations_applied.last().is_some() => {
+            let target_migration = migrations_applied.last().unwrap();
+            let is_below_target =
+                natural_lexical_cmp(&migration_file.name, &target_migration.script_name)
+                    == Ordering::Less;
+            if is_below_target {
+                return Ok(false);
+            }
+        }
+        ApplyOperation::Up
+        | ApplyOperation::UpSingle
+        | ApplyOperation::Reset
+        | ApplyOperation::DownSingle => {}
     }
 
     let has_already_been_applied = migrations_applied

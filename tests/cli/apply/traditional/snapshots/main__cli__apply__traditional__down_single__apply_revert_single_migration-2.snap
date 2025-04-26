@@ -1,0 +1,18 @@
+---
+source: tests/cli/apply/traditional/down_single.rs
+expression: "script_migrations.iter().sorted_by(|a, b|\nOrd::cmp(&b.script_name, &a.script_name)).collect_vec()"
+---
+[
+  ScriptMigration(
+    script_name: "__Initial",
+    executed_at: "[datetime]",
+  ),
+  ScriptMigration(
+    script_name: "[timestamp]_AddPost",
+    executed_at: "[datetime]",
+  ),
+  ScriptMigration(
+    script_name: "[timestamp]_AddAdminUser",
+    executed_at: "[datetime]",
+  ),
+]

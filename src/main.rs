@@ -217,6 +217,9 @@ async fn sub_main() -> Result<()> {
                 let operation = match (up, down, reset) {
                     (Some(up), None, false) if up.is_empty() => apply::ApplyOperation::UpSingle,
                     (Some(up), None, false) => apply::ApplyOperation::UpTo(up),
+                    (None, Some(down), false) if down.is_empty() => {
+                        apply::ApplyOperation::DownSingle
+                    }
                     (None, Some(down), false) => apply::ApplyOperation::DownTo(down),
                     (None, None, true) => apply::ApplyOperation::Reset,
                     (None, None, false) => apply::ApplyOperation::Up,

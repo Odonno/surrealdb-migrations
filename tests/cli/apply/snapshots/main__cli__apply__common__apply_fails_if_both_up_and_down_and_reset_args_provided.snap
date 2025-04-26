@@ -3,7 +3,7 @@ source: tests/cli/apply/common.rs
 expression: stderr
 ---
 error: the argument '--up [<UP>]' cannot be used with:
-  --down <DOWN>
+  --down [<DOWN>]
   --reset
 
 Usage: surrealdb-migrations apply --up [<UP>]

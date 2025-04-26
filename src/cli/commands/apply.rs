@@ -10,7 +10,9 @@ pub struct ApplyArgs {
     pub up: Option<String>,
     /// Apply migrations down to this migration name.
     /// This parameter allows you to rollback applied migrations.
-    #[clap(long, conflicts_with_all = vec!["up", "reset", "redo"])]
+    ///
+    /// Note: Rollback a single migration when no value is provided.
+    #[clap(long, num_args=0..=1, default_missing_value = "", conflicts_with_all = vec!["up", "reset", "redo"])]
     pub down: Option<String>,
     /// Resets the database, i.e. apply all migrations down.
     /// This parameter allows you to rollback ALL applied migrations.
