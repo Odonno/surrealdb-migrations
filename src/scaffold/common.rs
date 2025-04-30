@@ -19,6 +19,7 @@ use crate::{
         MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
     },
     io::{self, ensures_folder_exists},
+    runbin::io::{extract_event_definitions, extract_schema_definitions},
     surrealdb::parse_statements,
 };
 
@@ -54,8 +55,8 @@ pub fn apply_after_scaffold(
 
     if traditional {
         // extract surql files
-        let schema_definitions = io::extract_schema_definitions(config_file, None);
-        let event_definitions = io::extract_event_definitions(config_file, None);
+        let schema_definitions = extract_schema_definitions(config_file, None);
+        let event_definitions = extract_event_definitions(config_file, None);
 
         // concat surql statements
         let schemas_statements = parse_statements(&schema_definitions)?;

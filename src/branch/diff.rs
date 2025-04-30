@@ -3,7 +3,9 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path};
 
-use crate::{input::SurrealdbConfiguration, models::Branch, surrealdb::create_surrealdb_client};
+use crate::{
+    input::SurrealdbConfiguration, models::Branch, runbin::surrealdb::create_surrealdb_client,
+};
 
 use super::{
     common::{create_branching_feature_client, get_branch_table},

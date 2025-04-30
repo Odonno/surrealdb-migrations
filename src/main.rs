@@ -19,13 +19,12 @@ use input::SurrealdbConfiguration;
 use list::ListArgs;
 use models::ApplyOperation;
 use redo::RedoArgs;
+use runbin::surrealdb::create_surrealdb_client;
 #[cfg(feature = "scaffold-sql")]
 use scaffold::schema::ScaffoldFromSchemaArgs;
 #[cfg(feature = "scaffold")]
 use scaffold::template::ScaffoldFromTemplateArgs;
 use std::env;
-
-use crate::surrealdb::create_surrealdb_client;
 
 mod apply;
 #[cfg(feature = "branching")]
@@ -41,6 +40,7 @@ mod list;
 mod models;
 mod redo;
 mod remove;
+mod runbin;
 #[cfg(feature = "scaffold")]
 mod scaffold;
 mod surrealdb;

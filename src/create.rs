@@ -2,12 +2,13 @@ use color_eyre::eyre::{eyre, Result};
 use std::path::{Path, PathBuf};
 
 use crate::{
-    config::{self, retrieve_table_schema_design},
+    config,
     constants::{
         DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
         SURQL_FILE_EXTENSION,
     },
     io,
+    runbin::config::{retrieve_table_schema_design, TableSchemaDesign},
 };
 
 pub struct CreateArgs<'a> {
@@ -177,8 +178,8 @@ fn get_table_schema_design_str(
 
     let value = match table_schema_design {
         Some(table_schema_design) => match table_schema_design {
-            config::TableSchemaDesign::Schemafull => SCHEMAFULL,
-            config::TableSchemaDesign::Schemaless => SCHEMALESS,
+            TableSchemaDesign::Schemafull => SCHEMAFULL,
+            TableSchemaDesign::Schemaless => SCHEMALESS,
         },
         None => SCHEMALESS,
     };

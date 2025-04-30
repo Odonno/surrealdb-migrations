@@ -7,9 +7,8 @@ use color_eyre::eyre::Result;
 use surrealdb::{engine::any::Any, Surreal};
 
 use crate::{
-    input::SurrealdbConfiguration,
-    models::Branch,
-    surrealdb::{create_surrealdb_client, get_surrealdb_table_exists},
+    input::SurrealdbConfiguration, models::Branch, runbin::surrealdb::create_surrealdb_client,
+    surrealdb::get_surrealdb_table_exists,
 };
 
 use super::constants::{BRANCH_NS, BRANCH_TABLE, ORIGIN_BRANCH_NS};

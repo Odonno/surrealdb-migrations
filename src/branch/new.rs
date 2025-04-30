@@ -15,7 +15,7 @@ use crate::{
     input::SurrealdbConfiguration,
     io,
     models::Branch,
-    surrealdb::create_surrealdb_client,
+    runbin::{db_config::retrieve_db_config, surrealdb::create_surrealdb_client},
 };
 
 use super::{
@@ -36,8 +36,8 @@ pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
         config_file,
     } = args;
 
-    let db_config = config::retrieve_db_config(config_file);
-    let db_configuration = merge_db_config(db_configuration, &db_config);
+    let db_config = retrieve_db_config(config_file);
+    let db_configuration = db_configuration.merge_with_config(&db_config);
 
     let folder_path = config::retrieve_folder_path(config_file);
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
@@ -82,28 +82,6 @@ pub async fn main(args: NewBranchArgs<'_>) -> Result<()> {
 
             Err(error)
         }
-    }
-}
-
-fn merge_db_config(
-    db_configuration: &SurrealdbConfiguration,
-    db_config: &config::DbConfig,
-) -> SurrealdbConfiguration {
-    SurrealdbConfiguration {
-        address: db_configuration
-            .address
-            .to_owned()
-            .or(db_config.address.to_owned()),
-        username: db_configuration
-            .username
-            .to_owned()
-            .or(db_config.username.to_owned()),
-        password: db_configuration
-            .password
-            .to_owned()
-            .or(db_config.password.to_owned()),
-        ns: db_configuration.ns.to_owned().or(db_config.ns.to_owned()),
-        db: db_configuration.db.to_owned().or(db_config.db.to_owned()),
     }
 }
 

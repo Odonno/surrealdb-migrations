@@ -42,7 +42,6 @@ pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
 
 pub struct SurqlFile {
     pub name: String,
-    #[allow(dead_code)]
     pub full_name: String,
     pub is_down_file: bool,
     content: Box<dyn Fn() -> Option<String> + Send + Sync>,
@@ -62,28 +61,6 @@ pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
         is_down_file: true,
         content: Box::new(move || Some(content.to_string())),
     }
-}
-
-#[allow(dead_code)]
-pub fn extract_schema_definitions(
-    config_file: Option<&Path>,
-    embedded_dir: Option<&Dir<'static>>,
-) -> String {
-    let schemas_files = extract_schemas_files(config_file, embedded_dir)
-        .ok()
-        .unwrap_or_default();
-    concat_files_content(&schemas_files)
-}
-
-#[allow(dead_code)]
-pub fn extract_event_definitions(
-    config_file: Option<&Path>,
-    embedded_dir: Option<&Dir<'static>>,
-) -> String {
-    let events_files = extract_events_files(config_file, embedded_dir)
-        .ok()
-        .unwrap_or_default();
-    concat_files_content(&events_files)
 }
 
 pub fn concat_files_content(files: &[SurqlFile]) -> String {

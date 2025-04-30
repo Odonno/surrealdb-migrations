@@ -1,3 +1,5 @@
+use crate::runbin::db_config::DbConfig;
+
 /// The configuration used to connect to a SurrealDB instance.
 pub struct SurrealdbConfiguration {
     /// Address of the surrealdb instance.
@@ -19,7 +21,6 @@ pub struct SurrealdbConfiguration {
 
 impl SurrealdbConfiguration {
     /// Create a new configuration with default values.
-    #[allow(dead_code)]
     pub fn default() -> Self {
         SurrealdbConfiguration {
             address: None,
@@ -27,6 +28,16 @@ impl SurrealdbConfiguration {
             db: None,
             username: None,
             password: None,
+        }
+    }
+
+    pub fn merge_with_config(&self, db_config: &DbConfig) -> Self {
+        SurrealdbConfiguration {
+            address: self.address.to_owned().or(db_config.address.to_owned()),
+            username: self.username.to_owned().or(db_config.username.to_owned()),
+            password: self.password.to_owned().or(db_config.password.to_owned()),
+            ns: self.ns.to_owned().or(db_config.ns.to_owned()),
+            db: self.db.to_owned().or(db_config.db.to_owned()),
         }
     }
 }

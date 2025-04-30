@@ -5,10 +5,9 @@ use color_eyre::eyre::Result;
 use std::path::Path;
 
 use crate::{
-    common::get_migration_display_name,
-    constants::SURQL_FILE_EXTENSION,
-    input::SurrealdbConfiguration,
-    surrealdb::{create_surrealdb_client, list_script_migration_ordered_by_execution_date},
+    common::get_migration_display_name, constants::SURQL_FILE_EXTENSION,
+    input::SurrealdbConfiguration, runbin::surrealdb::create_surrealdb_client,
+    surrealdb::list_script_migration_ordered_by_execution_date,
 };
 
 pub struct ListArgs<'a> {
