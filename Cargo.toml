@@ -1,6 +1,6 @@
 [package]
 name = "surrealdb-migrations"
-version = "2.2.1"
+version = "2.2.2"
 description = "An awesome SurrealDB migration tool, with a user-friendly CLI and a versatile Rust library that enables seamless integration into any project."
 authors = ["David Bottiau"]
 repository = "https://github.com/Odonno/surrealdb-migrations/"
