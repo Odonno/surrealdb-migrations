@@ -14,9 +14,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.40"
+chrono = "0.4.41"
 chrono-human-duration = "0.1.1"
-clap = { version = "4.5.35", features = ["derive"] }
+clap = { version = "4.5.37", features = ["derive"] }
 cli-table = "=0.4.7"
 color-eyre = "0.6.3"
 convert_case = { version = "0.8.0", optional = true }
@@ -35,10 +35,10 @@ surrealdb = { version = "2.3.0", features = ["protocol-http", "jwks"] }
 tokio = { version = "1.44.2", features = ["macros"] }
 
 [dev-dependencies]
-assert_cmd = "2.0.16"
+assert_cmd = "2.0.17"
 assert_fs = "1.1.2"
 dir-diff = "0.3.3"
-insta = { version = "1.42.2", features = ["filters", "ron"] }
+insta = { version = "1.43.1", features = ["filters", "ron"] }
 itertools = "0.14.0"
 names = { version = "0.14.0", default-features = false }
 predicates = "3.1.3"
