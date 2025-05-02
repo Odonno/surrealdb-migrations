@@ -1,6 +1,8 @@
+#[cfg(feature = "branching")]
 use crate::runbin::db_config::DbConfig;
 
 /// The configuration used to connect to a SurrealDB instance.
+#[derive(Default)]
 pub struct SurrealdbConfiguration {
     /// Address of the surrealdb instance.
     /// Default value is `ws://localhost:8000`.
@@ -20,17 +22,7 @@ pub struct SurrealdbConfiguration {
 }
 
 impl SurrealdbConfiguration {
-    /// Create a new configuration with default values.
-    pub fn default() -> Self {
-        SurrealdbConfiguration {
-            address: None,
-            ns: None,
-            db: None,
-            username: None,
-            password: None,
-        }
-    }
-
+    #[cfg(feature = "branching")]
     pub fn merge_with_config(&self, db_config: &DbConfig) -> Self {
         SurrealdbConfiguration {
             address: self.address.to_owned().or(db_config.address.to_owned()),
