@@ -25,8 +25,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.81.0 toolchain
-        uses: dtolnay/rust-toolchain@1.81.0
+      - name: Install 1.82.0 toolchain
+        uses: dtolnay/rust-toolchain@1.82.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -49,8 +49,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.81.0 toolchain
-        uses: dtolnay/rust-toolchain@1.81.0
+      - name: Install 1.82.0 toolchain
+        uses: dtolnay/rust-toolchain@1.82.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
