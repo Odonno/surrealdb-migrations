@@ -1,0 +1,21 @@
+---
+source: tests/library/checksum.rs
+expression: "script_migrations.iter().sorted_by(|a, b|\nOrd::cmp(&b.script_name, &a.script_name)).collect_vec()"
+---
+[
+  ScriptMigration(
+    script_name: "[timestamp]_CommentPost",
+    executed_at: "[datetime]",
+    checksum: Some("9c47faadcf14ea05b44c176a2079ea778eab6db18e4219010f85230508b9ee89"),
+  ),
+  ScriptMigration(
+    script_name: "[timestamp]_AddPost",
+    executed_at: "[datetime]",
+    checksum: Some("742add6313b4e055d79a9df3651b00b6593ecea8f0c1f7637b3d1f4516e4593f"),
+  ),
+  ScriptMigration(
+    script_name: "[timestamp]_AddAdminUser",
+    executed_at: "[datetime]",
+    checksum: Some("2a9f8e44975a32f4d1c6e167136c7d9061487c3d86e691f747eb5b8bfd5003a6"),
+  ),
+]

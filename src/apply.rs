@@ -11,6 +11,7 @@ use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::Dir;
 use itertools::Itertools;
 use lexicmp::natural_lexical_cmp;
+use sha2::{Digest, Sha256};
 use std::{
     cmp::Ordering,
     path::{Path, PathBuf},
@@ -25,7 +26,9 @@ use crate::{
         get_initial_definition, get_migration_definition_diff, SurqlFile,
     },
     models::{ApplyOperation, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
-    surrealdb::{self, TransactionAction},
+    surrealdb::{
+        self, get_surrealdb_table_definition, is_define_checksum_statement, TransactionAction,
+    },
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
 
@@ -429,6 +432,12 @@ async fn apply_migrations<C: Connection>(
         }
     }
 
+    let script_migration_table_definition =
+        get_surrealdb_table_definition(client, SCRIPT_MIGRATION_TABLE_NAME).await?;
+    let mut supports_checksum = script_migration_table_definition
+        .fields
+        .contains_key("checksum");
+
     for migration_file in &migration_files_to_execute {
         let mut schemas_statements = String::new();
         let mut events_statements = String::new();
@@ -463,7 +472,7 @@ async fn apply_migrations<C: Connection>(
             events_statements = current_definition.events.to_string();
         }
 
-        let migration_statements = migration_file.get_content().unwrap_or(String::new());
+        let migration_content = migration_file.get_content().unwrap_or(String::new());
 
         if output {
             let migration_display_name = get_migration_display_name(&migration_file.name);
@@ -476,7 +485,7 @@ async fn apply_migrations<C: Connection>(
 CREATE {} SET script_name = '{}';",
                 schemas_statements,
                 events_statements,
-                migration_statements,
+                migration_content,
                 SCRIPT_MIGRATION_TABLE_NAME,
                 migration_file.name
             );
@@ -490,21 +499,39 @@ CREATE {} SET script_name = '{}';",
 
         let schemas_statements = surrealdb::parse_statements(&schemas_statements)?;
         let events_statements = surrealdb::parse_statements(&events_statements)?;
-        let migration_statements = surrealdb::parse_statements(&migration_statements)?;
+        let migration_statements = surrealdb::parse_statements(&migration_content)?;
+
+        supports_checksum = supports_checksum
+            || schemas_statements.iter().any(is_define_checksum_statement)
+            || migration_statements
+                .iter()
+                .any(is_define_checksum_statement);
 
         let mut what = ::surrealdb::sql::Values::default();
         what.0.push(::surrealdb::sql::Value::Table(
             SCRIPT_MIGRATION_TABLE_NAME.into(),
         ));
+        let mut set_script_expressions = vec![(
+            ::surrealdb::sql::Idiom::from("script_name"),
+            ::surrealdb::sql::Operator::Equal,
+            ::surrealdb::sql::Value::Strand(migration_file.name.to_string().into()),
+        )];
+        if supports_checksum {
+            let checksum = Sha256::digest(migration_content).to_vec();
+            let checksum = hex::encode(checksum);
+
+            set_script_expressions.push((
+                ::surrealdb::sql::Idiom::from("checksum"),
+                ::surrealdb::sql::Operator::Equal,
+                ::surrealdb::sql::Value::Strand(checksum.into()),
+            ));
+        }
         let mut create_migration_script_statement =
             ::surrealdb::sql::statements::CreateStatement::default();
         create_migration_script_statement.what = what;
-        create_migration_script_statement.data =
-            Some(::surrealdb::sql::Data::SetExpression(vec![(
-                ::surrealdb::sql::Idiom::from("script_name"),
-                ::surrealdb::sql::Operator::Equal,
-                ::surrealdb::sql::Value::Strand(migration_file.name.to_string().into()),
-            )]));
+        create_migration_script_statement.data = Some(::surrealdb::sql::Data::SetExpression(
+            set_script_expressions,
+        ));
         create_migration_script_statement.output = Some(::surrealdb::sql::Output::None);
 
         let statements = schemas_statements

@@ -1,7 +1,6 @@
 ---
 source: tests/cli/scaffold/traditional/template.rs
 expression: initial_down_content
-snapshot_kind: text
 ---
 REMOVE EVENT unpublish_post ON unpublish_post;
 REMOVE FIELD created_at ON unpublish_post;
@@ -25,6 +24,7 @@ REMOVE FIELD email ON user;
 REMOVE FIELD username ON user;
 REMOVE TABLE user;
 
+REMOVE FIELD checksum ON script_migration;
 REMOVE FIELD executed_at ON script_migration;
 REMOVE FIELD script_name ON script_migration;
 REMOVE TABLE script_migration;

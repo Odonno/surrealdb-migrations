@@ -1,3 +1,4 @@
+mod checksum;
 mod down_single;
 mod down_to;
 mod list;

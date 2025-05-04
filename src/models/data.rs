@@ -5,6 +5,7 @@ use surrealdb::sql::Datetime;
 pub struct ScriptMigration {
     pub script_name: String,
     pub executed_at: String,
+    pub checksum: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

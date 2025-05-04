@@ -1,7 +1,6 @@
 ---
 source: tests/cli/scaffold/traditional/template.rs
 expression: initial_down_content
-snapshot_kind: text
 ---
 REMOVE EVENT purchase ON purchase;
 REMOVE FIELD total ON purchase;
@@ -10,6 +9,7 @@ REMOVE FIELD product ON purchase;
 REMOVE FIELD customer ON purchase;
 REMOVE TABLE purchase;
 
+REMOVE FIELD checksum ON script_migration;
 REMOVE FIELD executed_at ON script_migration;
 REMOVE FIELD script_name ON script_migration;
 REMOVE TABLE script_migration;

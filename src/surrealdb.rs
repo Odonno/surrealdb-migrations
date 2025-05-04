@@ -1,5 +1,6 @@
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use itertools::Itertools;
+use serde::Deserialize;
 use std::collections::HashMap;
 use surrealdb::{Connection, Surreal};
 
@@ -18,14 +19,41 @@ type SurrealdbTableDefinitions = HashMap<String, String>;
 pub async fn get_surrealdb_table_definitions<C: Connection>(
     client: &Surreal<C>,
 ) -> Result<SurrealdbTableDefinitions> {
-    let mut response = client
+    let response = client
         .query(surrealdb::sql::statements::InfoStatement::Db(false, None))
         .await?;
+
+    let mut response = response.check()?;
 
     let result: Option<SurrealdbTableDefinitions> = response.take("tables")?;
     let table_definitions = result.context("Failed to get table definitions")?;
 
     Ok(table_definitions)
+}
+
+#[derive(Deserialize)]
+pub struct SurrealdbTableDefinition {
+    pub fields: HashMap<String, String>,
+}
+
+pub async fn get_surrealdb_table_definition<C: Connection>(
+    client: &Surreal<C>,
+    table: &str,
+) -> Result<SurrealdbTableDefinition> {
+    let response = client
+        .query(surrealdb::sql::statements::InfoStatement::Tb(
+            table.into(),
+            false,
+            None,
+        ))
+        .await?;
+
+    let mut response = response.check()?;
+
+    let result: Option<SurrealdbTableDefinition> = response.take(0)?;
+    let table_definition = result.context("Failed to get table definition")?;
+
+    Ok(table_definition)
 }
 
 pub async fn list_script_migration_ordered_by_execution_date<C: Connection>(
@@ -53,6 +81,18 @@ pub fn parse_statements(query_str: &str) -> Result<surrealdb::sql::Query> {
     )?;
 
     Ok(query)
+}
+
+pub fn is_define_checksum_statement(statement: &surrealdb::sql::Statement) -> bool {
+    match statement {
+        surrealdb::sql::Statement::Define(surrealdb::sql::statements::DefineStatement::Field(
+            define_field_statement,
+        )) => {
+            define_field_statement.name.to_string() == "checksum"
+                && define_field_statement.what.0 == SCRIPT_MIGRATION_TABLE_NAME
+        }
+        _ => false,
+    }
 }
 
 pub async fn apply_in_transaction<C: Connection>(

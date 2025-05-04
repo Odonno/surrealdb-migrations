@@ -1,7 +1,6 @@
 ---
 source: tests/cli/apply/up.rs
 expression: out
-snapshot_kind: text
 ---
 -- Initial schema and event definitions --
 DEFINE TABLE OVERWRITE category SCHEMALESS;
@@ -44,6 +43,8 @@ DEFINE TABLE OVERWRITE script_migration SCHEMAFULL
 
 DEFINE FIELD OVERWRITE script_name ON script_migration TYPE string;
 DEFINE FIELD OVERWRITE executed_at ON script_migration TYPE datetime VALUE time::now() READONLY;
+DEFINE FIELD OVERWRITE checksum ON script_migration TYPE option<string>;
+
 DEFINE TABLE OVERWRITE user SCHEMAFULL
     PERMISSIONS
         FOR select FULL
