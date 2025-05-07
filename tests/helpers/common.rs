@@ -51,6 +51,14 @@ pub fn apply_migrations_up_to(path: &Path, db: &str, name: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn apply_migrations_down_single(path: &Path, db: &str) -> Result<()> {
+    let mut cmd = create_cmd(path)?;
+    cmd.arg("apply").arg("--down").arg("--db").arg(db);
+    cmd.assert().try_success()?;
+
+    Ok(())
+}
+
 pub fn apply_migrations_down(path: &Path, db: &str, name: &str) -> Result<()> {
     let mut cmd = create_cmd(path)?;
     cmd.arg("apply").arg("--down").arg(name).arg("--db").arg(db);

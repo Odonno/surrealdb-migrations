@@ -323,7 +323,7 @@ pub fn add_jwks_schema_file(path: &Path) -> Result<()> {
 -- Use this token provider for database authorization
 ON DATABASE
 -- Specify the JWKS specification used to verify the token
-TYPE JWKS 
+TYPE JWKS
 -- Specify the URL where the JWKS object can be found
 VALUE \"https://example.com/.well-known/jwks.json\";";
 
@@ -382,6 +382,24 @@ pub fn inline_down_migration_files(path: &Path) -> Result<()> {
     }
 
     remove_folder(&down_migrations_files_dir)?;
+
+    Ok(())
+}
+
+pub fn disable_checksum_capability(path: &Path) -> Result<()> {
+    let schemas_files_dir = path.join("schemas");
+
+    if schemas_files_dir.exists() {
+        let schema_file = schemas_files_dir.join("script_migration.surql");
+        let content = fs::read(&schema_file)?;
+        let content = String::from_utf8(content)?;
+        let content = content.replace(
+            "DEFINE FIELD OVERWRITE checksum ON script_migration TYPE option<string>;",
+            "",
+        );
+
+        fs::write(schema_file, content)?;
+    }
 
     Ok(())
 }

@@ -27,6 +27,7 @@ include_dir = "0.7.4"
 itertools = "0.14.0"
 lexicmp = "0.2.0"
 names = { version = "0.14.0", default-features = false, optional = true }
+owo-colors = { version = "4.2.0", features = ["supports-colors"] }
 regex-lite = { version = "0.1.6", optional = true }
 rust-ini = "0.21.1"
 serde = { version = "1.0.219", features = ["derive"] }

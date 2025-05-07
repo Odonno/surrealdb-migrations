@@ -5,3 +5,4 @@ mod definitions;
 mod list;
 mod remove;
 mod scaffold;
+mod status;

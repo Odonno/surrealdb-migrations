@@ -24,6 +24,7 @@ use runbin::surrealdb::create_surrealdb_client;
 use scaffold::schema::ScaffoldFromSchemaArgs;
 #[cfg(feature = "scaffold")]
 use scaffold::template::ScaffoldFromTemplateArgs;
+use status::StatusArgs;
 use std::env;
 
 mod apply;
@@ -43,6 +44,7 @@ mod remove;
 mod runbin;
 #[cfg(feature = "scaffold")]
 mod scaffold;
+mod status;
 mod surrealdb;
 mod validate_version_order;
 
@@ -260,6 +262,30 @@ async fn sub_main() -> Result<()> {
                 config_file,
             };
             list::main(args).await
+        }
+        Action::Status(status_args) => {
+            let cli::StatusArgs {
+                address,
+                ns,
+                db,
+                username,
+                password,
+                no_color,
+            } = status_args;
+
+            let db_configuration = SurrealdbConfiguration {
+                address,
+                ns,
+                db,
+                username,
+                password,
+            };
+            let args = StatusArgs {
+                db_configuration: &db_configuration,
+                no_color,
+                config_file,
+            };
+            status::main(args).await
         }
         #[cfg(feature = "branching")]
         Action::Branch(branch_args) => {

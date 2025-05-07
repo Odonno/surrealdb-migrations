@@ -1,0 +1,11 @@
+---
+source: tests/cli/status.rs
+expression: stdout
+---
+Total of migrations applied: none
+
+Capabilities
+- Definition files: ✅
+- Checksum: ✅
+
+✅ Database migrations are up to date.

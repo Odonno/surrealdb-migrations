@@ -1,0 +1,12 @@
+---
+source: tests/cli/status.rs
+expression: stdout
+---
+Total of migrations applied: 3 ?1
+
+Capabilities
+- Definition files: ✅
+- Checksum: ✅
+
+❓ The following files seems to be missing:
+- [timestamp]_AddPost

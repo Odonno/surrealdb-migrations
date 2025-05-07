@@ -1,0 +1,9 @@
+---
+source: tests/cli/status.rs
+expression: stdout
+---
+Total of migrations applied: 1 ↓2
+
+Capabilities
+- Definition files: ✅
+- Checksum: ✅
