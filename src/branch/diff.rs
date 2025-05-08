@@ -14,7 +14,7 @@ use super::{
 
 pub struct BranchDiffArgs<'a> {
     pub name: String,
-    pub db_configuration: &'a SurrealdbConfiguration,
+    pub db_configuration: SurrealdbConfiguration,
     pub config_file: Option<&'a Path>,
 }
 
@@ -26,7 +26,7 @@ pub async fn main(args: BranchDiffArgs<'_>) -> Result<()> {
     } = args;
 
     let branching_feature_client =
-        create_branching_feature_client(config_file, db_configuration).await?;
+        create_branching_feature_client(config_file, &db_configuration).await?;
     let branch: Option<Branch> = get_branch_table(&branching_feature_client, &name).await?;
 
     match branch {

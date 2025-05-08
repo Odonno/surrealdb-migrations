@@ -1,3 +1,6 @@
+pub mod args;
+
+pub use args::*;
 use color_eyre::eyre::{eyre, Result};
 use std::path::{Path, PathBuf};
 
@@ -10,35 +13,6 @@ use crate::{
     io,
     runbin::config::{retrieve_table_schema_design, TableSchemaDesign},
 };
-
-pub struct CreateArgs<'a> {
-    pub name: String,
-    pub operation: CreateOperation,
-    pub config_file: Option<&'a Path>,
-}
-
-pub enum CreateOperation {
-    Schema(CreateSchemaArgs),
-    Event(CreateEventArgs),
-    Migration(CreateMigrationArgs),
-}
-
-pub struct CreateSchemaArgs {
-    pub fields: Option<Vec<String>>,
-    pub dry_run: bool,
-    pub schemafull: bool,
-}
-
-pub struct CreateEventArgs {
-    pub fields: Option<Vec<String>>,
-    pub dry_run: bool,
-    pub schemafull: bool,
-}
-
-pub struct CreateMigrationArgs {
-    pub down: bool,
-    pub content: Option<String>,
-}
 
 pub fn main(args: CreateArgs) -> Result<()> {
     let CreateArgs {

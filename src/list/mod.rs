@@ -1,20 +1,16 @@
+pub mod args;
+
+pub use args::ListArgs;
 use chrono::{DateTime, Utc};
 use chrono_human_duration::ChronoHumanDuration;
 use cli_table::{format::Border, Cell, ColorChoice, Style, Table};
 use color_eyre::eyre::Result;
-use std::path::Path;
 
 use crate::{
     common::get_migration_display_name, constants::SURQL_FILE_EXTENSION,
-    input::SurrealdbConfiguration, runbin::surrealdb::create_surrealdb_client,
+    runbin::surrealdb::create_surrealdb_client,
     surrealdb::list_script_migration_ordered_by_execution_date,
 };
-
-pub struct ListArgs<'a> {
-    pub db_configuration: &'a SurrealdbConfiguration,
-    pub no_color: bool,
-    pub config_file: Option<&'a Path>,
-}
 
 pub async fn main(args: ListArgs<'_>) -> Result<()> {
     let ListArgs {
@@ -23,7 +19,7 @@ pub async fn main(args: ListArgs<'_>) -> Result<()> {
         config_file,
     } = args;
 
-    let client = create_surrealdb_client(config_file, db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &db_configuration).await?;
 
     let migrations_applied = list_script_migration_ordered_by_execution_date(&client).await?;
 

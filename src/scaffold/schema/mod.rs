@@ -1,6 +1,9 @@
+mod args;
+
+pub use args::ScaffoldFromSchemaArgs;
 use color_eyre::eyre::{eyre, Result};
 use convert_case::{Case, Casing};
-use std::{collections::HashMap, ops::Deref, path::Path};
+use std::{collections::HashMap, ops::Deref};
 
 use crate::{
     cli::{ScaffoldSchemaDbType, ScaffoldTemplate},
@@ -12,14 +15,6 @@ use crate::{
 use super::common::{
     apply_after_scaffold, apply_before_scaffold, copy_template_files_to_current_dir,
 };
-
-pub struct ScaffoldFromSchemaArgs<'a> {
-    pub schema: String,
-    pub db_type: ScaffoldSchemaDbType,
-    pub preserve_casing: bool,
-    pub traditional: bool,
-    pub config_file: Option<&'a Path>,
-}
 
 pub fn main(args: ScaffoldFromSchemaArgs) -> Result<()> {
     let ScaffoldFromSchemaArgs {

@@ -25,7 +25,7 @@ use super::{
 
 pub struct NewBranchArgs<'a> {
     pub name: Option<String>,
-    pub db_configuration: &'a SurrealdbConfiguration,
+    pub db_configuration: SurrealdbConfiguration,
     pub config_file: Option<&'a Path>,
 }
 

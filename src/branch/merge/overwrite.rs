@@ -17,7 +17,7 @@ use crate::{
 
 pub struct MergeOverwriteBranchArgs<'a> {
     pub branch: Branch,
-    pub db_configuration: &'a SurrealdbConfiguration,
+    pub db_configuration: SurrealdbConfiguration,
     pub config_file: Option<&'a Path>,
 }
 
@@ -31,11 +31,12 @@ pub async fn main(args: MergeOverwriteBranchArgs<'_>) -> Result<()> {
     let folder_path = config::retrieve_folder_path(config_file);
     let dump_file_path = io::concat_path(&folder_path, DUMP_FILENAME);
 
-    let branch_client = create_branch_client(config_file, &branch.name, db_configuration).await?;
+    let branch_client = create_branch_client(config_file, &branch.name, &db_configuration).await?;
     branch_client.export(&dump_file_path).await?;
 
     let result =
-        apply_changes_to_main_branch(config_file, db_configuration, &branch, &dump_file_path).await;
+        apply_changes_to_main_branch(config_file, &db_configuration, &branch, &dump_file_path)
+            .await;
 
     match result {
         Ok(_) => {

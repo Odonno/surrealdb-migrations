@@ -1,17 +1,13 @@
-use color_eyre::eyre::Result;
-use std::path::Path;
+mod args;
 
-use crate::{cli::ScaffoldTemplate, config};
+pub use args::ScaffoldFromTemplateArgs;
+use color_eyre::eyre::Result;
+
+use crate::config;
 
 use super::common::{
     apply_after_scaffold, apply_before_scaffold, copy_template_files_to_current_dir,
 };
-
-pub struct ScaffoldFromTemplateArgs<'a> {
-    pub template: ScaffoldTemplate,
-    pub traditional: bool,
-    pub config_file: Option<&'a Path>,
-}
 
 pub fn main(args: ScaffoldFromTemplateArgs) -> Result<()> {
     let ScaffoldFromTemplateArgs {

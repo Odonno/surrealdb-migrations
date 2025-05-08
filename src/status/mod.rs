@@ -1,10 +1,12 @@
+pub mod args;
+
+pub use args::StatusArgs;
 use color_eyre::eyre::{eyre, Result};
 use owo_colors::{self, OwoColorize, Stream::Stdout};
-use std::{collections::HashSet, path::Path};
+use std::collections::HashSet;
 
 use crate::{
     constants::SCRIPT_MIGRATION_TABLE_NAME,
-    input::SurrealdbConfiguration,
     io,
     models::MigrationDirection,
     runbin::surrealdb::create_surrealdb_client,
@@ -13,12 +15,6 @@ use crate::{
         list_script_migration_ordered_by_execution_date,
     },
 };
-
-pub struct StatusArgs<'a> {
-    pub db_configuration: &'a SurrealdbConfiguration,
-    pub no_color: bool,
-    pub config_file: Option<&'a Path>,
-}
 
 pub async fn main(args: StatusArgs<'_>) -> Result<()> {
     let StatusArgs {
@@ -31,7 +27,7 @@ pub async fn main(args: StatusArgs<'_>) -> Result<()> {
         owo_colors::set_override(false);
     }
 
-    let client = create_surrealdb_client(config_file, db_configuration).await?;
+    let client = create_surrealdb_client(config_file, &db_configuration).await?;
 
     let table_definitions = get_surrealdb_table_definitions(&client).await?;
 

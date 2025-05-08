@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub struct ListBranchArgs<'a> {
-    pub db_configuration: &'a SurrealdbConfiguration,
+    pub db_configuration: SurrealdbConfiguration,
     pub no_color: bool,
     pub config_file: Option<&'a Path>,
 }
@@ -28,7 +28,7 @@ pub async fn main(args: ListBranchArgs<'_>) -> Result<()> {
     } = args;
 
     let branching_feature_client =
-        create_branching_feature_client(config_file, db_configuration).await?;
+        create_branching_feature_client(config_file, &db_configuration).await?;
     let branches_table_exists =
         get_surrealdb_table_exists(&branching_feature_client, BRANCH_TABLE).await?;
     let existing_branches: Vec<Branch> = if branches_table_exists {
