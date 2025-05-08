@@ -14,10 +14,12 @@ use crate::{
     config,
     constants::{
         DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, EVENTS_DIR_NAME, JSON_FILE_EXTENSION,
-        MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION,
+        MIGRATIONS_DIR_NAME, ROOT_TAG, SCHEMAS_DIR_NAME, SCRIPT_MIGRATION_TABLE_NAME,
+        SURQL_FILE_EXTENSION,
     },
     models::{DefinitionDiff, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::parse_statements,
+    tags::extract_file_tags,
 };
 
 pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
@@ -44,6 +46,7 @@ pub struct SurqlFile {
     pub name: String,
     pub full_name: String,
     pub is_down_file: bool,
+    tags: HashSet<String>,
     content: Box<dyn Fn() -> Option<String> + Send + Sync>,
 }
 
@@ -55,10 +58,13 @@ impl SurqlFile {
 
 #[cfg(test)]
 pub fn create_surql_file(full_name: &str, content: &'static str) -> SurqlFile {
+    use crate::constants::ROOT_TAG;
+
     SurqlFile {
         name: full_name.to_string(),
         full_name: full_name.to_string(),
         is_down_file: true,
+        tags: HashSet::from([ROOT_TAG.into()]),
         content: Box::new(move || Some(content.to_string())),
     }
 }
@@ -211,7 +217,9 @@ fn extract_surql_files(
     is_migration_folder: bool,
 ) -> Result<Vec<SurqlFile>> {
     match embedded_dir {
-        Some(dir) => extract_surql_files_from_embedded_dir(dir_path, dir, is_migration_folder),
+        Some(dir) => {
+            extract_surql_files_from_embedded_dir(dir_path, dir, is_migration_folder, None)
+        }
         None => extract_surql_files_from_filesystem(config_file, dir_path, is_migration_folder),
     }
 }
@@ -220,6 +228,7 @@ fn extract_surql_files_from_embedded_dir(
     dir_path: PathBuf,
     dir: &Dir<'static>,
     is_migration_folder: bool,
+    parent_tags: Option<HashSet<String>>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
@@ -242,10 +251,19 @@ fn extract_surql_files_from_embedded_dir(
                         || (is_migration_folder
                             && path_str.contains(&format!("{}/", DOWN_MIGRATIONS_DIR_NAME)));
 
+                    let parent_tags = match &parent_tags {
+                        Some(tags) => tags,
+                        None => &HashSet::from([ROOT_TAG.into()]),
+                    };
+                    let file_tags = extract_file_tags(&full_name);
+
+                    let tags = file_tags.union(parent_tags).cloned().collect();
+
                     Some(SurqlFile {
                         name,
                         full_name,
                         is_down_file,
+                        tags,
                         content: Box::new(move || get_embedded_file_content(f)),
                     })
                 }
@@ -310,7 +328,7 @@ fn extract_surql_files_from_filesystem(
     config.insert(DirEntryAttr::IsDir);
     config.insert(DirEntryAttr::FullName);
 
-    nested_extract_surql_files_from_filesystem(dir_path, &config, is_migration_folder)
+    nested_extract_surql_files_from_filesystem(dir_path, &config, is_migration_folder, None)
         .context(format!("Error listing {} directory", dir_path_str))
 }
 
@@ -318,6 +336,7 @@ fn nested_extract_surql_files_from_filesystem(
     dir_path: PathBuf,
     config: &HashSet<DirEntryAttr>,
     is_migration_folder: bool,
+    parent_tags: Option<&HashSet<String>>,
 ) -> Option<Vec<SurqlFile>> {
     let Ok(file_result) = fs_extra::dir::ls(dir_path, config) else {
         return None;
@@ -334,11 +353,22 @@ fn nested_extract_surql_files_from_filesystem(
                     return vec![];
                 };
 
+                let Some(full_name) = extract_string_dir_entry_value(f, DirEntryAttr::FullName)
+                else {
+                    return vec![];
+                };
+
                 if *is_dir {
+                    let parent_tags = match &parent_tags {
+                        Some(tags) => tags,
+                        None => &HashSet::from([full_name.into()]),
+                    };
+
                     return nested_extract_surql_files_from_filesystem(
                         path.into(),
                         config,
                         is_migration_folder,
+                        Some(parent_tags),
                     )
                     .unwrap_or_default();
                 }
@@ -346,22 +376,28 @@ fn nested_extract_surql_files_from_filesystem(
                 let is_file =
                     extract_boolean_dir_entry_value(f, DirEntryAttr::IsFile).unwrap_or(&false);
                 let name = extract_string_dir_entry_value(f, DirEntryAttr::Name);
-                let full_name = extract_string_dir_entry_value(f, DirEntryAttr::FullName);
 
-                match (is_file, name, full_name, path) {
+                match (is_file, name) {
                     (false, ..) => vec![],
-                    (true, Some(name), Some(full_name), path)
-                        if full_name.ends_with(SURQL_FILE_EXTENSION) =>
-                    {
+                    (true, Some(name)) if full_name.ends_with(SURQL_FILE_EXTENSION) => {
                         let is_down_file = full_name.ends_with(DOWN_SURQL_FILE_EXTENSION)
                             || (is_migration_folder
                                 && path.contains(&format!("{}/", DOWN_MIGRATIONS_DIR_NAME)));
                         let path: String = path.clone();
 
+                        let parent_tags = match &parent_tags {
+                            Some(tags) => tags,
+                            None => &HashSet::from([ROOT_TAG.into()]),
+                        };
+                        let file_tags = extract_file_tags(full_name);
+
+                        let tags = file_tags.union(parent_tags).cloned().collect();
+
                         vec![SurqlFile {
                             name: name.to_string(),
                             full_name: full_name.to_string(),
                             is_down_file,
+                            tags,
                             content: Box::new(move || fs_extra::file::read_to_string(&path).ok()),
                         }]
                     }

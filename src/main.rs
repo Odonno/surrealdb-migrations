@@ -36,6 +36,7 @@ mod runbin;
 mod scaffold;
 mod status;
 mod surrealdb;
+mod tags;
 mod validate_version_order;
 
 #[cfg(target_arch = "wasm32")]

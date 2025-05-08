@@ -61,6 +61,7 @@ mod io;
 mod models;
 mod redo;
 mod surrealdb;
+mod tags;
 mod validate_version_order;
 
 use ::surrealdb::{Connection, Surreal};
