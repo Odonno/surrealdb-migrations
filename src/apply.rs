@@ -339,7 +339,7 @@ fn ensures_necessary_files_exists(
         // expect __Initial.surql file (in migrations)
         let has_necessary_files = forward_migrations_files
             .iter()
-            .filter(|f| !f.is_down_file)
+            .filter(|f| !f.is_down_file())
             .any(|f| f.full_name == INITIAL_TRADITIONAL_MIGRATION_FILENAME);
 
         if !has_necessary_files {
@@ -352,7 +352,7 @@ fn ensures_necessary_files_exists(
         // expect script_migration.surql file (in schemas)
         let has_necessary_files = schemas_files
             .iter()
-            .filter(|f| !f.is_down_file)
+            .filter(|f| !f.is_down_file())
             .any(|f| f.name == SCRIPT_MIGRATION_TABLE_NAME);
 
         if !has_necessary_files {

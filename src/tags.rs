@@ -6,7 +6,7 @@ pub fn extract_file_tags(filename: &str) -> HashSet<String> {
             .split('.')
             .skip(1)
             .filter(|s| is_valid_tag(s))
-            .map(|s| s.to_string()),
+            .map(|s| s.to_lowercase()),
     )
 }
 
@@ -73,5 +73,17 @@ mod tests {
           "v2",
         ]
         "#);
+    }
+
+    #[test]
+    fn always_lowercase_tags() {
+        let result = extract_file_tags("schema_file.DOWN.surql");
+
+        assert_ron_snapshot!(result.iter().sorted_by(Ord::cmp).collect::<Vec<_>>(), @r#"
+            [
+              "down",
+              "surql",
+            ]
+            "#);
     }
 }
