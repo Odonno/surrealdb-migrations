@@ -47,6 +47,10 @@ pub struct ApplyArgs {
     /// Validate the version order of the migrations so that you cannot run migrations if there are
     /// gaps in the migrations history.
     #[clap(long)]
+    pub validate_checksum: bool,
+    /// Validate the checksum of the migrations already played so that you cannot run migrations if there are
+    /// changes detected in the migrations directory.
+    #[clap(long)]
     pub validate_version_order: bool,
     /// Output the surql statements to the console.
     #[clap(short, long, requires = "dry_run")]

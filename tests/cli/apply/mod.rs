@@ -8,4 +8,5 @@ mod traditional;
 mod up;
 mod up_single;
 mod up_to;
+mod validate_checksum;
 mod validate_version_order;

@@ -1,0 +1,11 @@
+---
+source: tests/cli/apply/traditional/validate_checksum.rs
+expression: stderr
+---
+Error: 
+   0: The migration file '[timestamp]_AddAdminUser' does not exist.
+
+[location]
+
+Backtrace omitted. Run with RUST_BACKTRACE=1 environment variable to display it.
+Run with RUST_BACKTRACE=full to include source snippets.

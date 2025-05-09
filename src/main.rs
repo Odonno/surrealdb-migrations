@@ -39,6 +39,7 @@ mod scaffold;
 mod status;
 mod surrealdb;
 mod tags;
+mod validate_checksum;
 mod validate_version_order;
 
 #[cfg(target_arch = "wasm32")]
@@ -90,6 +91,7 @@ async fn sub_main() -> Result<()> {
                 username,
                 password,
                 dry_run,
+                validate_checksum,
                 validate_version_order,
                 output,
             } = apply_args;
@@ -110,6 +112,7 @@ async fn sub_main() -> Result<()> {
                     dir: None,
                     display_logs: true,
                     dry_run,
+                    validate_checksum,
                     validate_version_order,
                     config_file,
                     output,
@@ -123,6 +126,7 @@ async fn sub_main() -> Result<()> {
                     dir: None,
                     display_logs: true,
                     dry_run,
+                    validate_checksum,
                     validate_version_order,
                     config_file,
                     output,

@@ -9,6 +9,7 @@ use crate::{
     io,
     models::MigrationDirection,
     surrealdb::{self},
+    validate_checksum::{self, ValidateChecksumArgs},
     validate_version_order::{self, ValidateVersionOrderArgs},
 };
 
@@ -18,6 +19,7 @@ pub struct RedoArgs<'a, C: Connection> {
     pub dir: Option<&'a Dir<'static>>,
     pub display_logs: bool,
     pub dry_run: bool,
+    pub validate_checksum: bool,
     pub validate_version_order: bool,
     pub config_file: Option<&'a Path>,
     pub output: bool,
@@ -30,6 +32,7 @@ pub async fn main<C: Connection>(args: RedoArgs<'_, C>) -> Result<()> {
         dir,
         display_logs,
         dry_run,
+        validate_checksum,
         validate_version_order,
         config_file,
         output,
@@ -42,6 +45,15 @@ pub async fn main<C: Connection>(args: RedoArgs<'_, C>) -> Result<()> {
             config_file,
         };
         validate_version_order::main(validate_version_order_args).await?;
+    }
+
+    if validate_checksum {
+        let validate_checksum_args = ValidateChecksumArgs {
+            db: client,
+            dir,
+            config_file,
+        };
+        validate_checksum::main(validate_checksum_args).await?;
     }
 
     let display_logs = match dry_run {

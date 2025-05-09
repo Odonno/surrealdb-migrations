@@ -1,0 +1,6 @@
+---
+source: tests/cli/apply/validate_checksum.rs
+expression: stdout
+---
+Schema files successfully executed!
+Event files successfully executed!

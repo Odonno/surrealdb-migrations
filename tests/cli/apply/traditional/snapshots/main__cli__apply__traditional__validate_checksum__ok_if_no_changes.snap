@@ -1,0 +1,5 @@
+---
+source: tests/cli/apply/traditional/validate_checksum.rs
+expression: stdout
+---
+

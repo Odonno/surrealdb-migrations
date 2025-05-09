@@ -62,6 +62,7 @@ mod models;
 mod redo;
 mod surrealdb;
 mod tags;
+mod validate_checksum;
 mod validate_version_order;
 
 use ::surrealdb::{Connection, Surreal};
@@ -71,6 +72,7 @@ use include_dir::Dir;
 use models::{ApplyOperation, ScriptMigration};
 use redo::RedoArgs;
 use std::path::Path;
+use validate_checksum::ValidateChecksumArgs;
 use validate_version_order::ValidateVersionOrderArgs;
 
 /// The main entry point for the library, used to apply migrations.
@@ -227,6 +229,47 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
         validate_version_order::main(args).await
     }
 
+    /// Validate the checksum of the migrations already played so that you cannot run migrations if there are
+    /// changes detected in the migrations directory.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// let runner = MigrationRunner::new(&db);
+    ///
+    /// runner.validate_checksum().await?;
+    /// runner.up().await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub async fn validate_checksum(&self) -> Result<()> {
+        let args = ValidateChecksumArgs {
+            db: self.db,
+            dir: self.dir,
+            config_file: self.config_file,
+        };
+        validate_checksum::main(args).await
+    }
+
     /// Apply schema definitions and apply all migrations.
     ///
     /// ## Examples
@@ -265,6 +308,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -314,6 +358,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -359,6 +404,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -408,6 +454,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -453,6 +500,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -498,6 +546,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
@@ -543,6 +592,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             display_logs: false,
             dry_run: false,
+            validate_checksum: false,
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
