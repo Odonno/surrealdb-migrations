@@ -13,6 +13,8 @@ use surrealdb::{
 
 use crate::helpers::SurrealdbConfiguration;
 
+use super::DbInstance;
+
 pub async fn is_surreal_db_empty(ns: Option<String>, db: Option<String>) -> Result<bool> {
     let db_configuration = SurrealdbConfiguration {
         ns,
@@ -117,14 +119,13 @@ pub async fn create_surrealdb_client(
 ) -> Result<Surreal<Any>> {
     let SurrealdbConfiguration {
         address,
-        url,
         username,
         password,
         ns,
         db,
     } = db_configuration;
 
-    let client = create_surrealdb_connection(url.clone(), address.clone()).await?;
+    let client = create_surrealdb_connection(address.clone()).await?;
     sign_in(username.clone(), password.clone(), &client).await?;
     set_namespace_and_database(ns.clone(), db.clone(), &client).await?;
 
@@ -132,11 +133,9 @@ pub async fn create_surrealdb_client(
 }
 
 async fn create_surrealdb_connection(
-    url: Option<String>,
     address: Option<String>,
 ) -> Result<Surreal<Any>, surrealdb::Error> {
-    let url = url.unwrap_or("localhost:8000".to_owned());
-    let address = address.unwrap_or(format!("ws://{}", url));
+    let address = address.unwrap_or(String::from("ws://localhost:8000"));
 
     let config =
         Config::new().capabilities(Capabilities::all().with_all_experimental_features_allowed());
@@ -188,6 +187,34 @@ pub async fn remove_features_ns() -> Result<()> {
 
     let client = create_surrealdb_client(&db_configuration).await?;
     client.query("REMOVE NAMESPACE features;").await?;
+
+    Ok(())
+}
+
+pub async fn execute_sql_statements(query: &str, db_instance: DbInstance, db: &str) -> Result<()> {
+    let username = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let password = match db_instance {
+        DbInstance::Root => "root",
+        DbInstance::Admin => "admin",
+    };
+    let port = match db_instance {
+        DbInstance::Root => "8000",
+        DbInstance::Admin => "8001",
+    };
+
+    let db_configuration = SurrealdbConfiguration {
+        address: Some(format!("ws://localhost:{}", port)),
+        username: Some(username.to_string()),
+        password: Some(password.to_string()),
+        ns: Some("test".to_string()),
+        db: Some(db.to_string()),
+    };
+
+    let client = create_surrealdb_client(&db_configuration).await?;
+    client.query(query).await?;
 
     Ok(())
 }

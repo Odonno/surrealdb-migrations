@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 use super::BranchArgs;
 #[cfg(feature = "scaffold")]
 use super::ScaffoldAction;
-use super::{ApplyArgs, CreateArgs, ListArgs, StatusArgs};
+use super::{ApplyArgs, CreateArgs, DiffArgs, ListArgs, StatusArgs};
 
 #[derive(Parser, Debug)]
 #[clap(name = "surrealdb-migrations", version, author = "Odonno")]
@@ -49,4 +49,7 @@ pub enum Action {
     /// ** Preview ** A set of commands for database branching
     #[clap(aliases = vec!["b"])]
     Branch(BranchArgs),
+    /// ** Preview ** Display the schema differences between schema migrations and a remote database
+    #[clap(aliases = vec!["d"])]
+    Diff(DiffArgs),
 }

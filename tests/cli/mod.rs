@@ -2,6 +2,7 @@ mod apply;
 mod branch;
 mod create;
 mod definitions;
+mod diff;
 mod list;
 mod remove;
 mod scaffold;

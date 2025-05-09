@@ -3993,6 +3993,7 @@ dependencies = [
  "diffy",
  "dir-diff",
  "fs_extra",
+ "futures",
  "hex",
  "include_dir",
  "insta",

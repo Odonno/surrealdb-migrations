@@ -330,7 +330,7 @@ fn expect_migration_definitions_to_be_up_to_date(
     }
 }
 
-fn ensures_necessary_files_exists(
+pub fn ensures_necessary_files_exists(
     use_traditional_approach: bool,
     schemas_files: &[SurqlFile],
     forward_migrations_files: &[SurqlFile],

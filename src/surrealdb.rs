@@ -31,7 +31,7 @@ pub async fn get_surrealdb_table_definitions<C: Connection>(
     Ok(table_definitions)
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct SurrealdbTableDefinition {
     pub fields: HashMap<String, String>,
 }
@@ -51,7 +51,10 @@ pub async fn get_surrealdb_table_definition<C: Connection>(
     let mut response = response.check()?;
 
     let result: Option<SurrealdbTableDefinition> = response.take(0)?;
-    let table_definition = result.context("Failed to get table definition")?;
+    let table_definition = result.context(format!(
+        "Failed to get table definition for table '{}'",
+        table
+    ))?;
 
     Ok(table_definition)
 }

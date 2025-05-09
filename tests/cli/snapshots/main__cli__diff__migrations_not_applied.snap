@@ -1,0 +1,39 @@
+---
+source: tests/cli/diff.rs
+expression: stdout
+---
++comment (2 additions)
+  +content
+  +created_at
+
++permission (2 additions)
+  +created_at
+  +name
+
++post (5 additions)
+  +author
+  +content
+  +created_at
+  +status
+  +title
+
++publish_post (2 additions)
+  +created_at
+  +post_id
+
++script_migration (3 additions)
+  +checksum
+  +executed_at
+  +script_name
+
++unpublish_post (2 additions)
+  +created_at
+  +post_id
+
++user (6 additions)
+  +avatar
+  +email
+  +password
+  +permissions
+  +registered_at
+  +username

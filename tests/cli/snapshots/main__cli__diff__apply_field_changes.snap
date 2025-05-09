@@ -1,0 +1,9 @@
+---
+source: tests/cli/diff.rs
+expression: stdout
+---
+~post (1 changes)
+  ~title
+
+~user (1 changes)
+  ~email

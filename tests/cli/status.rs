@@ -1,8 +1,7 @@
-use std::fs;
-
 use assert_fs::TempDir;
 use color_eyre::eyre::{Error, Result};
 use insta::{assert_snapshot, Settings};
+use std::fs;
 
 use crate::helpers::*;
 

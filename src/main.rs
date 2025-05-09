@@ -7,6 +7,7 @@ use color_eyre::config::HookBuilder;
 use color_eyre::config::Theme;
 use color_eyre::eyre::Result;
 use create::CreateArgs;
+use diff::DiffArgs;
 use input::SurrealdbConfiguration;
 use list::ListArgs;
 use models::ApplyOperation;
@@ -25,6 +26,7 @@ mod common;
 mod config;
 mod constants;
 mod create;
+mod diff;
 mod input;
 mod io;
 mod list;
@@ -144,5 +146,6 @@ async fn sub_main() -> Result<()> {
                 BranchArgs::Status(args) => branch::status::main(args).await,
             }
         }
+        Action::Diff(diff_args) => diff::main(DiffArgs::from(diff_args, config_file)).await,
     }
 }

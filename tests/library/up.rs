@@ -128,7 +128,6 @@ async fn apply_with_db_configuration() -> Result<()> {
 
     let configuration = SurrealdbConfiguration {
         address: Some("ws://localhost:8001".to_string()),
-        url: None,
         username: Some("admin".to_string()),
         password: Some("admin".to_string()),
         ns: Some("test".to_string()),
@@ -159,7 +158,6 @@ async fn apply_should_skip_events_if_no_events_folder() -> Result<()> {
 
     let configuration = SurrealdbConfiguration {
         address: Some("ws://localhost:8001".to_string()),
-        url: None,
         username: Some("admin".to_string()),
         password: Some("admin".to_string()),
         ns: Some("namespace".to_string()),
