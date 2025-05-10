@@ -1,17 +1,21 @@
 use color_eyre::eyre::{eyre, ContextCompat, Result};
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use crate::{
     common::get_migration_display_name,
     config,
-    constants::{DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, MIGRATIONS_DIR_NAME},
-    io::{self, SurqlFile},
+    constants::{
+        ALL_TAGS, DOWN_MIGRATIONS_DIR_NAME, DOWN_SURQL_FILE_EXTENSION, MIGRATIONS_DIR_NAME,
+    },
+    file::SurqlFile,
+    io::{self},
     models::MigrationDirection,
 };
 
 pub fn main(config_file: Option<&Path>) -> Result<()> {
+    let tags = HashSet::from([ALL_TAGS.into()]);
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, None, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, None, MigrationDirection::Forward, &tags);
 
     if forward_migrations_files.is_empty() {
         return Err(eyre!("No migration files left"));

@@ -10,7 +10,7 @@ pub fn extract_file_tags(filename: &str) -> HashSet<String> {
     )
 }
 
-fn is_valid_tag(str: &str) -> bool {
+pub fn is_valid_tag(str: &str) -> bool {
     str.chars()
         .all(|c| c.is_ascii_digit() || c.is_ascii_lowercase() || c.is_ascii_uppercase())
 }

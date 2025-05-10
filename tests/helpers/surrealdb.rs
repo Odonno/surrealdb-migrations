@@ -192,28 +192,7 @@ pub async fn remove_features_ns() -> Result<()> {
 }
 
 pub async fn execute_sql_statements(query: &str, db_instance: DbInstance, db: &str) -> Result<()> {
-    let username = match db_instance {
-        DbInstance::Root => "root",
-        DbInstance::Admin => "admin",
-    };
-    let password = match db_instance {
-        DbInstance::Root => "root",
-        DbInstance::Admin => "admin",
-    };
-    let port = match db_instance {
-        DbInstance::Root => "8000",
-        DbInstance::Admin => "8001",
-    };
-
-    let db_configuration = SurrealdbConfiguration {
-        address: Some(format!("ws://localhost:{}", port)),
-        username: Some(username.to_string()),
-        password: Some(password.to_string()),
-        ns: Some("test".to_string()),
-        db: Some(db.to_string()),
-    };
-
-    let client = create_surrealdb_client(&db_configuration).await?;
+    let client = create_surrealdb_client(&SurrealdbConfiguration::from(db_instance, db)).await?;
     client.query(query).await?;
 
     Ok(())

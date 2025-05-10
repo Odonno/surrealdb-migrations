@@ -5,6 +5,7 @@ mod list;
 mod load_files;
 mod redo;
 mod reset;
+mod tags;
 mod traditional;
 mod up;
 mod up_single;

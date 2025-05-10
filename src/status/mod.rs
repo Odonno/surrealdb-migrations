@@ -6,7 +6,7 @@ use owo_colors::{self, OwoColorize, Stream::Stdout};
 use std::collections::HashSet;
 
 use crate::{
-    constants::SCRIPT_MIGRATION_TABLE_NAME,
+    constants::{ALL_TAGS, SCRIPT_MIGRATION_TABLE_NAME},
     io,
     models::MigrationDirection,
     runbin::surrealdb::create_surrealdb_client,
@@ -38,10 +38,12 @@ pub async fn main(args: StatusArgs<'_>) -> Result<()> {
     let script_migration_table_definition =
         get_surrealdb_table_definition(&client, SCRIPT_MIGRATION_TABLE_NAME).await?;
 
-    let schemas_files = io::extract_schemas_files(config_file, None)
+    let tags = HashSet::from([ALL_TAGS.into()]);
+
+    let schemas_files = io::extract_schemas_files(config_file, None, &tags)
         .ok()
         .unwrap_or_default();
-    let events_files = io::extract_events_files(config_file, None)
+    let events_files = io::extract_events_files(config_file, None, &tags)
         .ok()
         .unwrap_or_default();
 
@@ -49,7 +51,7 @@ pub async fn main(args: StatusArgs<'_>) -> Result<()> {
     let event_definitions = io::concat_files_content(&events_files);
 
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, None, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, None, MigrationDirection::Forward, &tags);
 
     let use_traditional_approach = schema_definitions.is_empty()
         && event_definitions.is_empty()

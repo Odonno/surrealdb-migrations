@@ -2,9 +2,10 @@ use ::surrealdb::{Connection, Surreal};
 use color_eyre::eyre::{eyre, Result};
 use include_dir::Dir;
 use sha2::{Digest, Sha256};
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use crate::{
+    constants::ALL_TAGS,
     io::{self},
     models::MigrationDirection,
     surrealdb,
@@ -26,8 +27,10 @@ pub async fn main<C: Connection>(args: ValidateChecksumArgs<'_, C>) -> Result<()
     let migrations_applied =
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
+    let tags = HashSet::from([ALL_TAGS.into()]);
+
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
 
     for migration_applied in migrations_applied {
         if let Some(checksum) = migration_applied.checksum {

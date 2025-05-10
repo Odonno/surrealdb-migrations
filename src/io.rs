@@ -17,9 +17,10 @@ use crate::{
         JSON_FILE_EXTENSION, MIGRATIONS_DIR_NAME, ROOT_TAG, SCHEMAS_DIR_NAME,
         SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION,
     },
+    file::SurqlFile,
     models::{DefinitionDiff, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::parse_statements,
-    tags::extract_file_tags,
+    tags::{extract_file_tags, is_valid_tag},
 };
 
 pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
@@ -40,23 +41,6 @@ pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
     let can_use_filesystem = script_migration_file_try_exists.unwrap_or(false);
 
     Ok(can_use_filesystem)
-}
-
-pub struct SurqlFile {
-    pub name: String,
-    pub full_name: String,
-    tags: HashSet<String>,
-    content: Box<dyn Fn() -> Option<String> + Send + Sync>,
-}
-
-impl SurqlFile {
-    pub fn get_content(&self) -> Option<String> {
-        (self.content)()
-    }
-
-    pub fn is_down_file(&self) -> bool {
-        self.tags.contains(DOWN_TAG)
-    }
 }
 
 pub fn concat_files_content(files: &[SurqlFile]) -> String {
@@ -163,27 +147,30 @@ fn extract_consumed_table_names(query: &Query) -> HashSet<String> {
 pub fn extract_schemas_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
+    tags: &HashSet<String>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(SCHEMAS_DIR_NAME).to_path_buf();
-    extract_surql_files(config_file, dir_path, embedded_dir, false)
+    extract_surql_files(config_file, dir_path, embedded_dir, false, tags)
 }
 
 pub fn extract_events_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
+    tags: &HashSet<String>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path = Path::new(EVENTS_DIR_NAME).to_path_buf();
-    extract_surql_files(config_file, dir_path, embedded_dir, false)
+    extract_surql_files(config_file, dir_path, embedded_dir, false, tags)
 }
 
 pub fn extract_migrations_files(
     config_file: Option<&Path>,
     embedded_dir: Option<&Dir<'static>>,
     migration_direction: MigrationDirection,
+    tags: &HashSet<String>,
 ) -> Vec<SurqlFile> {
     let root_migrations_dir = Path::new(MIGRATIONS_DIR_NAME).to_path_buf();
     let root_migrations_files =
-        extract_surql_files(config_file, root_migrations_dir, embedded_dir, true)
+        extract_surql_files(config_file, root_migrations_dir, embedded_dir, true, tags)
             .ok()
             .unwrap_or_default();
 
@@ -205,12 +192,13 @@ fn extract_surql_files(
     dir_path: PathBuf,
     embedded_dir: Option<&Dir<'static>>,
     is_migration_folder: bool,
+    tags: &HashSet<String>,
 ) -> Result<Vec<SurqlFile>> {
     match embedded_dir {
         Some(dir) => {
-            extract_surql_files_from_embedded_dir(dir_path, dir, is_migration_folder, None)
+            extract_surql_files_from_embedded_dir(dir_path, dir, is_migration_folder, None, tags)
         }
-        None => extract_surql_files_from_filesystem(config_file, dir_path),
+        None => extract_surql_files_from_filesystem(config_file, dir_path, tags),
     }
 }
 
@@ -219,6 +207,7 @@ fn extract_surql_files_from_embedded_dir(
     dir: &Dir<'static>,
     is_migration_folder: bool,
     parent_tags: Option<HashSet<String>>,
+    filter_tags: &HashSet<String>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
@@ -237,6 +226,7 @@ fn extract_surql_files_from_embedded_dir(
                 (false, ..) => None,
                 (_, Some(name), Some(full_name)) => {
                     let path_str = f.path().to_str().unwrap_or_default();
+                    // TODO : extract tags from path folders
 
                     let parent_tags = match &parent_tags {
                         Some(tags) => tags,
@@ -267,6 +257,7 @@ fn extract_surql_files_from_embedded_dir(
                 _ => None,
             }
         })
+        .filter(|file| file.filter_by_tags(filter_tags))
         .collect::<Vec<_>>();
 
     Ok(files)
@@ -311,6 +302,7 @@ fn get_embedded_file_content(f: &include_dir::File) -> Option<String> {
 fn extract_surql_files_from_filesystem(
     config_file: Option<&Path>,
     dir_path: PathBuf,
+    filter_tags: &HashSet<String>,
 ) -> Result<Vec<SurqlFile>> {
     let dir_path_str = dir_path.display().to_string();
 
@@ -324,7 +316,7 @@ fn extract_surql_files_from_filesystem(
     config.insert(DirEntryAttr::IsDir);
     config.insert(DirEntryAttr::FullName);
 
-    nested_extract_surql_files_from_filesystem(dir_path, &config, None)
+    nested_extract_surql_files_from_filesystem(dir_path, &config, None, filter_tags)
         .context(format!("Error listing {} directory", dir_path_str))
 }
 
@@ -332,6 +324,7 @@ fn nested_extract_surql_files_from_filesystem(
     dir_path: PathBuf,
     config: &HashSet<DirEntryAttr>,
     parent_tags: Option<&HashSet<String>>,
+    filter_tags: &HashSet<String>,
 ) -> Option<Vec<SurqlFile>> {
     let Ok(file_result) = fs_extra::dir::ls(dir_path, config) else {
         return None;
@@ -354,15 +347,22 @@ fn nested_extract_surql_files_from_filesystem(
                 };
 
                 if *is_dir {
+                    let dir_tag = full_name.to_string();
+                    let is_valid_tag = is_valid_tag(&dir_tag);
                     let parent_tags = match &parent_tags {
+                        Some(tags) if is_valid_tag => &HashSet::from_iter(
+                            tags.union(&HashSet::from([dir_tag])).cloned().collect_vec(),
+                        ),
                         Some(tags) => tags,
-                        None => &HashSet::from([full_name.into()]),
+                        None if is_valid_tag => &HashSet::from([dir_tag]),
+                        _ => &HashSet::new(),
                     };
 
                     return nested_extract_surql_files_from_filesystem(
                         path.into(),
                         config,
                         Some(parent_tags),
+                        filter_tags,
                     )
                     .unwrap_or_default();
                 }
@@ -394,6 +394,7 @@ fn nested_extract_surql_files_from_filesystem(
                     _ => vec![],
                 }
             })
+            .filter(|file| file.filter_by_tags(filter_tags))
             .collect::<Vec<_>>(),
     )
 }
@@ -540,9 +541,10 @@ pub fn create_definition_files(
     initial_definition_path: PathBuf,
     schema_definitions: String,
     event_definitions: String,
+    tags: &HashSet<String>,
 ) -> Result<()> {
     let forward_migrations_files =
-        extract_migrations_files(config_file, None, MigrationDirection::Forward);
+        extract_migrations_files(config_file, None, MigrationDirection::Forward, tags);
     let last_migration_file = forward_migrations_files.last();
 
     if let Some(last_migration_file) = last_migration_file {

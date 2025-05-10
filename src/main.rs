@@ -16,6 +16,7 @@ use runbin::surrealdb::create_surrealdb_client;
 #[cfg(feature = "scaffold")]
 use scaffold::args::ScaffoldArgs;
 use status::StatusArgs;
+use std::collections::HashSet;
 use std::env;
 
 mod apply;
@@ -27,6 +28,7 @@ mod config;
 mod constants;
 mod create;
 mod diff;
+mod file;
 mod input;
 mod io;
 mod list;
@@ -94,6 +96,7 @@ async fn sub_main() -> Result<()> {
                 validate_checksum,
                 validate_version_order,
                 output,
+                tags,
             } = apply_args;
 
             let db_configuration = SurrealdbConfiguration {
@@ -120,6 +123,8 @@ async fn sub_main() -> Result<()> {
                 redo::main(args).await
             } else {
                 let operation = ApplyOperation::try_from(up, down, reset)?;
+                let tags = tags.map(HashSet::from_iter);
+
                 let args = ApplyArgs {
                     operation,
                     db: &db,
@@ -130,6 +135,7 @@ async fn sub_main() -> Result<()> {
                     validate_version_order,
                     config_file,
                     output,
+                    tags,
                 };
                 apply::main(args).await
             }

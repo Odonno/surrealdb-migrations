@@ -14,16 +14,20 @@ use lexicmp::natural_lexical_cmp;
 use sha2::{Digest, Sha256};
 use std::{
     cmp::Ordering,
+    collections::HashSet,
     path::{Path, PathBuf},
 };
 
 use crate::{
     common::get_migration_display_name,
-    constants::{INITIAL_TRADITIONAL_MIGRATION_FILENAME, SCRIPT_MIGRATION_TABLE_NAME},
+    constants::{
+        ALL_TAGS, INITIAL_TRADITIONAL_MIGRATION_FILENAME, ROOT_TAG, SCRIPT_MIGRATION_TABLE_NAME,
+    },
+    file::SurqlFile,
     io::{
         self, apply_patch, calculate_definition_using_patches, create_definition_files,
         extract_json_definition_files, filter_except_initial_definition, get_current_definition,
-        get_initial_definition, get_migration_definition_diff, SurqlFile,
+        get_initial_definition, get_migration_definition_diff,
     },
     models::{ApplyOperation, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{
@@ -43,6 +47,7 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub validate_version_order: bool,
     pub config_file: Option<&'a Path>,
     pub output: bool,
+    pub tags: Option<HashSet<String>>,
 }
 
 pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
@@ -56,6 +61,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         validate_version_order,
         config_file,
         output,
+        tags,
     } = args;
 
     if validate_version_order {
@@ -81,10 +87,19 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         false => display_logs,
     };
 
-    let schemas_files = io::extract_schemas_files(config_file, dir)
+    let tags = match tags {
+        Some(tags) => HashSet::from_iter(
+            tags.union(&HashSet::from([ROOT_TAG.into()]))
+                .cloned()
+                .collect_vec(),
+        ),
+        None => HashSet::from([ALL_TAGS.into()]),
+    };
+
+    let schemas_files = io::extract_schemas_files(config_file, dir, &tags)
         .ok()
         .unwrap_or_default();
-    let events_files = io::extract_events_files(config_file, dir)
+    let events_files = io::extract_events_files(config_file, dir, &tags)
         .ok()
         .unwrap_or_default();
 
@@ -92,9 +107,9 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
     let event_definitions = io::concat_files_content(&events_files);
 
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
     let backward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Backward);
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Backward, &tags);
 
     let use_traditional_approach = schema_definitions.is_empty()
         && event_definitions.is_empty()
@@ -130,6 +145,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                     initial_definition_path.to_path_buf(),
                     schema_definitions.to_string(),
                     event_definitions.to_string(),
+                    &tags,
                 )?;
             }
         } else if let Some(dir) = dir {

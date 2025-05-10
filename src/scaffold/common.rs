@@ -7,6 +7,7 @@ use chrono::{DateTime, Local};
 use color_eyre::eyre::{eyre, ContextCompat, Result};
 use include_dir::{include_dir, Dir};
 use std::{
+    collections::HashSet,
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -15,8 +16,8 @@ use std::{
 use crate::{
     cli::ScaffoldTemplate,
     constants::{
-        DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME, INITIAL_TRADITIONAL_MIGRATION_FILENAME,
-        MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
+        ALL_TAGS, DOWN_MIGRATIONS_DIR_NAME, EVENTS_DIR_NAME,
+        INITIAL_TRADITIONAL_MIGRATION_FILENAME, MIGRATIONS_DIR_NAME, SCHEMAS_DIR_NAME,
     },
     io::{self, ensures_folder_exists},
     runbin::io::{extract_event_definitions, extract_schema_definitions},
@@ -54,9 +55,11 @@ pub fn apply_after_scaffold(
     rename_down_migrations_files_to_match_current_date(now, &migrations_dir_path)?;
 
     if traditional {
+        let tags = HashSet::from([ALL_TAGS.into()]);
+
         // extract surql files
-        let schema_definitions = extract_schema_definitions(config_file, None);
-        let event_definitions = extract_event_definitions(config_file, None);
+        let schema_definitions = extract_schema_definitions(config_file, None, &tags);
+        let event_definitions = extract_event_definitions(config_file, None, &tags);
 
         // concat surql statements
         let schemas_statements = parse_statements(&schema_definitions)?;

@@ -57,6 +57,7 @@ mod apply;
 mod common;
 mod config;
 mod constants;
+mod file;
 mod io;
 mod models;
 mod redo;
@@ -71,7 +72,7 @@ use color_eyre::eyre::Result;
 use include_dir::Dir;
 use models::{ApplyOperation, ScriptMigration};
 use redo::RedoArgs;
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 use validate_checksum::ValidateChecksumArgs;
 use validate_version_order::ValidateVersionOrderArgs;
 
@@ -80,6 +81,7 @@ pub struct MigrationRunner<'a, C: Connection> {
     db: &'a Surreal<C>,
     dir: Option<&'a Dir<'static>>,
     config_file: Option<&'a Path>,
+    tags: Option<HashSet<String>>,
 }
 
 impl<'a, C: Connection> MigrationRunner<'a, C> {
@@ -93,6 +95,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             db,
             dir: None,
             config_file: None,
+            tags: None,
         }
     }
 
@@ -138,6 +141,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             db: self.db,
             dir: self.dir,
             config_file: Some(config_file.as_ref()),
+            tags: self.tags,
         }
     }
 
@@ -180,11 +184,60 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
     /// # Ok(())
     /// # }
     /// ```
-    pub fn load_files(&'a self, dir: &'a Dir<'static>) -> Self {
+    pub fn load_files(self, dir: &'a Dir<'static>) -> Self {
         MigrationRunner {
             db: self.db,
             dir: Some(dir),
             config_file: self.config_file,
+            tags: self.tags,
+        }
+    }
+
+    /// Load migration project files from an embedded directory.
+    ///
+    /// ## Arguments
+    ///
+    /// * `dir` - The directory containing the migration project files.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use include_dir::{include_dir, Dir};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// // Load migration project files from an embedded directory
+    /// const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+    ///
+    /// let runner = MigrationRunner::new(&db)
+    ///     .with_tags(HashSet::from(["v2"])) // Will run "root" migrations and migrations with the "v2" tag
+    ///     .up()
+    ///     .await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_tags(self, tags: &HashSet<&str>) -> Self {
+        MigrationRunner {
+            db: self.db,
+            dir: self.dir,
+            config_file: self.config_file,
+            tags: Some(HashSet::from_iter(tags.iter().map(|s| s.to_string()))),
         }
     }
 
@@ -312,6 +365,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }
@@ -362,6 +416,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }
@@ -408,6 +463,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }
@@ -458,6 +514,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }
@@ -504,6 +561,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }
@@ -550,6 +608,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             validate_version_order: false,
             config_file: self.config_file,
             output: false,
+            tags: self.tags.clone(),
         };
         apply::main(args).await
     }

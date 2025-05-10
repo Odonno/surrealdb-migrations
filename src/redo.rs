@@ -1,11 +1,12 @@
 use ::surrealdb::{Connection, Surreal};
 use color_eyre::eyre::{eyre, Result};
 use include_dir::Dir;
-use std::path::Path;
+use std::{collections::HashSet, path::Path};
 
 use crate::{
     apply::get_transaction_action,
     common::get_migration_display_name,
+    constants::ALL_TAGS,
     io,
     models::MigrationDirection,
     surrealdb::{self},
@@ -61,8 +62,10 @@ pub async fn main<C: Connection>(args: RedoArgs<'_, C>) -> Result<()> {
         false => display_logs,
     };
 
+    let tags = HashSet::from([ALL_TAGS.into()]);
+
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
 
     let migration_file = forward_migrations_files
         .into_iter()

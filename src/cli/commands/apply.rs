@@ -55,4 +55,9 @@ pub struct ApplyArgs {
     /// Output the surql statements to the console.
     #[clap(short, long, requires = "dry_run")]
     pub output: bool,
+    /// A list of tags to use to include schemas and/or migration files, using "," as a delimiter.
+    ///
+    /// Note: The 'root' tag is always included.
+    #[clap(long, value_delimiter = ',')]
+    pub tags: Option<Vec<String>>,
 }

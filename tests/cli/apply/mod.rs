@@ -4,6 +4,7 @@ mod down_to;
 mod e2e;
 mod redo;
 mod reset;
+mod tags;
 mod traditional;
 mod up;
 mod up_single;

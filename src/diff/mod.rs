@@ -12,6 +12,7 @@ use table_diff::TableDiff;
 
 use crate::{
     apply::ensures_necessary_files_exists,
+    constants::ALL_TAGS,
     input::SurrealdbConfiguration,
     io,
     models::MigrationDirection,
@@ -114,10 +115,12 @@ pub async fn main(args: DiffArgs<'_>) -> Result<()> {
 }
 
 fn get_local_statements(config_file: Option<&Path>) -> Result<Vec<::surrealdb::sql::Statement>> {
-    let schemas_files = io::extract_schemas_files(config_file, None)
+    let tags = HashSet::from([ALL_TAGS.into()]);
+
+    let schemas_files = io::extract_schemas_files(config_file, None, &tags)
         .ok()
         .unwrap_or_default();
-    let events_files = io::extract_events_files(config_file, None)
+    let events_files = io::extract_events_files(config_file, None, &tags)
         .ok()
         .unwrap_or_default();
 
@@ -125,7 +128,7 @@ fn get_local_statements(config_file: Option<&Path>) -> Result<Vec<::surrealdb::s
     let event_definitions = io::concat_files_content(&events_files);
 
     let forward_migrations_files =
-        io::extract_migrations_files(config_file, None, MigrationDirection::Forward);
+        io::extract_migrations_files(config_file, None, MigrationDirection::Forward, &tags);
 
     let use_traditional_approach = schema_definitions.is_empty()
         && event_definitions.is_empty()
