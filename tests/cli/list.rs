@@ -1,6 +1,6 @@
 use assert_fs::TempDir;
-use chrono::Local;
-use color_eyre::eyre::Result;
+use color_eyre::eyre::{Error, Result};
+use insta::{assert_snapshot, Settings};
 
 use crate::helpers::*;
 
@@ -31,8 +31,6 @@ fn list_blog_migrations() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
 
-    let now = Local::now();
-
     add_migration_config_file_with_db_name(&temp_dir, DbInstance::Root, &db_name)?;
     scaffold_blog_template(&temp_dir, false)?;
     apply_migrations(&temp_dir, &db_name)?;
@@ -41,23 +39,15 @@ fn list_blog_migrations() -> Result<()> {
 
     cmd.arg("list").arg("--no-color");
 
-    let date_prefix = now.format("%Y%m%d_%H%M").to_string();
+    let assert = cmd.assert().try_success()?;
+    let stdout = get_stdout_str(assert)?;
 
-    let expected = format!(
-        " Name         | Executed at | File name                          
---------------+-------------+------------------------------------
- AddAdminUser | just now    | {0}01_AddAdminUser.surql 
---------------+-------------+------------------------------------
- AddPost      | just now    | {0}02_AddPost.surql      
---------------+-------------+------------------------------------
- CommentPost  | just now    | {0}03_CommentPost.surql  
-\n",
-        date_prefix
-    );
-
-    cmd.assert()
-        .try_success()
-        .and_then(|assert| assert.try_stdout(expected))?;
+    let mut insta_settings = Settings::new();
+    insta_settings.add_script_timestamp_filter();
+    insta_settings.bind(|| {
+        assert_snapshot!(stdout);
+        Ok::<(), Error>(())
+    })?;
 
     temp_dir.close()?;
 
