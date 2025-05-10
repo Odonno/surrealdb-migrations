@@ -12,6 +12,8 @@ use input::SurrealdbConfiguration;
 use list::ListArgs;
 use models::ApplyOperation;
 use redo::RedoArgs;
+use runbin::config::retrieve_exclude_tags;
+use runbin::config::retrieve_tags;
 use runbin::surrealdb::create_surrealdb_client;
 #[cfg(feature = "scaffold")]
 use scaffold::args::ScaffoldArgs;
@@ -124,8 +126,12 @@ async fn sub_main() -> Result<()> {
                 redo::main(args).await
             } else {
                 let operation = ApplyOperation::try_from(up, down, reset)?;
-                let tags = tags.map(HashSet::from_iter);
-                let exclude_tags = exclude_tags.map(HashSet::from_iter);
+                let tags = tags
+                    .map(HashSet::from_iter)
+                    .or_else(|| retrieve_tags(config_file));
+                let exclude_tags = exclude_tags
+                    .map(HashSet::from_iter)
+                    .or_else(|| retrieve_exclude_tags(config_file));
 
                 let args = ApplyArgs {
                     operation,

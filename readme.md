@@ -262,6 +262,19 @@ Here is the definition of the `.surrealdb` configuration file:
     # Description: Name of the database to use inside the surrealdb instance
     # Default: "test"
     db
+
+[filters]
+    # Optional
+    # Type: Array<String>
+    # Description: Tags used to filter schema/migration files
+    # Default: [ "*" ]
+    tags
+
+    # Optional
+    # Type: Array<String>
+    # Description: Tags used to exclude schema/migration files
+    # Default: [ "old" ]
+    exclude_tags
 ```
 
 ### Environment variables
@@ -275,6 +288,8 @@ Here is the list of all environment variables that you can use:
 * `SURREAL_MIG_PASS` - Password used to authenticate to the surrealdb instance
 * `SURREAL_MIG_NS` - Namespace to use inside the surrealdb instance
 * `SURREAL_MIG_DB` - Name of the database to use inside the surrealdb instance
+* `SURREAL_MIG_TAGS` - Tags used to filter schema/migration files
+* `SURREAL_MIG_EXCLUDE_TAGS` - Tags used to exclude schema/migration files
 
 ### Execution context
 
