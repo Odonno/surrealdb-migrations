@@ -26,7 +26,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --version v2.3.0
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory --allow-experimental record_references &
@@ -69,7 +69,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Download SurrealDB
-        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh
+        run: curl --proto '=https' --tlsv1.2 -sSf https://install.surrealdb.com | sh -s -- --version v2.3.0
 
       - name: Run SurrealDB root
         run: surreal start --user root --pass root memory --allow-experimental record_references &
