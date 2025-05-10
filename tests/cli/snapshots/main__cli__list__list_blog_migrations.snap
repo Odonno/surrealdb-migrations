@@ -3,7 +3,7 @@ source: tests/cli/list.rs
 expression: stdout
 snapshot_kind: text
 ---
- Name         | Executed at | File name                          
+Name         | Executed at | File name                          
 --------------+-------------+------------------------------------
  AddAdminUser | just now    | [timestamp]_AddAdminUser.surql 
 --------------+-------------+------------------------------------

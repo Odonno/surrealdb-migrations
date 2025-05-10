@@ -17,8 +17,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.82.0 toolchain
-        uses: dtolnay/rust-toolchain@1.82.0
+      - name: Install 1.85.0 toolchain
+        uses: dtolnay/rust-toolchain@1.85.0
         with:
           components: clippy, rustfmt
 
@@ -60,8 +60,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.82.0 toolchain
-        uses: dtolnay/rust-toolchain@1.82.0
+      - name: Install 1.85.0 toolchain
+        uses: dtolnay/rust-toolchain@1.85.0
         with:
           components: llvm-tools-preview
 
@@ -105,8 +105,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install 1.82.0 toolchain
-        uses: dtolnay/rust-toolchain@1.82.0
+      - name: Install 1.85.0 toolchain
+        uses: dtolnay/rust-toolchain@1.85.0
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
