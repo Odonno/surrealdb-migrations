@@ -14,8 +14,14 @@ use crate::{
 
 pub fn main(config_file: Option<&Path>) -> Result<()> {
     let tags = HashSet::from([ALL_TAGS.into()]);
-    let forward_migrations_files =
-        io::extract_migrations_files(config_file, None, MigrationDirection::Forward, &tags);
+    let exclude_tags = HashSet::new();
+    let forward_migrations_files = io::extract_migrations_files(
+        config_file,
+        None,
+        MigrationDirection::Forward,
+        &tags,
+        &exclude_tags,
+    );
 
     if forward_migrations_files.is_empty() {
         return Err(eyre!("No migration files left"));

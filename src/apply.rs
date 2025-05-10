@@ -21,7 +21,8 @@ use std::{
 use crate::{
     common::get_migration_display_name,
     constants::{
-        ALL_TAGS, INITIAL_TRADITIONAL_MIGRATION_FILENAME, ROOT_TAG, SCRIPT_MIGRATION_TABLE_NAME,
+        ALL_TAGS, INITIAL_TRADITIONAL_MIGRATION_FILENAME, OLD_TAG, ROOT_TAG,
+        SCRIPT_MIGRATION_TABLE_NAME,
     },
     file::SurqlFile,
     io::{
@@ -48,6 +49,7 @@ pub struct ApplyArgs<'a, C: Connection> {
     pub config_file: Option<&'a Path>,
     pub output: bool,
     pub tags: Option<HashSet<String>>,
+    pub exclude_tags: Option<HashSet<String>>,
 }
 
 pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
@@ -62,6 +64,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         config_file,
         output,
         tags,
+        exclude_tags,
     } = args;
 
     if validate_version_order {
@@ -95,21 +98,35 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
         ),
         None => HashSet::from([ALL_TAGS.into()]),
     };
+    let exclude_tags = match exclude_tags {
+        Some(tags) => tags,
+        None => HashSet::from([OLD_TAG.into()]),
+    };
 
-    let schemas_files = io::extract_schemas_files(config_file, dir, &tags)
+    let schemas_files = io::extract_schemas_files(config_file, dir, &tags, &exclude_tags)
         .ok()
         .unwrap_or_default();
-    let events_files = io::extract_events_files(config_file, dir, &tags)
+    let events_files = io::extract_events_files(config_file, dir, &tags, &exclude_tags)
         .ok()
         .unwrap_or_default();
 
     let schema_definitions = io::concat_files_content(&schemas_files);
     let event_definitions = io::concat_files_content(&events_files);
 
-    let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
-    let backward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Backward, &tags);
+    let forward_migrations_files = io::extract_migrations_files(
+        config_file,
+        dir,
+        MigrationDirection::Forward,
+        &tags,
+        &exclude_tags,
+    );
+    let backward_migrations_files = io::extract_migrations_files(
+        config_file,
+        dir,
+        MigrationDirection::Backward,
+        &tags,
+        &exclude_tags,
+    );
 
     let use_traditional_approach = schema_definitions.is_empty()
         && event_definitions.is_empty()
@@ -146,6 +163,7 @@ pub async fn main<C: Connection>(args: ApplyArgs<'_, C>) -> Result<()> {
                     schema_definitions.to_string(),
                     event_definitions.to_string(),
                     &tags,
+                    &exclude_tags,
                 )?;
             }
         } else if let Some(dir) = dir {

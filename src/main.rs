@@ -97,6 +97,7 @@ async fn sub_main() -> Result<()> {
                 validate_version_order,
                 output,
                 tags,
+                exclude_tags,
             } = apply_args;
 
             let db_configuration = SurrealdbConfiguration {
@@ -124,6 +125,7 @@ async fn sub_main() -> Result<()> {
             } else {
                 let operation = ApplyOperation::try_from(up, down, reset)?;
                 let tags = tags.map(HashSet::from_iter);
+                let exclude_tags = exclude_tags.map(HashSet::from_iter);
 
                 let args = ApplyArgs {
                     operation,
@@ -136,6 +138,7 @@ async fn sub_main() -> Result<()> {
                     config_file,
                     output,
                     tags,
+                    exclude_tags,
                 };
                 apply::main(args).await
             }

@@ -28,9 +28,15 @@ pub async fn main<C: Connection>(args: ValidateChecksumArgs<'_, C>) -> Result<()
         surrealdb::list_script_migration_ordered_by_execution_date(client).await?;
 
     let tags = HashSet::from([ALL_TAGS.into()]);
+    let exclude_tags = HashSet::new();
 
-    let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
+    let forward_migrations_files = io::extract_migrations_files(
+        config_file,
+        dir,
+        MigrationDirection::Forward,
+        &tags,
+        &exclude_tags,
+    );
 
     for migration_applied in migrations_applied {
         if let Some(checksum) = migration_applied.checksum {

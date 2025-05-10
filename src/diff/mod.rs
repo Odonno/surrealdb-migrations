@@ -116,19 +116,25 @@ pub async fn main(args: DiffArgs<'_>) -> Result<()> {
 
 fn get_local_statements(config_file: Option<&Path>) -> Result<Vec<::surrealdb::sql::Statement>> {
     let tags = HashSet::from([ALL_TAGS.into()]);
+    let exclude_tags = HashSet::new();
 
-    let schemas_files = io::extract_schemas_files(config_file, None, &tags)
+    let schemas_files = io::extract_schemas_files(config_file, None, &tags, &exclude_tags)
         .ok()
         .unwrap_or_default();
-    let events_files = io::extract_events_files(config_file, None, &tags)
+    let events_files = io::extract_events_files(config_file, None, &tags, &exclude_tags)
         .ok()
         .unwrap_or_default();
 
     let schema_definitions = io::concat_files_content(&schemas_files);
     let event_definitions = io::concat_files_content(&events_files);
 
-    let forward_migrations_files =
-        io::extract_migrations_files(config_file, None, MigrationDirection::Forward, &tags);
+    let forward_migrations_files = io::extract_migrations_files(
+        config_file,
+        None,
+        MigrationDirection::Forward,
+        &tags,
+        &exclude_tags,
+    );
 
     let use_traditional_approach = schema_definitions.is_empty()
         && event_definitions.is_empty()

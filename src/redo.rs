@@ -63,9 +63,15 @@ pub async fn main<C: Connection>(args: RedoArgs<'_, C>) -> Result<()> {
     };
 
     let tags = HashSet::from([ALL_TAGS.into()]);
+    let exclude_tags = HashSet::new();
 
-    let forward_migrations_files =
-        io::extract_migrations_files(config_file, dir, MigrationDirection::Forward, &tags);
+    let forward_migrations_files = io::extract_migrations_files(
+        config_file,
+        dir,
+        MigrationDirection::Forward,
+        &tags,
+        &exclude_tags,
+    );
 
     let migration_file = forward_migrations_files
         .into_iter()

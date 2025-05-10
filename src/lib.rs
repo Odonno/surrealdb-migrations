@@ -82,6 +82,7 @@ pub struct MigrationRunner<'a, C: Connection> {
     dir: Option<&'a Dir<'static>>,
     config_file: Option<&'a Path>,
     tags: Option<HashSet<String>>,
+    exclude_tags: Option<HashSet<String>>,
 }
 
 impl<'a, C: Connection> MigrationRunner<'a, C> {
@@ -96,6 +97,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: None,
             config_file: None,
             tags: None,
+            exclude_tags: None,
         }
     }
 
@@ -142,6 +144,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             config_file: Some(config_file.as_ref()),
             tags: self.tags,
+            exclude_tags: self.exclude_tags,
         }
     }
 
@@ -190,14 +193,15 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: Some(dir),
             config_file: self.config_file,
             tags: self.tags,
+            exclude_tags: self.exclude_tags,
         }
     }
 
-    /// Load migration project files from an embedded directory.
+    /// Set the list of tags to filter migrations.
     ///
     /// ## Arguments
     ///
-    /// * `dir` - The directory containing the migration project files.
+    /// * `tags` - The list of tags to filter migrations.
     ///
     /// ## Examples
     ///
@@ -238,6 +242,58 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             dir: self.dir,
             config_file: self.config_file,
             tags: Some(HashSet::from_iter(tags.iter().map(|s| s.to_string()))),
+            exclude_tags: self.exclude_tags,
+        }
+    }
+
+    /// Set the list of tags to exclude when applying migrations.
+    ///
+    /// ## Arguments
+    ///
+    /// * `exclude_tags` - A list of tags to exclude.
+    ///
+    /// ## Examples
+    ///
+    /// ```rust,no_run
+    /// # use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+    /// use include_dir::{include_dir, Dir};
+    /// use surrealdb_migrations::MigrationRunner;
+    /// use surrealdb::engine::any::connect;
+    /// use surrealdb::opt::auth::Root;
+    ///
+    /// # #[tokio::main]
+    /// # async fn main() -> Result<()> {
+    /// let db = connect("ws://localhost:8000").await?;
+    ///
+    /// // Signin as a namespace, database, or root user
+    /// db.signin(Root {
+    ///     username: "root",
+    ///     password: "root",
+    /// }).await?;
+    ///
+    /// // Select a specific namespace / database
+    /// db.use_ns("namespace").use_db("database").await?;
+    ///
+    /// // Load migration project files from an embedded directory
+    /// const DB_DIR: Dir<'_> = include_dir!("$CARGO_MANIFEST_DIR/templates/blog");
+    ///
+    /// let runner = MigrationRunner::new(&db)
+    ///     .with_exclude_tags(HashSet::from(["v2"])) // Will exclude migrations with the "v2" tag
+    ///     .up()
+    ///     .await?;
+    ///
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn with_exclude_tags(self, exclude_tags: &HashSet<&str>) -> Self {
+        MigrationRunner {
+            db: self.db,
+            dir: self.dir,
+            config_file: self.config_file,
+            tags: self.tags,
+            exclude_tags: Some(HashSet::from_iter(
+                exclude_tags.iter().map(|s| s.to_string()),
+            )),
         }
     }
 
@@ -366,6 +422,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }
@@ -417,6 +474,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }
@@ -464,6 +522,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }
@@ -515,6 +574,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }
@@ -562,6 +622,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }
@@ -609,6 +670,7 @@ impl<'a, C: Connection> MigrationRunner<'a, C> {
             config_file: self.config_file,
             output: false,
             tags: self.tags.clone(),
+            exclude_tags: self.exclude_tags.clone(),
         };
         apply::main(args).await
     }

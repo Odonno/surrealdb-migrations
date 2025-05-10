@@ -60,4 +60,9 @@ pub struct ApplyArgs {
     /// Note: The 'root' tag is always included.
     #[clap(long, value_delimiter = ',')]
     pub tags: Option<Vec<String>>,
+    /// A list of tags to use to exclude schemas and/or migration files, using "," as a delimiter.
+    ///
+    /// Note: If no value provided, the 'old' tag is excluded.
+    #[clap(long, value_delimiter = ',')]
+    pub exclude_tags: Option<Vec<String>>,
 }

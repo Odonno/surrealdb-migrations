@@ -56,10 +56,12 @@ pub fn apply_after_scaffold(
 
     if traditional {
         let tags = HashSet::from([ALL_TAGS.into()]);
+        let exclude_tags = HashSet::new();
 
         // extract surql files
-        let schema_definitions = extract_schema_definitions(config_file, None, &tags);
-        let event_definitions = extract_event_definitions(config_file, None, &tags);
+        let schema_definitions =
+            extract_schema_definitions(config_file, None, &tags, &exclude_tags);
+        let event_definitions = extract_event_definitions(config_file, None, &tags, &exclude_tags);
 
         // concat surql statements
         let schemas_statements = parse_statements(&schema_definitions)?;

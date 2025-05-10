@@ -18,7 +18,16 @@ impl SurqlFile {
         self.tags.contains(DOWN_TAG)
     }
 
-    pub fn filter_by_tags(&self, filter_tags: &HashSet<String>) -> bool {
+    pub fn filter_by_tags(
+        &self,
+        filter_tags: &HashSet<String>,
+        exclude_tags: &HashSet<String>,
+    ) -> bool {
+        let is_excluded = !exclude_tags.is_empty() && !self.tags.is_disjoint(exclude_tags);
+        if is_excluded {
+            return false;
+        }
+
         if filter_tags.contains(ALL_TAGS) {
             return true;
         }
@@ -46,7 +55,8 @@ mod tests {
     #[test]
     fn always_true_if_filter_all_tags() {
         let filter_tags = HashSet::from([ALL_TAGS.into()]);
-        let result = create_surql_file(vec!["root"]).filter_by_tags(&filter_tags);
+        let exclude_tags = HashSet::new();
+        let result = create_surql_file(vec!["root"]).filter_by_tags(&filter_tags, &exclude_tags);
 
         assert!(result);
     }
@@ -54,7 +64,9 @@ mod tests {
     #[test]
     fn always_true_if_filter_all_tags_alt() {
         let filter_tags = HashSet::from([ALL_TAGS.into()]);
-        let result = create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags);
+        let exclude_tags = HashSet::new();
+        let result =
+            create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags, &exclude_tags);
 
         assert!(result);
     }
@@ -62,7 +74,9 @@ mod tests {
     #[test]
     fn false_if_no_tag_match() {
         let filter_tags = HashSet::from(["v1".into()]);
-        let result = create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags);
+        let exclude_tags = HashSet::new();
+        let result =
+            create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags, &exclude_tags);
 
         assert!(!result);
     }
@@ -70,7 +84,9 @@ mod tests {
     #[test]
     fn true_if_one_tag_match() {
         let filter_tags = HashSet::from(["v2".into()]);
-        let result = create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags);
+        let exclude_tags = HashSet::new();
+        let result =
+            create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags, &exclude_tags);
 
         assert!(result);
     }
@@ -78,8 +94,40 @@ mod tests {
     #[test]
     fn true_if_all_tag_matches() {
         let filter_tags = HashSet::from(["v2".into(), "product".into()]);
-        let result = create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags);
+        let exclude_tags = HashSet::new();
+        let result =
+            create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags, &exclude_tags);
 
         assert!(result);
+    }
+
+    #[test]
+    fn false_if_one_excluded_tag_match() {
+        let filter_tags = HashSet::from(["v2".into(), "product".into()]);
+        let exclude_tags = HashSet::from(["old".into()]);
+        let result = create_surql_file(vec!["v2", "product", "old"])
+            .filter_by_tags(&filter_tags, &exclude_tags);
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn false_if_all_excluded_tag_matches() {
+        let filter_tags = HashSet::new();
+        let exclude_tags = HashSet::from(["v2".into(), "product".into()]);
+        let result =
+            create_surql_file(vec!["v2", "product"]).filter_by_tags(&filter_tags, &exclude_tags);
+
+        assert!(!result);
+    }
+
+    #[test]
+    fn exclude_tags_is_stronger_than_inclusion() {
+        let filter_tags = HashSet::from([ALL_TAGS.into()]);
+        let exclude_tags = HashSet::from(["old".into()]);
+        let result =
+            create_surql_file(vec!["v2", "old"]).filter_by_tags(&filter_tags, &exclude_tags);
+
+        assert!(!result);
     }
 }
