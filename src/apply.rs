@@ -1,13 +1,13 @@
 use ::surrealdb::{
+    Connection, Surreal,
     sql::{
+        Statement,
         statements::{
             DefineEventStatement, DefineFieldStatement, DefineStatement, DefineTableStatement,
         },
-        Statement,
     },
-    Connection, Surreal,
 };
-use color_eyre::eyre::{eyre, ContextCompat, Result};
+use color_eyre::eyre::{ContextCompat, Result, eyre};
 use include_dir::Dir;
 use itertools::Itertools;
 use lexicmp::natural_lexical_cmp;
@@ -32,7 +32,7 @@ use crate::{
     },
     models::{ApplyOperation, MigrationDirection, SchemaMigrationDefinition, ScriptMigration},
     surrealdb::{
-        self, get_surrealdb_table_definition, is_define_checksum_statement, TransactionAction,
+        self, TransactionAction, get_surrealdb_table_definition, is_define_checksum_statement,
     },
     validate_checksum::{self, ValidateChecksumArgs},
     validate_version_order::{self, ValidateVersionOrderArgs},
@@ -427,7 +427,7 @@ async fn apply_migrations<C: Connection>(
 ) -> Result<()> {
     let mut has_applied_schemas = false;
     let mut has_applied_events = false;
-    let has_applied_migrations = !&migration_files_to_execute.is_empty();
+    let has_migration_files_to_execute = !migration_files_to_execute.is_empty();
     let mut current_definition: SchemaMigrationDefinition = Default::default();
 
     if use_migration_definitions {
@@ -443,7 +443,7 @@ async fn apply_migrations<C: Connection>(
             }
         }?;
 
-        if !has_applied_migrations {
+        if !has_migration_files_to_execute {
             let schemas_statements = current_definition.schemas.to_string();
             let events_statements = current_definition.events.to_string();
 
@@ -612,7 +612,7 @@ CREATE {} SET script_name = '{}';",
         if has_applied_events {
             println!("Event files successfully executed!");
         }
-        if has_applied_migrations {
+        if has_migration_files_to_execute {
             println!("Migration files successfully executed!");
         }
     }
@@ -808,7 +808,7 @@ fn get_rollback_statements(
         true => vec![],
         false => {
             let next_statements = surrealdb::parse_statements(next_statements_str)?;
-            next_statements.0 .0
+            next_statements.0.0
         }
     };
 
@@ -816,7 +816,7 @@ fn get_rollback_statements(
         true => vec![],
         false => {
             let previous_statements = surrealdb::parse_statements(previous_statements_str)?;
-            previous_statements.0 .0
+            previous_statements.0.0
         }
     };
 
