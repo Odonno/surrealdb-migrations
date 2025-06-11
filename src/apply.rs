@@ -443,7 +443,7 @@ async fn apply_migrations<C: Connection>(
             }
         }?;
 
-        if !has_migration_files_to_execute {
+        if has_migration_files_to_execute {
             let schemas_statements = current_definition.schemas.to_string();
             let events_statements = current_definition.events.to_string();
 
