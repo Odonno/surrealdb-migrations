@@ -25,7 +25,7 @@ impl SurrealdbConfiguration {
         };
 
         SurrealdbConfiguration {
-            address: Some(format!("ws://localhost:{}", port)),
+            address: Some(format!("ws://localhost:{port}")),
             username: Some(username.to_string()),
             password: Some(password.to_string()),
             ns: Some("test".to_string()),

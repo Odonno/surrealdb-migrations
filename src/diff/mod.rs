@@ -107,7 +107,7 @@ pub async fn main(args: DiffArgs<'_>) -> Result<()> {
             .iter()
             .sorted_by(|a, b| natural_lexical_cmp(&a.name, &b.name))
         {
-            println!("{}", table_diff);
+            println!("{table_diff}");
         }
     }
 

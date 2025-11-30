@@ -28,8 +28,7 @@ fn fails_if_migrations_applied_with_new_migration_before_last_applied() -> Resul
     let first_migration_name = get_first_migration_name(&temp_dir)?;
 
     let error = format!(
-        "The following migrations have not been applied: {}",
-        first_migration_name
+        "The following migrations have not been applied: {first_migration_name}"
     );
 
     cmd.assert()

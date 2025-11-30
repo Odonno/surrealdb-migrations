@@ -55,7 +55,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
 
     match dry_run {
         true => {
-            println!("{}", content);
+            println!("{content}");
         }
         false => {
             fs_extra::file::write_all(&file_path, &content)?;
@@ -73,7 +73,7 @@ pub fn main(args: CreateArgs) -> Result<()> {
                 fs_extra::file::write_all(down_file_path, "")?;
             }
 
-            println!("File {} created successfully", filename);
+            println!("File {filename} created successfully");
         }
     }
 
@@ -82,8 +82,8 @@ pub fn main(args: CreateArgs) -> Result<()> {
 
 fn get_filename(operation: &CreateOperation, name: &String) -> String {
     match operation {
-        CreateOperation::Schema(_) => format!("{}{}", name, SURQL_FILE_EXTENSION),
-        CreateOperation::Event(_) => format!("{}{}", name, SURQL_FILE_EXTENSION),
+        CreateOperation::Schema(_) => format!("{name}{SURQL_FILE_EXTENSION}"),
+        CreateOperation::Event(_) => format!("{name}{SURQL_FILE_EXTENSION}"),
         CreateOperation::Migration(_) => {
             let now = chrono::Local::now();
             format!(
@@ -109,10 +109,9 @@ fn generate_file_content(
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE OVERWRITE {0} {1};
+                "DEFINE TABLE OVERWRITE {name} {table_schema_design_str};
 
-{2}",
-                name, table_schema_design_str, field_definitions
+{field_definitions}"
             )
         }
         CreateOperation::Event(args) => {
@@ -121,14 +120,13 @@ fn generate_file_content(
             let field_definitions = generate_field_definitions(&args.fields, name.to_string());
 
             format!(
-                "DEFINE TABLE OVERWRITE {0} {1};
+                "DEFINE TABLE OVERWRITE {name} {table_schema_design_str};
 
-{2}
+{field_definitions}
 
-DEFINE EVENT OVERWRITE {0} ON TABLE {0} WHEN $event == \"CREATE\" THEN (
+DEFINE EVENT OVERWRITE {name} ON TABLE {name} WHEN $event == \"CREATE\" THEN (
     # TODO
-);",
-                name, table_schema_design_str, field_definitions
+);"
             )
         }
         CreateOperation::Migration(args) => args.content.to_owned().unwrap_or(String::new()),
@@ -164,10 +162,10 @@ fn generate_field_definitions(fields: &Option<Vec<String>>, name: String) -> Str
     match fields {
         Some(fields) => fields
             .iter()
-            .map(|field| format!("DEFINE FIELD OVERWRITE {} ON {};", field, name))
+            .map(|field| format!("DEFINE FIELD OVERWRITE {field} ON {name};"))
             .collect::<Vec<String>>()
             .join("\n"),
-        None => format!("# DEFINE FIELD OVERWRITE field ON {};", name),
+        None => format!("# DEFINE FIELD OVERWRITE field ON {name};"),
     }
 }
 

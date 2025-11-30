@@ -449,13 +449,12 @@ async fn apply_migrations<C: Connection>(
 
             if output {
                 let query = format!(
-                    "{}
-        {}",
-                    schemas_statements, events_statements,
+                    "{schemas_statements}
+        {events_statements}"
                 );
 
                 println!("-- Initial schema and event definitions --");
-                println!("{}", query);
+                println!("{query}");
             }
 
             let schemas_statements = surrealdb::parse_statements(&schemas_statements)?;
@@ -522,7 +521,7 @@ async fn apply_migrations<C: Connection>(
 
         if output {
             let migration_display_name = get_migration_display_name(&migration_file.name);
-            println!("-- Apply migration for {} --", migration_display_name);
+            println!("-- Apply migration for {migration_display_name} --");
 
             let query = format!(
                 "{}
@@ -535,12 +534,12 @@ CREATE {} SET script_name = '{}';",
                 SCRIPT_MIGRATION_TABLE_NAME,
                 migration_file.name
             );
-            println!("{}", query);
+            println!("{query}");
         }
 
         if display_logs {
             let migration_display_name = get_migration_display_name(&migration_file.name);
-            println!("Executing migration {}...", migration_display_name);
+            println!("Executing migration {migration_display_name}...");
         }
 
         let schemas_statements = surrealdb::parse_statements(&schemas_statements)?;
@@ -666,7 +665,7 @@ async fn revert_migrations<C: Connection>(
             .filter(|migration_applied| {
                 migration_applied.script_name < migration_reverted.script_name
             })
-            .last();
+            .next_back();
 
         let mut definition_after_revert: SchemaMigrationDefinition = Default::default();
 
@@ -712,7 +711,7 @@ async fn revert_migrations<C: Connection>(
 
         if output {
             let migration_display_name = get_migration_display_name(&migration_file.name);
-            println!("-- Revert migration for {} --", migration_display_name);
+            println!("-- Revert migration for {migration_display_name} --");
 
             let query = format!(
                 "{}
@@ -735,12 +734,12 @@ DELETE {} WHERE script_name = '{}';",
                 SCRIPT_MIGRATION_TABLE_NAME,
                 migration_file.name
             );
-            println!("{}", query);
+            println!("{query}");
         }
 
         if display_logs {
             let migration_display_name = get_migration_display_name(&migration_file.name);
-            println!("Reverting migration {}...", migration_display_name);
+            println!("Reverting migration {migration_display_name}...");
         }
 
         let migration_statements = surrealdb::parse_statements(&migration_statements)?;

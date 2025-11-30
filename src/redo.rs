@@ -1,5 +1,5 @@
 use ::surrealdb::{Connection, Surreal};
-use color_eyre::eyre::{eyre, Result};
+use color_eyre::eyre::{Result, eyre};
 use include_dir::Dir;
 use std::{collections::HashSet, path::Path};
 
@@ -89,23 +89,25 @@ pub async fn main<C: Connection>(args: RedoArgs<'_, C>) -> Result<()> {
         .any(|m| m.script_name == migration_file.name || m.script_name == migration_file.full_name);
 
     if !is_migration_already_applied {
-        return Err(eyre!("This migration was not applied in the SurrealDB instance. Please make sure you correctly applied this migration before."));
+        return Err(eyre!(
+            "This migration was not applied in the SurrealDB instance. Please make sure you correctly applied this migration before."
+        ));
     }
 
     let migration_content = migration_file.get_content().unwrap_or(String::new());
     let statements = surrealdb::parse_statements(&migration_content)?;
 
     if output {
-        println!("{}", statements);
+        println!("{statements}");
     }
 
     if display_logs {
         let migration_display_name = get_migration_display_name(&migration_file.name);
-        println!("Executing migration {}...", migration_display_name);
+        println!("Executing migration {migration_display_name}...");
     }
 
     let transaction_action = get_transaction_action(dry_run);
-    surrealdb::apply_in_transaction(client, statements.0 .0, transaction_action).await?;
+    surrealdb::apply_in_transaction(client, statements.0.0, transaction_action).await?;
 
     if display_logs {
         println!("Migration successfully re-executed!");

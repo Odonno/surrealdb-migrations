@@ -102,12 +102,12 @@ pub async fn main(args: StatusArgs<'_>) -> Result<()> {
     );
     if left_migrations_to_apply > 0 {
         print!(" ");
-        let text = format!("↓{}", left_migrations_to_apply);
+        let text = format!("↓{left_migrations_to_apply}");
         print!("{}", text.if_supports_color(Stdout, |text| text.red()));
     }
     if missing_migrations_files_count > 0 {
         print!(" ");
-        let text = format!("?{}", missing_migrations_files_count);
+        let text = format!("?{missing_migrations_files_count}");
         print!(
             "{}",
             text.if_supports_color(Stdout, |text| text.bright_red())
@@ -135,7 +135,7 @@ pub async fn main(args: StatusArgs<'_>) -> Result<()> {
         println!("❓ The following files seems to be missing:");
 
         for filename in missing_migrations_files {
-            println!("- {}", filename);
+            println!("- {filename}");
         }
     }
 

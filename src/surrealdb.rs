@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, ContextCompat, Result};
+use color_eyre::eyre::{ContextCompat, Result, eyre};
 use itertools::Itertools;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -52,8 +52,7 @@ pub async fn get_surrealdb_table_definition<C: Connection>(
 
     let result: Option<SurrealdbTableDefinition> = response.take(0)?;
     let table_definition = result.context(format!(
-        "Failed to get table definition for table '{}'",
-        table
+        "Failed to get table definition for table '{table}'"
     ))?;
 
     Ok(table_definition)

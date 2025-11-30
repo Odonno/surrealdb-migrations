@@ -65,7 +65,7 @@ pub async fn main(args: ListArgs<'_>) -> Result<()> {
 
         let table_display = table.display()?;
 
-        println!("{}", table_display);
+        println!("{table_display}");
     }
 
     Ok(())

@@ -1,5 +1,5 @@
-use ::surrealdb::sql::{statements::DefineStatement, Query, Statement};
-use color_eyre::eyre::{eyre, ContextCompat, Result, WrapErr};
+use ::surrealdb::sql::{Query, Statement, statements::DefineStatement};
+use color_eyre::eyre::{ContextCompat, Result, WrapErr, eyre};
 use fs_extra::dir::{DirEntryAttr, DirEntryValue};
 use include_dir::Dir;
 use itertools::Itertools;
@@ -33,8 +33,7 @@ pub fn concat_path(folder_path: &Option<String>, dir_name: &str) -> PathBuf {
 pub fn can_use_filesystem(config_file: Option<&Path>) -> Result<bool> {
     let folder_path = config::retrieve_folder_path(config_file);
     let script_migration_path = concat_path(&folder_path, SCHEMAS_DIR_NAME).join(format!(
-        "{}{}",
-        SCRIPT_MIGRATION_TABLE_NAME, SURQL_FILE_EXTENSION
+        "{SCRIPT_MIGRATION_TABLE_NAME}{SURQL_FILE_EXTENSION}"
     ));
     let script_migration_file_try_exists = script_migration_path.try_exists().ok();
 
@@ -115,7 +114,7 @@ fn consumes_any_table(query: &Query, all_tables: &HashSet<String>) -> bool {
 fn extract_table_names(query: &Query) -> HashSet<String> {
     query
         .0
-         .0
+        .0
         .iter()
         .filter_map(|statement| match statement {
             Statement::Define(DefineStatement::Table(table)) => Some(table.name.0.clone()),
@@ -127,7 +126,7 @@ fn extract_table_names(query: &Query) -> HashSet<String> {
 fn extract_consumed_table_names(query: &Query) -> HashSet<String> {
     query
         .0
-         .0
+        .0
         .iter()
         .filter_map(|statement| match statement {
             Statement::Define(DefineStatement::Table(table)) => match &table.view {
@@ -271,7 +270,7 @@ fn extract_surql_files_from_embedded_dir(
 
                     let is_down_file = full_name.ends_with(DOWN_SURQL_FILE_EXTENSION)
                         || (is_migration_folder
-                            && path_str.contains(&format!("{}/", DOWN_MIGRATIONS_DIR_NAME)));
+                            && path_str.contains(&format!("{DOWN_MIGRATIONS_DIR_NAME}/")));
 
                     if is_down_file {
                         tags.insert(DOWN_TAG.into());
@@ -308,12 +307,10 @@ fn get_embedded_file_name(f: &include_dir::File) -> Option<String> {
 }
 
 fn get_embedded_file_full_name(f: &include_dir::File) -> Option<String> {
-    let full_name = f
-        .path()
+    f.path()
         .file_name()
         .and_then(|full_name| full_name.to_str())
-        .map(|full_name| full_name.to_string());
-    full_name
+        .map(|full_name| full_name.to_string())
 }
 
 fn get_embedded_file_is_file(full_name: &Option<String>) -> bool {
@@ -348,7 +345,7 @@ fn extract_surql_files_from_filesystem(
     config.insert(DirEntryAttr::FullName);
 
     nested_extract_surql_files_from_filesystem(dir_path, &config, None, filter_tags, exclude_tags)
-        .context(format!("Error listing {} directory", dir_path_str))
+        .context(format!("Error listing {dir_path_str} directory"))
 }
 
 fn nested_extract_surql_files_from_filesystem(
@@ -539,7 +536,7 @@ fn extract_json_definition_files_from_filesystem(
     config.insert(DirEntryAttr::IsFile);
 
     let files = fs_extra::dir::ls(dir_path, &config)
-        .context(format!("Error listing {} directory", dir_path_str))?
+        .context(format!("Error listing {dir_path_str} directory"))?
         .items;
 
     let files = files
@@ -863,8 +860,7 @@ fn extract_initial_definition_content(
             let initial_definition_filepath = definitions_path.join(INITIAL_DEFINITION_FILENAME);
             let content =
                 fs_extra::file::read_to_string(&initial_definition_filepath).wrap_err(format!(
-                    "initial_definition_filepath not found at: {:?}",
-                    initial_definition_filepath,
+                    "initial_definition_filepath not found at: {initial_definition_filepath:?}",
                 ))?;
 
             Ok(content)
@@ -899,7 +895,7 @@ fn extract_definition_diff_content(
     migration_name: String,
     embedded_dir: Option<&Dir<'static>>,
 ) -> Result<Option<String>> {
-    let definition_filename = format!("{}.json", migration_name);
+    let definition_filename = format!("{migration_name}.json");
 
     match embedded_dir {
         Some(dir) => {

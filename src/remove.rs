@@ -38,8 +38,7 @@ pub fn main(config_file: Option<&Path>) -> Result<()> {
     let last_migration_display_name = get_migration_display_name(&last_migration.name);
 
     println!(
-        "Migration '{}' successfully removed",
-        last_migration_display_name
+        "Migration '{last_migration_display_name}' successfully removed"
     );
 
     Ok(())

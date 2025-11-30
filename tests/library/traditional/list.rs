@@ -79,7 +79,7 @@ async fn list_blog_migrations() -> Result<()> {
         .context("Cannot get second migration")?;
 
     ensure!(
-        second_migration.script_name == format!("{}01_AddAdminUser", date_prefix),
+        second_migration.script_name == format!("{date_prefix}01_AddAdminUser"),
         "Expected second migration script name to be {}01_AddAdminUser",
         date_prefix
     );
@@ -97,7 +97,7 @@ async fn list_blog_migrations() -> Result<()> {
         .context("Cannot get third migration")?;
 
     ensure!(
-        third_migration.script_name == format!("{}02_AddPost", date_prefix),
+        third_migration.script_name == format!("{date_prefix}02_AddPost"),
         "Expected third migration script name to be {}02_AddPost",
         date_prefix
     );
@@ -115,7 +115,7 @@ async fn list_blog_migrations() -> Result<()> {
         .context("Cannot get fourth migration")?;
 
     ensure!(
-        fourth_migration.script_name == format!("{}03_CommentPost", date_prefix),
+        fourth_migration.script_name == format!("{date_prefix}03_CommentPost"),
         "Expected fourth migration script name to be {}03_CommentPost",
         date_prefix
     );

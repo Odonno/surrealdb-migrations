@@ -176,7 +176,7 @@ pub fn write_simple_migration_down_file(path: &Path, migration_name: &str) -> Re
     let migration_down_file = path
         .join("migrations")
         .join("down")
-        .join(format!("{}.surql", migration_name));
+        .join(format!("{migration_name}.surql"));
 
     fs::write(migration_down_file, content)?;
 
@@ -203,7 +203,7 @@ pub fn write_post_migration_down_file(path: &Path, migration_name: &str) -> Resu
     let migration_down_file = path
         .join("migrations")
         .join("down")
-        .join(format!("{}.surql", migration_name));
+        .join(format!("{migration_name}.surql"));
 
     fs::write(migration_down_file, content)?;
 
@@ -261,7 +261,7 @@ pub fn write_category_migration_down_file(path: &Path, migration_name: &str) -> 
     let migration_down_file = path
         .join("migrations")
         .join("down")
-        .join(format!("{}.surql", migration_name));
+        .join(format!("{migration_name}.surql"));
 
     fs::write(migration_down_file, content)?;
 
@@ -307,7 +307,7 @@ pub fn write_archive_migration_down_file(path: &Path, migration_name: &str) -> R
     let migration_down_file = path
         .join("migrations")
         .join("down")
-        .join(format!("{}.surql", migration_name));
+        .join(format!("{migration_name}.surql"));
 
     fs::write(migration_down_file, content)?;
 
