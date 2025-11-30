@@ -1,0 +1,3 @@
+[tools]
+"cargo:cargo-nextest" = { version = "0.9.114", locked = true }
+rust = "1.88.0"
