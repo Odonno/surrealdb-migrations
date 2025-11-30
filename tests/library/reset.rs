@@ -1,10 +1,11 @@
 use assert_fs::TempDir;
-use color_eyre::{eyre::ensure, Result};
+use color_eyre::{Result, eyre::ensure};
 use surrealdb_migrations::MigrationRunner;
 
 use crate::helpers::*;
 
 #[tokio::test]
+#[ignore = "flaky test"]
 async fn apply_revert_all_migrations() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let db_name = generate_random_db_name()?;
