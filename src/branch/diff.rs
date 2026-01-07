@@ -1,4 +1,4 @@
-use color_eyre::eyre::{eyre, ContextCompat, Result};
+use color_eyre::eyre::{ContextCompat, Result, eyre};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, path::Path};

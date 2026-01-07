@@ -1,8 +1,8 @@
 use color_eyre::eyre::{ContextCompat, Result, eyre};
 use itertools::Itertools;
-use serde::Deserialize;
 use std::collections::HashMap;
 use surrealdb::{Connection, Surreal};
+use surrealdb_types::SurrealValue;
 
 use crate::{constants::SCRIPT_MIGRATION_TABLE_NAME, models::ScriptMigration};
 
@@ -31,7 +31,7 @@ pub async fn get_surrealdb_table_definitions<C: Connection>(
     Ok(table_definitions)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, SurrealValue)]
 pub struct SurrealdbTableDefinition {
     pub fields: HashMap<String, String>,
 }
@@ -75,13 +75,8 @@ async fn list_script_migration<C: Connection>(client: &Surreal<C>) -> Result<Vec
     Ok(result)
 }
 
-pub fn parse_statements(query_str: &str) -> Result<surrealdb::sql::Query> {
-    let query = ::surrealdb::syn::parse_with_capabilities(
-        query_str,
-        &::surrealdb::dbs::Capabilities::all()
-            .with_experimental(::surrealdb::dbs::capabilities::Targets::All),
-    )?;
-
+pub fn parse_statements(query_str: &str) -> Result<Ast> {
+    let query = ::surrealdb::syn::parse(query_str)?;
     Ok(query)
 }
 
@@ -123,7 +118,7 @@ pub async fn apply_in_transaction<C: Connection>(
 
     match action {
         TransactionAction::Rollback => {
-            let end_result = response_result.and_then(|response| response.check());
+            let end_result = response_result?.check();
 
             let first_error = end_result.err().context("Error on rollback")?;
             let is_rollback_success = first_error
