@@ -1,11 +1,12 @@
+> **Warning**
+> The project is archived in favor of [Surrealkit](https://github.com/surrealdb/surrealkit) as it is now the official migration tool for SurrealDB.
+
+![No Maintenance Intended](https://img.shields.io/maintenance/no/2026.svg)
 ![Crates.io](https://img.shields.io/crates/v/surrealdb-migrations) ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Odonno/surrealdb-migrations/main.yml) ![GitHub](https://img.shields.io/github/license/Odonno/surrealdb-migrations) [![codecov](https://codecov.io/gh/Odonno/surrealdb-migrations/branch/main/graph/badge.svg?token=8DCQY63QP9)](https://codecov.io/gh/Odonno/surrealdb-migrations)
 
 # SurrealDB Migrations
 
 An awesome SurrealDB migration tool, with a user-friendly CLI and a versatile Rust library that enables seamless integration into any project.
-
-> **Warning**
-> This project is not production-ready, use at your own risk.
 
 This project can be used:
 
@@ -281,15 +282,15 @@ Here is the definition of the `.surrealdb` configuration file:
 
 Here is the list of all environment variables that you can use:
 
-* `SURREAL_MIG_PATH` - Path to the folder that contains your migration project
-* `SURREAL_MIG_SCHEMA` - Define SCHEMALESS or SCHEMAFULL option by default when creating new table/event file
-* `SURREAL_MIG_ADDRESS` - Address of the surrealdb instance
-* `SURREAL_MIG_USER` - Username used to authenticate to the surrealdb instance
-* `SURREAL_MIG_PASS` - Password used to authenticate to the surrealdb instance
-* `SURREAL_MIG_NS` - Namespace to use inside the surrealdb instance
-* `SURREAL_MIG_DB` - Name of the database to use inside the surrealdb instance
-* `SURREAL_MIG_TAGS` - Tags used to filter schema/migration files
-* `SURREAL_MIG_EXCLUDE_TAGS` - Tags used to exclude schema/migration files
+- `SURREAL_MIG_PATH` - Path to the folder that contains your migration project
+- `SURREAL_MIG_SCHEMA` - Define SCHEMALESS or SCHEMAFULL option by default when creating new table/event file
+- `SURREAL_MIG_ADDRESS` - Address of the surrealdb instance
+- `SURREAL_MIG_USER` - Username used to authenticate to the surrealdb instance
+- `SURREAL_MIG_PASS` - Password used to authenticate to the surrealdb instance
+- `SURREAL_MIG_NS` - Namespace to use inside the surrealdb instance
+- `SURREAL_MIG_DB` - Name of the database to use inside the surrealdb instance
+- `SURREAL_MIG_TAGS` - Tags used to filter schema/migration files
+- `SURREAL_MIG_EXCLUDE_TAGS` - Tags used to exclude schema/migration files
 
 ### Execution context
 
